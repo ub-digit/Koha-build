@@ -31,6 +31,7 @@ use C4::Output qw( output_and_exit output_and_exit_if_error output_html_with_htt
 use C4::Members qw( checkcardnumber get_cardnumber_length );
 use C4::Koha qw( GetAuthorisedValues );
 use C4::Letters qw( SendAlerts );
+use C4::Members::Messaging;
 use C4::Form::MessagingPreferences;
 use Koha::AuthUtils;
 use Koha::AuthorisedValues;
@@ -46,6 +47,8 @@ use Koha::Patron::HouseboundRoles;
 use Koha::Token;
 use Email::Valid;
 use Koha::SMS::Providers;
+
+my $messaging_options = C4::Members::Messaging::GetMessagingOptions();
 
 my $input = CGI->new;
 my %data;
@@ -420,6 +423,57 @@ if ( ($op eq 'modify' || $op eq 'insert' || $op eq 'save'|| $op eq 'duplicate') 
     unless ($newdata{'dateexpiry'}){
         my $patron_category = Koha::Patron::Categories->find( $newdata{categorycode} );
         $newdata{'dateexpiry'} = $patron_category->get_expiry_date( $newdata{dateenrolled} ) if $patron_category;
+    }
+}
+
+# do this for both save and insert  if EnhancedMessagingPreferences and simple-messaging is used
+if ( $op eq 'insert' || $op eq 'save') {
+    # if simplified form is to be used we add the params here
+    if (C4::Context->preference('EnhancedMessagingPreferences') and $input->param('setting_messaging_prefs')) {
+      if ( defined $input->param('simple-messaging') && $input->param('simple-messaging') eq 'yes') {
+          if (defined $input->param ('opacmessaging-simple-radios')) {
+              my %whichActionsToTickUsingSimpleOpacMessaging = map { $_ => 1 } (split /\|/, C4::Context->preference('whichActionsToTickUsingSimpleOpacMessaging')); # split the string to array and then convert to hash to use keys for easy checking
+              if ($input->param('opacmessaging-simple-radios') eq 'sms') {
+                  foreach my $messaging_option (@{$messaging_options})
+                  {
+                    if ($whichActionsToTickUsingSimpleOpacMessaging{$messaging_option->{'message_name'}}) {
+                        $input->param($messaging_option->{'message_attribute_id'}, "sms");
+
+                    }
+                  }
+
+              }
+              elsif ($input->param('opacmessaging-simple-radios') eq 'email') {
+                  # set all types to email
+                  foreach my $messaging_option (@{$messaging_options})
+                  {
+                    if ($whichActionsToTickUsingSimpleOpacMessaging{$messaging_option->{'message_name'}}) {
+                         $input->param($messaging_option->{'message_attribute_id'}, "email");
+                    }
+                  }
+              }
+              elsif (($input->param('opacmessaging-simple-radios') eq 'SmsAndEmail')) {
+                   # set all types to email and sms
+                  foreach my $messaging_option (@{$messaging_options})
+                  {
+                    if ($whichActionsToTickUsingSimpleOpacMessaging{$messaging_option->{'message_name'}}) {
+                      $input->param($messaging_option->{'message_attribute_id'}, "sms", "email");
+                    }
+                  }
+              }
+              elsif (($input->param('opacmessaging-simple-radios') eq 'paper')) {
+                   # set all types to do not notify
+                  foreach my $messaging_option (@{$messaging_options})
+                  {
+                    if ($whichActionsToTickUsingSimpleOpacMessaging{$messaging_option->{'message_name'}}) {
+                      $input->delete($messaging_option->{'message_attribute_id'});
+                    }
+                  }
+              }
+          }
+      }
+      delete $newdata{"opacmessaging-simple-radios"};
+      delete $newdata{"simple-messaging"};
     }
 }
 
