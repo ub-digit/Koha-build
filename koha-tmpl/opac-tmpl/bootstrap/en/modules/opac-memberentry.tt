@@ -534,6 +534,15 @@
                                             </li>
                                         [% END %]
 
+                                        [% UNLESS hidden.defined('smsalertnumber') %]
+                                            <li>
+                                                <label for="borrower_smsalertnumber" class="[% required.smsalertnumber | html %]">Mobile/SMS:</label>
+
+                                                <input type="text" id="borrower_smsalertnumber" name="borrower_smsalertnumber" value="[% borrower.smsalertnumber | html%]" class="[% required.smsalertnumber | html %]" />
+                                                <div class="required_label [% required.smsalertnumber | html %]">Required</div>
+                                            </li>
+                                        [% END %]
+
                                         [% UNLESS hidden.defined('mobile') %]
                                             <li>
                                                 <label for="borrower_mobile" class="[% required.mobile | html %]">Other phone:</label>
@@ -995,7 +1004,7 @@
                                     <fieldset class="action">
                                         <input type="hidden" name="action" value="update" />
                                         <input type="hidden" name="csrf_token" value="[% csrf_token | html %]" />
-                                        <input type="submit" class="btn btn-primary" value="Submit update request" />
+                                        <input type="submit" class="btn btn-default" value="Submit update request" />
                                     </fieldset>
                                 [% END %]
                             [% ELSE %]
@@ -1109,7 +1118,7 @@
                         $.ajax({
                             url: "/api/v1/public/patrons/[% logged_in_user.borrowernumber | uri %]/guarantors/can_see_charges",
                             type: 'PUT',
-                            data: JSON.stringify({ 
+                            data: JSON.stringify({
                                 allowed: can_see_charges
                             }),
                             contentType: 'application/json',

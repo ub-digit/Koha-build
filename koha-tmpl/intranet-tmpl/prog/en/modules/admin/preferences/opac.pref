@@ -7,6 +7,14 @@ OPAC:
                   0: "Don't show"
             - "a summary of a logged in patron's checkouts, overdues, holds and charges on the OPAC start page."
         -
+            - pref: enableSimpleOpacMessaging
+              choices:
+                  yes: "Enable"
+                  no: "Disable"
+            -  the simple form of messaging options. This will enable the user to set sms, email or sms and email for all different events listed in the input box below.
+            - pref: whichActionsToTickUsingSimpleOpacMessaging
+              class: multi
+            - (separate columns with |)
             - For search results in the OPAC, show the item's
             - pref: OPACResultsLibrary
               choices:
