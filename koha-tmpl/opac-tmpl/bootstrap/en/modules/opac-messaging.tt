@@ -37,6 +37,7 @@
                         [% IF ( settings_updated ) %]
                         <div class="alert alert-success"><p><strong>Settings updated</strong></p></div>
                         [% END %]
+                        [% IF !Koha.Preference('enableSimpleOpacMessaging') %]
                         <form action="/cgi-bin/koha/opac-messaging.pl" method="post" name="opacmessaging">
                             <input type="hidden" name="csrf_token" value="[% csrf_token | html %]" />
                             <input type="hidden" name="modify" value="yes" />
@@ -50,7 +51,7 @@
                                             [% IF ( SMSSendDriver ) %]<th>SMS</th>[% END %]
                                             [% IF ( TalkingTechItivaPhone ) %]<th>Phone</th>[% END %]
                                             [% IF Koha.Preference('PhoneNotification') %]<th>Phone</th>[% END %]
-                                            <th>Email</th>
+                                            <th>E-mail</th>
                                             <th>Digests only <i id="info_digests" data-toggle="tooltip" title="You can ask for a digest to reduce the number of messages. Messages will be saved and sent as a single message." data-placement="right" class="fa fa-info-circle"></i></th>
                                         </tr>
                                     </thead>
@@ -222,7 +223,140 @@
                                 <input type="submit" value="Submit changes" class="btn btn-primary" />
                             </fieldset>
                         </form>
+                        [% END %] <!-- END !enableSimpleOpacMessaging -->
                     </div> <!-- / #usermessaging -->
+
+                    [% IF Koha.Preference('enableSimpleOpacMessaging') %]
+                        <!-- START - Simplified form -->
+                        <form action="/cgi-bin/koha/opac-messaging.pl" method="post" name="opacmessaging-simple">
+                            <input type="hidden" name="csrf_token" value="[% csrf_token | html %]" />
+                            <input type="hidden" name="simple" value="yes" />
+                            <input type="hidden" name="modify" value="yes" />
+                                <table class="table table-bordered table-condensed table-striped">
+                                    <tr>
+                                        <th>&nbsp;</th>
+                                        [% IF ( SMSSendDriver ) %]<th class="gub-heading-messaging-sms">SMS</th>[% END %]
+                                        <th class="gub-heading-messaging-email">E-mail</th>
+                                        [% IF ( SMSSendDriver ) %]<th class="gub-heading-messaging-sms-and-email">E-mail and SMS</th>[% END %]
+                                    </tr>
+                                    [% FOREACH messaging_preference IN messaging_preferences %]
+                                        [% IF ( messaging_preference.Advance_Notice ) %]
+                                          [% IF ( messaging_preference.takes_days ) %]
+                                            [% FOREACH select_day IN messaging_preference.select_days %]
+                                              [% IF ( select_day.selected ) %]
+                                                <input type="hidden" name="[% messaging_preference.message_attribute_id %]-DAYS" value="[% select_day.day %]"></input>
+                                              [% END %]
+                                            [% END %]
+                                          [% END %]
+                                            <tr>
+                                                <td>Reminders and notifications</td>
+                                                [% IF ( messaging_preference.transport_sms ) %]
+                                                    [% IF ( SMSSendDriver ) %]
+                                                        <td class="gub-messaging-sms">
+                                                            [% IF ( messaging_preference.transports_sms ) %]
+                                                                <label class="radio">
+                                                                  <input type="radio" name="opacmessaging-simple-radios" id="optionSMS" value="sms" checked>
+                                                                  SMS
+                                                                </label>
+                                                            [% ELSE %]
+                                                                <label class="radio">
+                                                                  <input type="radio" name="opacmessaging-simple-radios" id="optionSMS" value="sms" >
+                                                                  SMS
+                                                                </label>
+                                                            [% END %]
+                                                        </td>
+                                                    [% END %]
+                                                [% END %]
+                                                [% IF ( messaging_preference.transport_email ) %]
+                                                    <td class="gub-messaging-email">
+                                                        [% IF ( messaging_preference.transports_email ) %]
+                                                            <label class="radio">
+                                                              <input type="radio" name="opacmessaging-simple-radios" id="optionEMAIL" value="email" checked >
+                                                              E-mail
+                                                            </label>
+                                                        [% ELSE %]
+                                                            <label class="radio">
+                                                              <input type="radio" name="opacmessaging-simple-radios" id="optionEMAIL" value="email" >
+                                                              E-mail
+                                                            </label>
+                                                        [% END %]
+                                                    </td>
+                                                [% ELSE %]
+                                                    <td>-</td>
+                                                [% END %]
+
+                                                [% IF ( messaging_preference.transport_sms ) %]
+                                                    [% IF ( SMSSendDriver ) %]
+                                                        <td class="gub-messaging-sms-and-email">
+                                                            [% IF ( messaging_preference.transports_sms && messaging_preference.transports_email) %]
+                                                                <label class="radio">
+                                                                  <input type="radio" name="opacmessaging-simple-radios" id="optionSmsAndEmail" value="SmsAndEmail" checked>
+                                                                  E-mail and SMS
+                                                                </label>
+                                                            [% ELSE %]
+                                                                <label class="radio">
+                                                                  <input type="radio" name="opacmessaging-simple-radios" id="optionSmsAndEmail" value="SmsAndEmail" >
+                                                                  E-mail and SMS
+                                                                </label>
+                                                            [% END %]
+                                                        </td>
+                                                    [% END %]
+                                                [% END %]
+                                            </tr>
+                                        [% END %]
+                                    [% END # / FOREACH messaging_preferences%]
+                            </table>
+                            <fieldset class="rows">
+                                [% IF ( SMSSendDriver ) %]
+                                    <ol>
+                                        <li>
+                                            [% IF (email) %]
+                                                <span class="gub-email-info"><strong>E-mail: </strong> [% email | html %] <a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend"><i class="icon-edit"></i></a></span>
+                                            [% ELSE %]
+                                                <span class="gub-no-email-info">You have not yet registered an e-mail address.</span> <a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend">Click here to add e-mail.</a>
+                                            [% END %]
+                                        </li>
+                                        <li>
+                                            [% IF (SMSnumber) %]
+                                                <span class="gub-sms-info"><strong>Mobile/SMS: </strong> [% SMSnumber | html %]<a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend"><i class="icon-edit"></i></a></span>
+                                            [% ELSE %]
+                                                <span class="gub-no-sms-info">You have not yet registered a mobile/sms number.</span> <a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend">Click here to add number. </a>
+                                            [% END %]
+                                        </li>
+                                        <li>
+                                            <label for="lang">Preferred language for notices: </label>
+                                            <select id="lang" name="lang">
+                                                <option value="default">Default</option>
+                                                [% FOR language IN languages %]
+                                                    [% FOR sublanguage IN language.sublanguages_loop %]
+                                                        [% IF language.plural %]
+                                                            [% IF sublanguage.rfc4646_subtag == patron_lang %]
+                                                                <option value="[% sublanguage.rfc4646_subtag | html %]" selected="selected">[% sublanguage.native_description | html %] [% sublanguage.region_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>
+                                                            [% ELSE %]
+                                                                <option value="[% sublanguage.rfc4646_subtag | html %]">[% sublanguage.native_description | html %] [% sublanguage.region_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>
+                                                            [% END %]
+                                                        [% ELSE %]
+                                                            [% IF sublanguage.rfc4646_subtag == patron_lang %]
+                                                                <option value="[% sublanguage.rfc4646_subtag | html %]" selected="selected">[% sublanguage.native_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>
+                                                            [% ELSE %]
+                                                                <option value="[% sublanguage.rfc4646_subtag | html %]">[% sublanguage.native_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>
+                                                            [% END %]
+                                                        [% END # /IF language.plural %]
+                                                    [% END # /FOR sublanguage %]
+                                                [% END #/FOR language %]
+                                            </select> <!-- /#lang -->
+                                        </li>
+                                    </ol>
+                                [% END %]
+                            </fieldset>
+
+                            <fieldset class="action">
+                              <input type="submit" value="Submit changes" class="btn" /> <a class="cancel" href="/cgi-bin/koha/opac-user.pl">Cancel</a>
+                            </fieldset>
+                        </form>
+                        <!-- END - Simplified form  -->
+                    [% END %]
+                </div> <!-- / #usermessaging -->
                 [% ELSE %]
                 <p><strong>You are not allowed to call this page directly</strong></p>
                 [% END # /IF Koha.Preference( 'EnhancedMessagingPreferencesOPAC' ) %]
@@ -230,6 +364,8 @@
         </div> <!-- / .row -->
     </div> <!-- / .container-fluid -->
 </div> <!-- / .main -->
+
+
 
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
@@ -282,5 +418,24 @@
                 }, 100);
             });
         }
+        $(document).ready(function() {
+            if ( ($("input[name='opacmessaging-simple-radios']:checked").val() === "sms") || ($("input[name='opacmessaging-simple-radios']:checked").val() === "SmsAndEmail") ) {
+                if ($(".gub-no-sms-info").length) {
+                    $("input[type='submit']").attr("disabled", true);
+                    $(".gub-no-sms-info").css({"font-weight": "bold", "color": "red"});
+                }
+            }
+            $("input[name='opacmessaging-simple-radios']").change(function(e){
+                if( ($(this).val() === 'sms') || ($(this).val() === 'SmsAndEmail') ) {
+                    if ($(".gub-no-sms-info").length) {
+                        $("input[type='submit']").attr("disabled", true);
+                         $(".gub-no-sms-info").css({"font-weight": "bold", "color": "red"});
+                    }
+                } else {
+                    $("input[type='submit']").attr("disabled", false);
+                     $(".gub-no-sms-info").css({"font-weight": "normal", "color": "inherit"});
+                }
+            });
+        });
     </script>
 [% END %]
