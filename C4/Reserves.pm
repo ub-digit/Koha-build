@@ -46,6 +46,8 @@ use Koha::Libraries;
 use Koha::Old::Holds;
 use Koha::Patrons;
 use Koha::Plugins;
+use Koha::CirculationRules;
+use Koha::Plugins::Handler;
 
 use List::MoreUtils qw( any );
 
@@ -193,6 +195,43 @@ sub AddReserve {
     my $itemtype       = $params->{itemtype};
     my $non_priority   = $params->{non_priority};
 
+    my $plugin_result = Koha::Plugins::Handler->run_hook(
+        {
+            method => 'add_reserve_before',
+            params => {
+                branch => $branch,
+                borrowernumber => $borrowernumber,
+                biblionumber => $biblionumber,
+                priority => $priority,
+                resdate => $resdate,
+                expdate => $patron_expiration_date,
+                notes => $notes,
+                title => $title,
+                checkitem => $checkitem,
+                found => $found,
+                itemtype => $itemtype
+            }
+        }
+        );
+
+    (
+     $branch,   $borrowernumber, $biblionumber,
+     $priority, $resdate,        $patron_expiration_date,      $notes,
+     $title,    $checkitem,      $found,        $itemtype) = (
+        $plugin_result->{'branch'},
+        $plugin_result->{'borrowernumber'},
+        $plugin_result->{'biblionumber'},
+        $plugin_result->{'priority'},
+        $plugin_result->{'resdate'},
+        $plugin_result->{'expdate'},
+        $plugin_result->{'notes'},
+        $plugin_result->{'title'},
+        $plugin_result->{'checkitem'},
+        $plugin_result->{'found'},
+        $plugin_result->{'itemtype'}
+    );
+
+
     $resdate ||= dt_from_string;
 
     # if we have an item selectionned, and the pickup branch is the same as the holdingbranch
@@ -257,6 +296,17 @@ sub AddReserve {
 
     logaction( 'HOLDS', 'CREATE', $hold->id, $hold )
         if C4::Context->preference('HoldsLog');
+
+    $plugin_result = Koha::Plugins::Handler->run_hook(
+        {
+            method => 'add_reserve_after',
+            params => {
+                hold => $hold
+            }
+        }
+        );
+
+    $hold = $plugin_result->{'hold'};
 
     my $reserve_id = $hold->id();
 
