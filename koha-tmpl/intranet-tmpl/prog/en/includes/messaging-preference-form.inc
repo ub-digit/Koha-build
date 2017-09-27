@@ -37,6 +37,9 @@
           [% ELSIF ( messaging_preference.Auto_Renewals ) %]<span>Auto renewal</span>
           [% ELSIF ( messaging_preference.Recall_Waiting ) %]<span>Recall awaiting pickup</span>
           [% ELSIF ( messaging_preference.Recall_Requested ) %]<span>Return recalled item</span>
+          [% ELSIF ( messaging_preference.Overdue1 ) %]<span>Overdue 1</span>
+          [% ELSIF ( messaging_preference.Overdue2 ) %]<span>Overdue 2</span>
+          [% ELSIF ( messaging_preference.Overdue3 ) %]<span>Overdue 3</span>
           [% ELSE %]<span>Unknown</span>
           [% END %]
       </td>
