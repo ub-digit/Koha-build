@@ -649,6 +649,21 @@ Circulation:
             - "when the outstanding balance is written off."
     Checkin policy:
         -
+            - Use message preferences based on
+            - pref: UsePatronPreferencesForOverdueNotices
+              choices:
+                  1: individual patron preference
+                  0: patron category
+            - when sending overdue notices.
+        -
+            - When using individual patron preferences for overdue notices
+            - pref: UsePatronPreferencesForOverdueNoticesPrint
+              choices:
+                  always: always
+                  fallback: when no other transport set
+                  never: never
+            - print notice.
+        -
             - pref: TrapHoldsOnOrder
               choices:
                   1: Trap
