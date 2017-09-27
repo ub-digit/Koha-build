@@ -856,6 +856,8 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('UseICUStyleQuotes','0','1','Tell Koha whether to use ICU style quotes ({) or default (") when tracing subjects .','YesNo'),
 ('UseLocationAsAQInSIP', '0', '', 'Use permanent_location instead of homebranch for AQ in SIP response', 'YesNo'),
 ('UseOCLCEncodingLevels','0',NULL,'If enabled, include OCLC encoding levels in leader value builder dropdown for position 17.','YesNo'),
+('UsePatronPreferencesForOverdueNotices', '0', NULL, 'Use patron specific messaging preferences for overdue notices if available', 'YesNo'),
+('UsePatronPreferencesForOverdueNoticesPrint', 'always', 'always|fallback|never', 'When to send print notices when using patron specific messaging preferences for overdue notices', 'Choice'),
 ('UseRecalls','0',NULL,'Enable or disable recalls','YesNo'),
 ('UseTransportCostMatrix','0','','Use Transport Cost Matrix when filling holds','YesNo'),
 ('UseWYSIWYGinSystemPreferences','0','','Show WYSIWYG editor when editing certain HTML system preferences.','YesNo'),
