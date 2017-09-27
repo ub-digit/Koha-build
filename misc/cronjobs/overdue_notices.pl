@@ -25,12 +25,14 @@ use Pod::Usage   qw( pod2usage );
 use Text::CSV_XS;
 use DateTime;
 use DateTime::Duration;
+use List::MoreUtils qw( uniq );
 
 use Koha::Script -cron;
 use C4::Context;
 use C4::Letters;
 use C4::Overdues qw( GetOverdueMessageTransportTypes parse_overdues_letter );
 use C4::Log qw( cronlogaction );
+use C4::Members::Messaging qw( GetMessagingPreferences );
 use Koha::Patron::Debarments qw( AddUniqueDebarment );
 use Koha::DateUtils qw( dt_from_string output_pref );
 use Koha::Calendar;
@@ -711,11 +713,25 @@ END_SQL
                     push @items, $item_info;
                 }
                 $sth2->finish;
-
-                my @message_transport_types = @{ GetOverdueMessageTransportTypes( $branchcode, $overdue_rules->{categorycode}, $i) };
-                @message_transport_types = @{ GetOverdueMessageTransportTypes( q{}, $overdue_rules->{categorycode}, $i) }
+                my @message_transport_types;
+                if (C4::Context->preference('UsePatronPreferencesForOverdueNotices')) {
+                    my $patronpref = GetMessagingPreferences(
+                        { borrowernumber => $borrowernumber, message_name => "Overdue$i"});
+                    if ($patronpref && $patronpref->{'transports'}) {
+                        @message_transport_types = keys %{$patronpref->{'transports'}};
+                    }
+                    my $print_behavior = C4::Context->preference('UsePatronPreferencesForOverdueNoticesPrint');
+                    if (
+                        $print_behavior eq 'always' ||
+                        $print_behavior eq 'fallback' && !@message_transport_types
+                    ) {
+                        unshift(@message_transport_types, 'shift');
+                    }
+                } else {
+                    @message_transport_types = @{ GetOverdueMessageTransportTypes( $branchcode, $overdue_rules->{categorycode}, $i) };
+                    @message_transport_types = @{ GetOverdueMessageTransportTypes( q{}, $overdue_rules->{categorycode}, $i) }
                     unless @message_transport_types;
-
+                }
 
                 my $print_sent = 0; # A print notice is not yet sent for this patron
                 for my $mtt ( @message_transport_types ) {
