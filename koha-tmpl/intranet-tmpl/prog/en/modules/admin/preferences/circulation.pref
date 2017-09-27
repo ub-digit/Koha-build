@@ -540,6 +540,13 @@ Circulation:
             - Allow issue when reserved.
     Checkin policy:
         -
+            - Use message preferences based on
+            - pref: UsePatronPreferencesForOverdue
+              choices:
+                  yes: individual patron preference
+                  no: patron category
+            - when sending overdue notices.
+        -
             - pref: TrapHoldsOnOrder
               choices:
                   yes: Trap
