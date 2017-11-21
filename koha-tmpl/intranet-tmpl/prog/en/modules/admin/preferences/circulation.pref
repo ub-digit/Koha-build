@@ -551,7 +551,11 @@ Circulation:
             - "<br />ccode: [NEWFIC,NULL,DVD]"
             - "<br />itype: [NEWBK,\"\"]"
             - "<br /> <strong>NOTE:</strong> The word 'NULL' can be used to block renewal on undefined fields, while an empty string \"\" will block on an empty (but defined) field."
-    Checkin policy:
+        -
+            - Bypass confirmation when On-site is ticked and item notforloan has any of the listed statuses.
+            - pref: BypassOnSiteCheckoutConfirmation
+            - (Separated by pipe -3|-2|-1)
+    Checkin Policy:
         -
             - pref: TrapHoldsOnOrder
               choices:
