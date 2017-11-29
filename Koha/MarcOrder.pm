@@ -1017,6 +1017,11 @@ sub create_items_and_generate_order_hash {
                 if ($price) {
                     $price                            = _format_price_to_CurrencyFormat_syspref($price);
                     $price                            = Koha::Number::Price->new($price)->unformat;
+                    # RECALCULATE PRICE BASED ON CURRENCY
+                    my $currency_code = $bookseller->listprice;
+                    my $currency = Koha::Acquisition::Currencies->find($currency_code);
+                    my $currency_rate = $currency->rate;
+                    $price = $price * $currency_rate;
                     $orderinfo{tax_rate_on_ordering}  = $vendor->tax_rate;
                     $orderinfo{tax_rate_on_receiving} = $vendor->tax_rate;
                     my $order_discount = $fields->{c_discount} ? $fields->{c_discount} : $vendor->discount;
@@ -1074,6 +1079,11 @@ sub create_items_and_generate_order_hash {
         if ( $fields->{c_price} ) {
             $fields->{c_price}                = _format_price_to_CurrencyFormat_syspref( $fields->{c_price} );
             $fields->{c_price}                = Koha::Number::Price->new( $fields->{c_price} )->unformat;
+            # RECALCULATE PRICE BASED ON CURRENCY
+            my $currency_code = $bookseller->listprice;
+            my $currency = Koha::Acquisition::Currencies->find($currency_code);
+            my $currency_rate = $currency->rate;
+            $fields->{c_price} = $fields->{c_price} * $currency_rate;
             $orderinfo{tax_rate_on_ordering}  = $vendor->tax_rate;
             $orderinfo{tax_rate_on_receiving} = $vendor->tax_rate;
             my $order_discount = $fields->{c_discount} ? $fields->{c_discount} : $vendor->discount;
