@@ -1055,13 +1055,14 @@ sub create_items_and_generate_order_hash {
         # Add an orderline for each MARC record
         # Get quantity in the MARC record (1 if none)
         my $quantity  = GetMarcQuantity( $fields->{marcrecord}, C4::Context->preference('marcflavour') ) || 1;
+        my $uncertainprice = C4::Context->preference('AcqUncertainPriceWhenImporting');
         my %orderinfo = (
             biblionumber       => $fields->{biblionumber},
             basketno           => $basket_id,
             quantity           => $fields->{c_quantity},
             branchcode         => C4::Context->userenv()->{'branch'},
             budget_id          => $fields->{c_budget_code},
-            uncertainprice     => 1,
+            uncertainprice     => $uncertainprice,
             sort1              => $fields->{c_sort1},
             sort2              => $fields->{c_sort2},
             order_internalnote => $fields->{order_internalnote},
