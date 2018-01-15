@@ -673,6 +673,13 @@ Circulation:
             - removal of Overdue debarments when patron has overdue items but none are old enough to have reached restricting delay. Used in combination with AutoRemoveOverduesRestrictions.
     Holds policy:
         -
+            - Use
+            - pref: UseLocationAsAQInSIP
+              choices:
+                  yes: permanent_location
+                  no: homebranch
+            - for AQ field in SIP protocol.
+        -
             - In the staff interface, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
               choices:
