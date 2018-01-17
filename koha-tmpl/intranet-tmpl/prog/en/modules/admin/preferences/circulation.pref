@@ -626,7 +626,13 @@ Circulation:
                   yes: Store
                   no: "Don't store"
             - the last patron to return an item. This setting is independent of opacreadinghistory/AnonymousPatron.
-    Holds policy:
+        -
+            - pref: SipNoAlertForAvailable
+              choices:
+                  yes: Do not set alert
+                  no: Set alert
+            - for returned books that are not issued.
+    Holds Policy:
         -
             - In the staff client, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
