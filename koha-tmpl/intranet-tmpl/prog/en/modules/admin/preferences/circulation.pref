@@ -626,7 +626,13 @@ Circulation:
                   yes: Store
                   no: "Don't store"
             - the last patron to return an item. This setting is independent of opacreadinghistory/AnonymousPatron.
-    Holds policy:
+        -
+            - pref: ODueDebarmentRemovalAllowUnrestricted
+              choices:
+                  yes: Allow
+                  no: Do not allow
+            - removal of Overdue debarments when patron has overdue items but none are old enough to have reached restricting delay. Used in combination with AutoRemoveOverduesRestrictions.
+    Holds Policy:
         -
             - In the staff client, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
