@@ -626,7 +626,11 @@ Circulation:
                   yes: Store
                   no: "Don't store"
             - the last patron to return an item. This setting is independent of opacreadinghistory/AnonymousPatron.
-    Holds policy:
+        -
+            - NOT_LOAN values that should NOT trigger reserves:
+            - pref: PreventNotLoanFromHoldResolve
+            - (Separated by pipe -3|-2|-1)
+    Holds Policy:
         -
             - In the staff client, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
