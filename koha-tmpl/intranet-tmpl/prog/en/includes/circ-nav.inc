@@ -46,6 +46,7 @@
             [% END %]
         </ul>
 
+        [% IF !Koha.Preference('HideCircReports') %]
         <h5>Holds</h5>
         <ul>
             <li>
@@ -66,6 +67,7 @@
                 <a href="/cgi-bin/koha/circ/reserveratios.pl">Hold ratios</a>
             </li>
         </ul>
+        [% END %]
         </div>
 
 
@@ -117,7 +119,7 @@
             </li>
         </ul>
 
-        [% IF ( CAN_user_circulate_overdues_report ) %]
+        [% IF !Koha.Preference('HideCircReports') and ( CAN_user_circulate_overdues_report ) %]
         <h5>Overdues</h5>
         <ul>
             <li>
