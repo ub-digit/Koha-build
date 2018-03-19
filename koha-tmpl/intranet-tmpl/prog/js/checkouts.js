@@ -368,6 +368,9 @@ $(document).ready(function() {
 
                         if ( oObj.recalled == 1 ) {
                              title += " - <span class='circ-hlt item-recalled'>This item has been recalled and the due date updated.</span>";
+
+                        if ( oObj.issue_note ) {
+                            onsite_checkout += " <span class='onsite_checkout'>(" + oObj.issue_note + ")</span>";
                         }
 
                         title += " "
@@ -766,6 +769,10 @@ $(document).ready(function() {
                             var onsite_checkout = '';
                             if ( oObj.onsite_checkout == 1 ) {
                                 onsite_checkout += " <span class='onsite_checkout'>(" + __("On-site checkout") + ")</span>";
+                            }
+
+                            if ( oObj.issue_note ) {
+                                onsite_checkout += " <span class='onsite_checkout'>(" + oObj.issue_note + ")</span>";
                             }
 
                             title += " "
