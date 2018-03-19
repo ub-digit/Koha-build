@@ -63,6 +63,20 @@ use List::MoreUtils qw( uniq );
 #
 my $query = CGI->new;
 
+my $ub_extended_inhouse_select = $query->param('ub_extended_inhouse_select');
+my $ub_extended_inhouse = 0;
+my $note = '';
+if($ub_extended_inhouse_select eq "reading_room") {
+    $note = "Läsesalslån";
+    $ub_extended_inhouse = 1;
+} elsif($ub_extended_inhouse_select eq "research_locker") {
+    $note = "Forskarskåpslån";
+    $ub_extended_inhouse = 1;
+} elsif($ub_extended_inhouse_select eq "department_loan") {
+    $note = "Institutionslån";
+    $ub_extended_inhouse = 1;
+}
+
 my $borrowernumber = $query->param('borrowernumber');
 my $barcodes       = [];
 my $barcode        = $query->param('barcode');
@@ -384,6 +398,16 @@ if (@$barcodes) {
         }
     }
 
+    # Cleanup error from NOT_FOR_LOAN in case of extended inhouse loans
+    if($ub_extended_inhouse) {
+        if($error->{NOT_FOR_LOAN}) {
+            delete $error->{NOT_FOR_LOAN};
+        }
+        if($error->{item_notforloan}) {
+            delete $error->{item_notforloan};
+        }
+    }
+
     # Only some errors will block when performing forced onsite checkout,
     # for other cases all errors will block
     my @blocking_error_codes =
@@ -458,7 +482,7 @@ if (@$barcodes) {
                 {
                     onsite_checkout        => $onsite_checkout,        auto_renew    => $session->param('auto_renew'),
                     switch_onsite_checkout => $switch_onsite_checkout, cancel_recall => $cancel_recall,
-                    recall_id              => $recall_id,
+                    recall_id              => $recall_id,              note => $note,
                 }
             );
             $template_params->{issue} = $issue;
