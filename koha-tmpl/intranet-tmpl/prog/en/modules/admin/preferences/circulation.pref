@@ -678,7 +678,13 @@ Circulation:
                   yes: Allow
                   no: Do not allow
             - removal of Overdue debarments when patron has overdue items but none are old enough to have reached restricting delay. Used in combination with AutoRemoveOverduesRestrictions.
-    Holds policy:
+        -
+            - pref: ShowRefundLostItemFeeMessage
+              choices:
+                  yes: Enable
+                  no: Disable
+            - When disabled, the lost item fee refund message is hidden.
+    Holds Policy:
         -
             - Use
             - pref: UseLocationAsAQInSIP
