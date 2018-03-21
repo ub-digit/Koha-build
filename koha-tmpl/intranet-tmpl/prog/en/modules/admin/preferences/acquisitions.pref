@@ -145,6 +145,11 @@ Acquisitions:
                 1: Enable
                 0:  Disable
             - automatic order line creation from MARC records.
+        -
+            - Use
+            - pref: GubEdifactBasedir
+            - as base directory for vendor orders processed by gub_edifact.pl.
+            - type: textarea
     Printing:
         -
             - Use the
