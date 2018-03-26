@@ -633,7 +633,13 @@ Circulation:
                   yes: Store
                   no: "Don't store"
             - the last patron to return an item. This setting is independent of opacreadinghistory/AnonymousPatron.
-    Holds policy:
+        -
+            - pref: TriggerWaitingOnSIPReturn
+              choices:
+                  yes: Trigger
+                  no: Do not trigger
+            - hold on pickup library on checkin via SIP. (Not triggering means no message is sent.)
+    Holds Policy:
         -
             - In the staff client, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
