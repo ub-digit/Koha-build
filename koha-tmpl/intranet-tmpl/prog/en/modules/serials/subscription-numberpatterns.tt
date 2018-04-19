@@ -405,6 +405,8 @@
         $(document).ready(function(){
 
             $("#numberpatternst").dataTable($.extend(true, {}, dataTablesDefaults, {
+                paging: false,
+                "order": [[ 3, "asc" ]],
                 "columnDefs": [
                     { "targets": [ -1 ], "orderable": false, "searchable":  false },
                 ],
