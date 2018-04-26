@@ -33,7 +33,7 @@
 
                 [% IF Koha.Preference( 'EnhancedMessagingPreferencesOPAC' )  %]
                     <div id="usermessaging" class="maincontent">
-                        <h1>Your messaging settings</h1>
+                        <h1>Messages</h1>
                         [% IF ( settings_updated ) %]
                         <div class="alert alert-success"><p><strong>Settings updated</strong></p></div>
                         [% END %]
@@ -184,22 +184,6 @@
                                                 <span class="hint sms_number_help">Please enter numbers only. Prefix the number with + if including the country code.</span>
                                             </li>
 
-                                            [% IF ( SMSSendDriver == 'Email' ) %]
-                                                <li>
-                                                    <label for="sms_provider_id">SMS provider:</label>
-                                                    <select id="sms_provider_id" name="sms_provider_id">
-                                                        <option value="">Unknown</option>
-                                                        [% FOREACH s IN sms_providers %]
-                                                            [% IF s.id == sms_provider_id %]
-                                                                <option value="[% s.id | html %]" selected="selected">[% s.name | html %]</option>
-                                                            [% ELSE %]
-                                                                <option value="[% s.id | html %]">[% s.name | html %]</option>
-                                                            [% END %]
-                                                        [% END %]
-                                                    </select>
-                                                    <div class="hint">Please contact a library staff member if you are unsure of your mobile service provider, or you do not see your provider in this list.</div>
-                                                </li>
-                                            [% END # /IF ( SMSSendDriver == 'Email' ) %]
                                         [% END # /IF SMSSendDriver %]
 
                                         [% IF Koha.Preference('TranslateNotices') %]
@@ -233,7 +217,6 @@
 
                             <fieldset class="action">
                                 <input type="submit" value="Submit changes" class="btn btn-primary" />
-                                <a class="cancel" href="/cgi-bin/koha/opac-user.pl">Cancel</a>
                             </fieldset>
                         </form>
                     </div> <!-- / #usermessaging -->

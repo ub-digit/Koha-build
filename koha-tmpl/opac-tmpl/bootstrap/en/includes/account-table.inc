@@ -2,20 +2,20 @@
 <form method="post" action="opac-account-pay.pl" class="form-horizontal">
     [% IF  ACCOUNT_LINES.count > 0  %]
         <table class="table table-bordered table-striped" id="finestable">
-            <caption class="sr-only">Your charges</caption>
+            <caption class="sr-only">Fines and charges</caption>
             <thead>
                 <tr>
                     [% IF ( UBOnlinePayment.Active() ) %]<th width="20" style="text-align:center"><input id="check-all-payable" type="checkbox"></input></th>[% END %]
                     <th>Date</th>
                     <th>Type</th>
                     <th>Description</th>
-                    <th>Amount</th>
                     <th>Amount outstanding</th>
                 </tr>
             </thead>
 
             <tbody>
                 [% FOREACH ACCOUNT_LINE IN ACCOUNT_LINES %]
+                    [% IF ACCOUNT_LINE.amountoutstanding > 0 %]
                     [% IF ACCOUNT_LINE.amountoutstanding > 0 || ACCOUNT_LINE.amountoutstanding < 0 %]<tr class="outstanding">[% ELSE %]<tr>[% END%]
                         [% IF ( UBOnlinePayment.Active() ) %]
                             <td style="text-align:center"><input aria-label="[% ACCOUNT_LINE.item.biblio.title| html %] [% ACCOUNT_LINE.item.biblio.subtitle| html %] [% ACCOUNT_LINE.amountoutstanding | $Price %]" class="account-line-checkbox" data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]"
@@ -43,9 +43,9 @@
                             [%- IF ACCOUNT_LINE.description %][% ACCOUNT_LINE.description | html %][% END %]
                             [% IF ACCOUNT_LINE.itemnumber %]([% ACCOUNT_LINE.item.biblio.title | html %])[% END %]
                         </td>
-                        [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amount * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amount | $Price %][% END %]</td>
                         [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amountoutstanding * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amountoutstanding | $Price %][% END %]</td>
                     </tr>
+                    [% END %]
                 [% END %]
             </tbody>
 
