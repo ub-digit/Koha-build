@@ -13,15 +13,16 @@
 <div id="wrapper">
     <div id="header-region" class="noprint">
         <nav class="navbar navbar-expand">
-            <div id="logo">
-            <a class="navbar-brand" href="/cgi-bin/koha/opac-main.pl">
+            <h1 id="logo" class="pull-left">
+            <a class="brand" href="http://www.ub.gu.se/">
                 [% IF ( LibraryNameTitle ) %]
                     [% LibraryNameTitle | html %]
                 [% ELSE %]
                     Koha online
                 [% END %]
             </a>
-            </div>
+            </h1>
+            <div class="navbar-appname"> My loans </div>
             [% IF ( Koha.Preference( 'opacbookbag' ) == 1 ) %]
                 <div id="cartDetails" class="cart-message">Your cart is empty.</div>
             [% END %]
@@ -81,7 +82,7 @@
                 [% END # / IF virtualshelves %]
             </ul> <!-- / .navbar-nav -->
 
-            [% IF Koha.Preference( 'opacuserlogin' ) == 1 ||  Koha.Preference( 'EnableOpacSearchHistory') || Koha.Preference( 'opaclanguagesdisplay' ) %]
+            [% IF Koha.Preference( 'EnableOpacSearchHistory') || Koha.Preference( 'opaclanguagesdisplay' ) %]
                 [% IF ( Koha.Preference( 'opaclanguagesdisplay' ) ) %]
                     [% INCLUDE 'masthead-langmenu.inc' %]
                 [% END %]
@@ -156,6 +157,7 @@
             [% UNLESS ( advsearch ) %]
                 <div class="row">
                     <div class="col">
+                            [% IF Koha.Preference('enableOpacCatalogBrowsing') == 1 %]
                             <div id="opac-main-search" class="mastheadsearch">
                                 [% IF ( OpacCustomSearch ) %]
                                     [% PROCESS koha_news_block news => OpacCustomSearch %]
@@ -287,6 +289,7 @@
                                     </form>
                                 [% END # / ( OpacCustomSearch ) %]
                             </div><!-- /#opac-main-search -->
+                            [% END %]
                     </div> <!-- /.col -->
                 </div> <!-- /.row -->
             [% END # / UNLESS advsearch %]
