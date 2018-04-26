@@ -1,4 +1,4 @@
-<h3>Charges</h3>
+<h1>Fines and charges</h1>
 
 <form method="post" action="opac-account-pay.pl" class="form-horizontal">
 
@@ -10,13 +10,13 @@
                 <th class="title-string">Date</th>
                 <th>Type</th>
                 <th>Description</th>
-                <th>Amount</th>
                 <th>Amount outstanding</th>
             </tr>
         </thead>
 
         <tbody>
             [% FOREACH ACCOUNT_LINE IN ACCOUNT_LINES %]
+                [% IF ACCOUNT_LINE.amountoutstanding > 0 %]
                 [% IF ACCOUNT_LINE.amountoutstanding > 0 || ACCOUNT_LINE.amountoutstanding < 0 %]<tr class="outstanding">[% ELSE %]<tr>[% END%]
                     [% IF ( UBOnlinePayment.Active() ) %]
                         <td style="text-align:center"><input aria-label="[% ACCOUNT_LINE.item.biblio.title| html %] [% ACCOUNT_LINE.item.biblio.subtitle| html %] [% ACCOUNT_LINE.amountoutstanding | $Price %]" class="account-line-checkbox" data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]"
@@ -38,6 +38,7 @@
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amount * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amount | $Price %][% END %]</td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amountoutstanding * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amountoutstanding | $Price %][% END %]</td>
                 </tr>
+                [% END %]
             [% END %]
         </tbody>
 
@@ -46,7 +47,7 @@
                 [%- IF UBOnlinePayment.Active() -%]
                     [%- SET COLSPAN = 4 -%]
                 [%- ELSE -%]
-                    [%- SET COLSPAN = 4 -%]
+                    [%- SET COLSPAN = 2 -%]
                 [%- END -%]
                 <th class="sum" colspan="[% COLSPAN | html %]">Total due</th>
                 <td class="sum">[% total | $Price %]</td>
