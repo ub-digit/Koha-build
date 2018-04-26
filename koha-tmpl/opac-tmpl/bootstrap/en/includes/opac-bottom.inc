@@ -7,47 +7,6 @@
 [% PROCESS 'html_helpers.inc' %]
 [% UNLESS ( is_popup ) %]
         [% SET OpacLangSelectorMode = Koha.Preference('OpacLangSelectorMode') %]
-        [% IF ( opaccredits ) %]
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col">
-                        [% PROCESS koha_news_block news => opaccredits %]
-                    </div>
-                </div>
-            </div>
-        [% END #/ opaccredits %]
-
-        [% IF ( Koha.Preference('OPACReportProblem') && Koha.Preference('KohaAdminEmailAddress') ) || OpacKohaUrl %]
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col">
-                        <div id="report-koha-url">
-                            <div class="row justify-content-between">
-                                [% IF Koha.Preference('OPACReportProblem') && Koha.Preference('KohaAdminEmailAddress') %]
-                                    <div class="col">
-                                        <div id="report_a_problem" class="noprint">
-                                            <a class="koha-url" href="/cgi-bin/koha/opac-reportproblem.pl">Report a problem</a>
-                                        </div>
-                                    </div>
-                                [% END # / IF Koha.Preference('OPACReportProblem') && Koha.Preference('KohaAdminEmailAddress') %]
-                                [% IF OpacKohaUrl %]
-                                    <div class="col">
-                                        <div id="koha_url" class="clearfix noprint">
-                                            <p>Powered by
-                                            [% IF template.name.match('opac-main.tt') %]
-                                                <a class="koha_url" href="http://koha-community.org">Koha</a>
-                                            [% ELSE %]
-                                                <a class="koha_url" rel="nofollow" href="http://koha-community.org">Koha</a>
-                                            [% END %]</p>
-                                        </div> <!-- /#koha_url -->
-                                    </div> <!-- /.col -->
-                                [% END # /IF OpacKohaUrl %]
-                            </div> <!-- /.row.justify-content-between -->
-                        </div> <!-- /#report-koha-url -->
-                    </div> <!-- /.col -->
-                </div> <!-- /.row -->
-            </div> <!-- /.container-fluid -->
-        [% END # / OPACReportProblem || OpacKohaUrl %]
     </div> <!-- / #wrapper in masthead.inc -->
 
     [% IF OpacLangSelectorMode == 'both' || OpacLangSelectorMode == 'footer' %]

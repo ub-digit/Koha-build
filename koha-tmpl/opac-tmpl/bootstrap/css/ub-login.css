@@ -1,0 +1,62 @@
+.well {
+  min-height: 20px;
+  padding: 19px;
+  margin-bottom: 20px;
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  -webkit-border-radius: 4px;
+  line-height: 20px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.ub-cas-login-link {
+  display: inline-block;
+  color: inherit !important;
+  text-decoration: none;
+  box-sizing: border-box;
+  /* no underline */
+}
+.ub-cas-login-link .ub-cas-login-box.well {
+  background: none;
+}
+@media (min-width: 768px) {
+  #opac-auth #auth {
+    max-width: 310px;
+  }
+
+  .ub-cas-login-link .ub-cas-login-box.well {
+    max-width: 310px;
+  }
+}
+.ub-cas-login-link .ub-cas-login-box p {
+  font-size: 16px;
+}
+.ub-cas-login-link .ub-cas-login-box .ub-cas-login-heading {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.ub-cas-login-link .ub-cas-login-box .ub-cas-login-heading .icon-chevron-right {
+  opacity: .5;
+  margin-top: 7px;
+}
+.ub-cas-login-link .ub-cas-login-box .gu-login-arrow {
+  text-align: right;
+  float: right;
+  width: 10%;
+}
+.ub-cas-login-link .ub-cas-login-box .gub-logo-horizontal {
+  background: transparent url("../images/gu-logo-login-gu-account@2x.png") no-repeat scroll 0%;
+  background-size: 100%;
+  width: 193px;
+  height: 30px;
+  margin-bottom: 10px;
+}
+.ub-cas-login-link .ub-cas-login-box .gub-logo-horizontal.en {
+  background: transparent url("../images/gu-logo-login-gu-account@2x_en.png") no-repeat scroll 0%;
+  background-size: 100%;
+}
