@@ -139,6 +139,14 @@
                 <a href="/cgi-bin/koha/opac-illrequests.pl">your interlibrary loan requests</a></li>
             [% END %]
 
+            [% IF ( barcodeview ) %]
+                <li class="active">
+            [% ELSE %]
+                <li>
+            [% END %]
+                <a href="/cgi-bin/koha/opac-barcode.pl">your barcode</a></li>
+
+
         </ul>
     </div>
 [% END %]
