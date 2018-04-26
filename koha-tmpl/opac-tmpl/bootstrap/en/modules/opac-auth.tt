@@ -125,7 +125,6 @@
                                         </ul>
                                     [% END %]
                                 [% ELSE %]
-                                    <h2>CAS login</h2>
 
                                     [% IF ( invalidCasLogin ) %]
                                         <!-- This is what is displayed if cas login has failed -->
@@ -133,7 +132,18 @@
                                     [% END %]
 
                                     [% IF ( casServerUrl ) %]
-                                       <p><a href="[% casServerUrl | $raw %]">Log in using a CAS account.</a><p>
+                                        <a class="ub-cas-login-link" href="[% casServerUrl | $raw %]">
+                                            <div class="well ub-cas-login-box cas-login">
+                                                <div class="gub-logo-horizontal [%lang%]">
+                                                </div>
+                                                <div class="ub-cas-login-heading">
+                                                    <span class="ub-copy-container">Log in with GU account</span>
+                                                    <div class="gu-login-arrow"> <svg width="15px" height="24px" viewBox="0 0 15 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <!-- Generator: Sketch 48.2 (47327) - http://www.bohemiancoding.com/sketch --> <desc>Created with Sketch.</desc> <defs></defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" font-family="FontAwesome" font-size="25" font-weight="normal" opacity="0.329999983"> <g id="Logga-in-Copy-11" transform="translate(-714.000000, -264.000000)" fill="#C3C3C3"> <g id="Group-7" transform="translate(450.000000, 199.000000)"> <text id=""> <tspan x="263.142857" y="87"></tspan> </text> </g> </g> </g> </svg> </div>
+                                                </div>
+                                                <p>For students and employees at GU with a gus-account or an x-account.</p>
+
+                                            </div>
+                                        </a>
                                     [% END %]
 
                                     [% IF ( casServersLoop ) %]
@@ -149,8 +159,10 @@
                                 [% IF ( shibbolethAuthentication ) %]
                                     <p>Nothing</p>
                                 [% ELSE %]
-                                    <h2>Local login</h2>
-                                    <p>If you do not have a CAS account, but do have a local account, you can still log in: </p>
+                                    <span class="gub-login-lib-account">
+                                        <h2>Log in with library account</h2>
+                                        <p>For users without a GU account.</p>
+                                    </span>
                                 [% END %]
 
                             [% END # / IF casAuthentication %]
@@ -183,11 +195,23 @@
                                         <input type="hidden" name="[% INPUT.name | html %]" value="[% INPUT.value | html %]" />
                                     [% END %]
                                     <div class="form-group">
-                                        <label for="userid">Login:</label>
+                                        <label for="userid">
+                                            [% IF Koha.Preference('enableCardnumberAndPersonalNumberAuth') %]
+                                                Library card number
+                                            [% ELSE %]
+                                                Login
+                                            [% END %]
+                                        </label>
                                         <input class="form-control" type="text"  size="25" id="userid"  name="userid" />
                                     </div>
                                     <div class="form-group">
-                                        <label for="password">Password:</label>
+                                        <label for="password">
+                                            [% IF Koha.Preference('enableCardnumberAndPersonalNumberAuth') %]
+                                                Personal identity number
+                                            [% ELSE %]
+                                                Password
+                                            [% END %]
+                                        </label>
                                         <input class="form-control" type="password"  size="25" id="password"  name="password" />
                                     </div>
                                     <fieldset class="action">
@@ -204,16 +228,17 @@
                                     [% IF OpacLoginInstructions %]
                                         [% PROCESS koha_news_block news => OpacLoginInstructions %]
                                     [% ELSE %]
-                                        <h2>Don't have a password yet?</h2>
-                                        <p>If you don't have a password yet, stop by the circulation desk the next time you're in the library. We'll happily set one up for you.</p>
-                                        <h2>Don't have a library card?</h2>
-                                        <p>If you don't have a library card, stop by your local library to sign up.</p>
                                     [% END # / IF OpacLoginInstructions %]
 
                                     [% IF PatronSelfRegistration && PatronSelfRegistrationDefaultCategory %]
-                                        <span id="registrationinstructions">
-                                            <a href="/cgi-bin/koha/opac-memberentry.pl">You may register here.</a>
-                                        </span>
+                                      [% IF Koha.Preference( 'PatronSelfRegistrationLinkAddress') %]
+                                        <br/>
+                                        <sp an id="registrationinstructions"><a href="[% Koha.Preference( 'PatronSelfRegistrationLinkAddress') %][% IF lang == 'en'%]?lang=en[%END%]">Apply for a library card.</a></span>
+                                      [% ELSE %]
+                                        <p>
+                                        <span id="registrationinstructions"><a href="/cgi-bin/koha/opac-memberentry.pl">Apply for a library card.</a></span>
+                                        </p>
+                                      [% END %]
                                     [% END %]
                                 </div>
                             </form>
@@ -239,7 +264,7 @@
 <script>
     // Hide circular 'Log in to Your Account' link in opac-auth.pl
     $(document).ready(function() {
-        if ( $("#auth" ) ) { $("#members ul li a").hide(); }
+        if ( $("#auth" ) ) { $("#members > ul.nav > li+li").hide(); }
     });
 </script>
 [% END %]

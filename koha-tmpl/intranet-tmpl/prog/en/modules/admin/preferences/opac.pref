@@ -1,11 +1,37 @@
 OPAC:
     Appearance:
         -
+            - pref: enableCardnumberAndPersonalNumberAuth
+              choices:
+                  yes: "Enable"
+                  no: "Disable"
+            - "use cardnumber as userid and personalnumber as password"
+        -
+            - pref: OPACRedirect
+              choices:
+                  yes: "Enable"
+                  no: "Disable"
+            - "redirect from homepage to userpage"
+        -
             - pref: OPACUserSummary
               choices:
                   1: Show
                   0: "Don't show"
             - "a summary of a logged in patron's checkouts, overdues, holds and charges on the OPAC start page."
+        -
+            - pref: enableOpacCatalogBrowsing
+              choices:
+                  yes: "Enable"
+                  no: "Disable"
+            -  catalog browsing and searching.
+        -
+            - pref: linkToExternalSite
+              choices:
+                  yes: "Link to external site"
+                  no: "Link to OPAC"
+            - for links to bibliographic records. The external URL is
+            - pref: externalSiteURL
+              class: url
         -
             - For search results in the OPAC, show the item's
             - pref: OPACResultsLibrary
@@ -349,7 +375,12 @@ OPAC:
             - (available) individual items on the OPAC XSLT search results, and show no more than
             - pref: OPACResultsMaxItemsUnavailable
             - "'really unavailable' individual items in categories like Checked out, Damaged, On Hold, etc."
-
+        -
+            - pref: enableCoverImagesInOpacList
+              choices:
+                  yes: Enable
+                  no: Disable
+            - "Show syndetics cover images in OPAC"
     Features:
         -
             - pref: OPACReportProblem
@@ -516,6 +547,13 @@ OPAC:
                   1: Allow
                   0: "Don't allow"
             - patrons to add a note when placing a hold.
+        -
+            - pref: OPACShowDetailedDebarments
+              default: 0
+              choices:
+                  no: Don't show
+                  yes: Show
+            - detailed debarments
         -
             - pref: OPACAcquisitionDetails
               default: 0
