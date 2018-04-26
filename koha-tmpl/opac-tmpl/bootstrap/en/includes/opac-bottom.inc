@@ -7,46 +7,13 @@
 [% PROCESS 'html_helpers.inc' %]
 [% UNLESS ( is_popup ) %]
     [% SET OpacLangSelectorMode = Koha.Preference('OpacLangSelectorMode') %]
-    [% IF ( opaccredits ) %]
-        <div class="container-fluid">
-            <div class="row-fluid">
-                <div id="opaccredits">
-                    [% PROCESS koha_news_block news => opaccredits %]
-                </div>
-            </div>
-        </div>
-    [% END #/ opaccredits %]
-
-    [% IF ( Koha.Preference('OPACReportProblem') && Koha.Preference('KohaAdminEmailAddress') ) || OpacKohaUrl %]
-        <div class="container-fluid">
-            <div class="row-fluid">
-                <div class="span12">
-                    [% IF Koha.Preference('OPACReportProblem') && Koha.Preference('KohaAdminEmailAddress') %]
-                    <div id="report_a_problem" class="noprint" style="float:left;">
-                        <a class="koha-url" href="/cgi-bin/koha/opac-reportproblem.pl">Report a problem</a>
-                    </div>
-                    [% END %]
-                    [% IF OpacKohaUrl %]
-                    <div id="koha_url" class="clearfix noprint">
-                        <p>Powered by
-                        [% IF template.name.match('opac-main.tt') %]
-                            <a class="koha_url" href="http://koha-community.org">Koha</a>
-                        [% ELSE %]
-                            <a class="koha_url" rel="nofollow" href="http://koha-community.org">Koha</a>
-                        [% END %]</p>
-                    </div>
-                    [% END %]
-                </div> <!-- /.span12 -->
-            </div> <!-- /.row-fluid -->
-        </div> <!-- /.container-fluid -->
-    [% END # / OPACReportProblem || OpacKohaUrl %]
 
 </div> <!-- / #wrap in masthead.inc -->
 [% IF OpacLangSelectorMode == 'both' || OpacLangSelectorMode == 'footer' %]
     [% IF ( opaclanguagesdisplay ) %]
         [% IF ( languages_loop && opaclanguagesdisplay ) %]
             [% UNLESS ( one_language_enabled ) %]
-                <div id="changelanguage" class="navbar navbar-fixed-bottom navbar-static-bottom noprint">
+                <div id="changelanguage" class="navbar navbar-static-bottom noprint">
                     <div class="navbar-inner">
                         <ul id="i18nMenu" class="nav">
                             <li><p class="lang navbar-text"><strong>Languages:&nbsp;</strong></p></li>
