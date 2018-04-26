@@ -102,6 +102,25 @@ my ($warning_year, $warning_month, $warning_day) = split /-/, $borr->{'dateexpir
 
 my $debar = Koha::Patrons->find( $borrowernumber )->is_debarred;
 my $userdebarred;
+my $allowed_despite_restriction = 1;
+if (C4::Context->preference( 'OPACShowDetailedDebarments')) {
+    our $restrictionCodeList = [];
+    if ( $borr->{'gonenoaddress'}){push @{$restrictionCodeList}, "ADDRESS_MISSING"};
+    if ( $borr->{'lost'})         {push @{$restrictionCodeList}, "CARD_LOST"};
+    my $debarments = Koha::Patron::Debarments::GetDebarments({ borrowernumber => $borrowernumber});
+    my ($hashref, $key, $cmt);
+    my $borrstring = my $commentstring = '';
+    foreach $hashref (@$debarments){
+        $commentstring = %$hashref{'comment'};
+        (($key, $cmt) = $commentstring =~m/^(OVERDUES_PROCESS)\s*(.*)$/) || (($key, $cmt) = $commentstring =~ m/^([^, ]+)[, ]+[^:]*(?:: (.*))?$/);
+        if($key ne "OVERDUES_PROCESS") {
+            $allowed_despite_restriction = 0;
+        }
+        $borr->{"${key}comment"}  = $cmt;
+        push @{$restrictionCodeList}, $key;
+    }
+    $borr->{'restrictionCodeList'}    = $restrictionCodeList;
+};
 
 if ($debar) {
     $userdebarred = 1;
@@ -118,7 +137,7 @@ if ($debar) {
     $template->param( 'discharge_available' => $available && Koha::Patron::Discharge::is_discharged({borrowernumber => $borrowernumber}) );
 }
 
-if ( $userdebarred || $borr->{'gonenoaddress'} || $borr->{'lost'} ) {
+if ( ($userdebarred  && !$allowed_despite_restriction) || $borr->{'gonenoaddress'} || $borr->{'lost'} ) {
     $borr->{'flagged'} = 1;
     $canrenew = 0;
 }
@@ -135,6 +154,8 @@ if (   C4::Context->preference('OpacRenewalAllowed')
     && defined($no_renewal_amt)
     && $amountoutstandingfornewal > $no_renewal_amt )
 {
+if (C4::Context->preference( 'OPACShowDetailedDebarments')) {push @{our $restrictionCodeList}, "FINES_EXCEEDED";}
+
     $borr->{'flagged'} = 1;
     $canrenew = 0;
     $template->param(
@@ -185,12 +206,18 @@ my $count          = 0;
 my $overdues_count = 0;
 my @overdues;
 my @issuedat;
+my $has_at_least_one_issue_auto_renewal = 0;
 my $itemtypes = { map { $_->{itemtype} => $_ } @{ Koha::ItemTypes->search_with_localization->unblessed } };
 my $pending_checkouts = $patron->pending_checkouts->search({}, { order_by => [ { -desc => 'date_due' }, { -asc => 'issue_id' } ] });
 my $are_renewable_items = 0;
 if ( $pending_checkouts->count ) { # Useless test
     while ( my $c = $pending_checkouts->next ) {
         my $issue = $c->unblessed_all_relateds;
+
+        if ($issue->{'auto_renew'}) {
+            $has_at_least_one_issue_auto_renewal = 1;
+        }
+
         # check for reserves
         my $restype = GetReserveStatus( $issue->{'itemnumber'} );
         if ( $restype ) {
@@ -309,8 +336,10 @@ my $overduesblockrenewing = C4::Context->preference('OverduesBlockRenewing');
 $canrenew = 0 if ($overduesblockrenewing ne 'allow' and $overdues_count == $count) || !$are_renewable_items;
 
 $template->param( ISSUES       => \@issuedat );
+$template->param(has_at_least_one_issue_auto_renewal => $has_at_least_one_issue_auto_renewal);
 $template->param( issues_count => $count );
 $template->param( canrenew     => $canrenew );
+$template->param( allowed_despite_restriction => $allowed_despite_restriction);
 $template->param( OVERDUES       => \@overdues );
 $template->param( overdues_count => $overdues_count );
 
@@ -328,6 +357,7 @@ my $reserves = Koha::Holds->search( { borrowernumber => $borrowernumber } );
 $template->param(
     RESERVES       => $reserves,
     showpriority   => $show_priority,
+    external_url => sub {my $bibnumber = shift; my $url = sprintf(C4::Context->preference('externalSiteURL'),$bibnumber); return $url;},
 );
 
 if (C4::Context->preference('BakerTaylorEnabled')) {
@@ -338,14 +368,15 @@ if (C4::Context->preference('BakerTaylorEnabled')) {
         BakerTaylorBookstoreURL => C4::Context->preference('BakerTaylorBookstoreURL'),
     );
 }
-
-if (C4::Context->preference("OPACAmazonCoverImages") or 
-    C4::Context->preference("GoogleJackets") or
-    C4::Context->preference("BakerTaylorEnabled") or
-    C4::Context->preference("SyndeticsCoverImages") or
-    ( C4::Context->preference('OPACCustomCoverImages') and C4::Context->preference('CustomCoverImagesURL') )
+if (C4::Context->preference("enableCoverImagesInOpacList")){
+    if (C4::Context->preference("OPACAmazonCoverImages") or
+        C4::Context->preference("GoogleJackets") or
+        C4::Context->preference("BakerTaylorEnabled") or
+        C4::Context->preference("SyndeticsCoverImages") or
+        ( C4::Context->preference('OPACCustomCoverImages') and C4::Context->preference('CustomCoverImagesURL') )
 ) {
-        $template->param(JacketImages=>1);
+            $template->param(JacketImages=>1);
+    }
 }
 
 $template->param(

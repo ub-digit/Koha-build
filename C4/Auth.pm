@@ -239,6 +239,7 @@ sub get_template_and_user {
             $template->param(
                 loginprompt => 1,
                 script_name => get_script_name(),
+                lang        => C4::Languages::getlanguage(),
             );
 
             print $in->{query}->header(
@@ -570,6 +571,7 @@ sub get_template_and_user {
 
         my @search_groups = Koha::Library::Groups->get_search_groups({ interface => 'opac' });
         $template->param(
+            OpacAdditionalStylesheet              => C4::Context->preference("OpacAdditionalStylesheet"),
             AnonSuggestions                       => "" . C4::Context->preference("AnonSuggestions"),
             LibrarySearchGroups                   => \@search_groups,
             opac_name                             => $opac_name,
@@ -1308,6 +1310,8 @@ sub checkauth {
     my $auth_template_name = ( $type eq 'opac' ) ? 'opac-auth.tt' : 'auth.tt';
     my $template = C4::Templates::gettemplate( $auth_template_name, $type, $query );
     $template->param(
+        OpacAdditionalStylesheet              => C4::Context->preference("OpacAdditionalStylesheet"),
+        opaclayoutstylesheet                  => C4::Context->preference("opaclayoutstylesheet"),
         login                                 => 1,
         INPUTS                                => \@inputs,
         script_name                           => get_script_name(),
@@ -1947,7 +1951,65 @@ sub checkpw {
     return @return;
 }
 
+
+sub checkpw_internal_personalnumber {
+    my ( $dbh, $userid, $password, $no_set_userenv ) = @_;
+    $password = Encode::encode( 'UTF-8', $password )
+      if Encode::is_utf8($password);
+
+    if ( $userid && $userid eq C4::Context->config('user') ) {
+        if ( $password && $password eq C4::Context->config('pass') ) {
+            # Koha superuser account
+            #     C4::Context->set_userenv(0,0,C4::Context->config('user'),C4::Context->config('user'),C4::Context->config('user'),"",1);
+            return 2;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    my $sth =
+      $dbh->prepare(
+        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname,flags from borrowers join branches on borrowers.branchcode=branches.branchcode where cardnumber=?"
+      );
+    $sth->execute($userid);
+    if ( $sth->rows ) {
+        my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
+            $surname, $branchcode, $branchname, $flags )
+          = $sth->fetchrow;
+
+        my $patron = Koha::Patrons->find({ userid => $userid });
+        my $pnr12obj = $patron->get_extended_attribute("PNR12");
+        my $pnrobj = $patron->get_extended_attribute("PNR");
+        my $pnr12 = "";
+        my $pnr = "";
+        if ($pnr12obj) {
+          $pnr12 = $pnr12obj->attribute;
+        }
+        if ($pnrobj) {
+          $pnr = $pnrobj->attribute;
+        }
+
+        my $match = "false";
+        if (($pnr12 and (($password eq $pnr12) or ($password eq substr($pnr12, 2)))) or ($pnr and (($password eq $pnr) or (substr($password, 2) eq $pnr)))) {
+          $match = "true";
+        }
+        if ($match eq "true") {
+            C4::Context->set_userenv( $borrowernumber, $userid, $cardnumber,
+                $firstname, $surname, $branchcode, $branchname, $flags ) unless $no_set_userenv;
+            return 1, $cardnumber, $userid;
+        }
+    }
+    return 0;
+}
+
 sub checkpw_internal {
+    if (C4::Context->preference("enableCardnumberAndPersonalNumberAuth")) {
+        my @isOk = checkpw_internal_personalnumber(@_);
+        if ($isOk[0] != 0) {
+            return @isOk;
+        }
+    }
     my ( $dbh, $userid, $password, $no_set_userenv ) = @_;
 
     $password = Encode::encode( 'UTF-8', $password )
