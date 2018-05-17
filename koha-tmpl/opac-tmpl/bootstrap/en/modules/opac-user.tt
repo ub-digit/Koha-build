@@ -76,8 +76,8 @@
 
                     [% IF ( RENEW_ERROR ) %]
                         <div class="dialog alert">
-                            <strong>Please note:</strong>
-                                Your loan renewal failed because of the following reason(s):
+                            <strong class="hidden">Please note:</strong>
+                                <span class="error-header">One or more of your loans can not be renewed:</span>
                                 <ul>
                                     [% FOREACH error IN RENEW_ERROR.split('\|') %]
                                         [% IF error == 'card_expired' %]
@@ -91,7 +91,7 @@
                                         [% ELSIF error == 'item_denied_renewal' %]
                                             <li>Item renewal is not allowed.</li>
                                        [% ELSIF error == 'auto_too_soon' %]
-                                            <li class=[% error %]>Manual renew not allowed on automatic renew.</li>
+                                            <li class=[% error %]>The item will be automatically renewed at the end of the loan period, unless it has been requested by someone else. You can not renew the loan yourself.</li>
                                         [% END %]
                                     [% END %]
                                 </ul>
@@ -365,8 +365,8 @@
                                                         No renewal before [% ISSUE.soonestrenewdate | html %]
                                                         <span class="renewals">([% ISSUE.renewsleft | html %] of [% ISSUE.renewsallowed | html %] renewals remaining)</span>
                                                     [% ELSIF ( ISSUE.auto_renew || ISSUE.auto_too_soon ) %]
-                                                        Automatic renewal
-                                                        <span class="renewals">([% ISSUE.renewsleft | html %] of [% ISSUE.renewsallowed | html %] renewals remaining)</span>
+                                                        <span class="automatically-renewal">Automatically renewal</span>
+                                                        <span class="renewals hidden">([% ISSUE.renewsleft | html %] of [% ISSUE.renewsallowed | html %] renewals remaining)</span>
                                                     [% ELSIF ( ISSUE.item_denied_renewal ) %]
                                                         Renewal not allowed
                                                     [% END %]
