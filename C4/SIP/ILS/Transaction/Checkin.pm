@@ -72,7 +72,7 @@ sub do_checkin {
     }
 
     $debug and warn "do_checkin() calling AddReturn($barcode, $branch)";
-    my ($return, $messages, $issue, $borrower) = AddReturn($barcode, $branch, undef, $return_date);
+    my ($return, $messages, $issue, $borrower) = AddReturn($barcode, $branch, undef, undef);
 
     if ( $checked_in_ok ) {
         delete $messages->{ItemLocationUpdated};
