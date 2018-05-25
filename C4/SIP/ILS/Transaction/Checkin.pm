@@ -90,7 +90,7 @@ sub do_checkin {
     my $checkin_blocked_by_holds = $holds_block_checkin && $item->biblio->holds->count;
 
     ( $return, $messages, $issue, $borrower ) =
-      AddReturn( $barcode, $branch, undef, $return_date )
+      AddReturn( $barcode, $branch, undef, undef )
       unless $human_required || $checkin_blocked_by_holds;
 
     if ( $checked_in_ok ) {
