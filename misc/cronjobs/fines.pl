@@ -49,6 +49,7 @@ my $output_dir;
 my $log;
 my $maxdays;
 my $run_everyday;
+my $from_date;
 
 GetOptions(
     'h|help'    => \$help,
@@ -57,6 +58,7 @@ GetOptions(
     'o|out:s'   => \$output_dir,
     'm|maxdays:i' => \$maxdays,
     'e|run_everyday' => \$run_everyday,
+    'd|from-date:s' => \$from_date,
 );
 my $usage = << 'ENDUSAGE';
 
@@ -134,6 +136,10 @@ for my $overdue ( @{$overdues} ) {
       : ( $control eq 'PatronLibrary' )   ? $patron->branchcode
       :                                     $overdue->{branchcode};
 
+    unless ($branchcode) {
+        next;
+    }
+
     # If we want fines.pl to run regardless of the day being marked as holiday or not,
     # --run_everyday can be used to skip the default behaviour where holidays do not
     # update fines.
@@ -145,7 +151,13 @@ for my $overdue ( @{$overdues} ) {
         }
     }
 
-    my $datedue = dt_from_string( $overdue->{date_due} );
+    my $datedue;
+    if ($from_date and dt_from_string($from_date) > dt_from_string($overdue->{date_due})) {
+      $datedue = dt_from_string( $from_date );
+    }
+    else {
+      $datedue = dt_from_string( $overdue->{date_due} );
+    }
     if ( DateTime->compare( $datedue, $today ) == 1 ) {
         next;    # not overdue
     }
