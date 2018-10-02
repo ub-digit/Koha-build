@@ -518,7 +518,7 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
         }
 
         $patron = Koha::Patrons->find( $borrowernumber );
-        $newdata{debarredcomment} = $newdata{debarred_comment};
+        #$newdata{debarredcomment} = $newdata{debarred_comment};
         delete $newdata{debarred_comment};
         delete $newdata{password2};
 
