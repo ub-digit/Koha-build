@@ -375,9 +375,9 @@
         <li>
             <label for="unitprice">Actual cost:</label>
             [% IF (invoiceincgst) %]
-                <input type="text" size="20" name="unitprice" id="unitprice" value="[% order.unitprice_tax_included | $Price on_editing => 1 %]" /> <span class="hint">(tax inclusive)</span>
+                <input type="text" size="20" name="unitprice" id="unitprice" value="[% order.unitprice_tax_included | $Price %]" /> <span class="hint">(tax inclusive)</span>
             [% ELSE %]
-                <input type="text" size="20" name="unitprice" id="unitprice" value="[% order.unitprice_tax_excluded | $Price on_editing => 1 %]" /> <span class="hint">(tax exclusive)</span>
+                <input type="text" size="20" name="unitprice" id="unitprice" value="[% order.unitprice_tax_excluded | $Price %]" /> <span class="hint">(tax exclusive)</span>
             [% END %]
             <label style="font-weight: inherit; float:none;"><input type="checkbox" name="change_currency">Change currency</label>
         </li>
