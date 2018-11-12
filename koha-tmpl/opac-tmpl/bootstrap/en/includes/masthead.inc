@@ -16,7 +16,7 @@
                 <div class="container-fluid">
                     <button id="scrolltocontent">Skip to main content</button>
                     <h1 id="logo" class="pull-left">
-                        <a class="brand" href="/cgi-bin/koha/opac-main.pl">
+                        <a class="brand" href="http://www.ub.gu.se/">
                             [% IF ( LibraryNameTitle ) %]
                                 [% LibraryNameTitle | html %]
                             [% ELSE %]
