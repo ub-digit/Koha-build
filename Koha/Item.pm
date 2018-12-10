@@ -808,8 +808,7 @@ sub _set_found_trigger {
         return $self unless $lost_age_in_days < $no_refund_after_days;
     }
 
-    return $self
-      unless Koha::CirculationRules->get_lostreturn_policy(
+    my $should_refund = Koha::CirculationRules->get_lostreturn_policy(
         {
             item          => $self,
             return_branch => C4::Context->userenv
@@ -817,6 +816,8 @@ sub _set_found_trigger {
             : undef,
         }
       );
+    return $self
+        if $should_refund eq '0';
 
     # check for charge made for lost book
     my $accountlines = Koha::Account::Lines->search(
@@ -845,7 +846,12 @@ sub _set_found_trigger {
     my $account = $patron->account;
 
     # Use cases
-    if ( $accountline->amount > $accountline->amountoutstanding ) {
+    # If refund policy is set to 1 (Refund Yes)
+    #  - Refund any payment made for the item.
+    # If refund policy is set to 2 (Refund only if unpaid)
+    #  - Refund any payment unless item is fully paid for (amountoutstanding is 0)
+    if ( ($should_refund eq '1' && ( $accountline->amount > $accountline->amountoutstanding ) )
+         || ($should_refund eq '2' && ($accountline->amountoutstanding > 0))) {
 
     # some amount has been cancelled. collect the offsets that are not writeoffs
     # this works because the only way to subtract from this kind of a debt is
