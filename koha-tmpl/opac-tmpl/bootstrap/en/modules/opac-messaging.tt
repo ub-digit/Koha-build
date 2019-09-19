@@ -132,7 +132,7 @@
                             [% IF ( SMSSendDriver ) %]
                                 <ol><li><label>Notice:</label>Some charges for text messages may be incurred when using this service. Please check with your mobile service provider if you have questions.</li></ol>
                                 <ol><li>
-                                    <label for="SMSnumber">SMS number:</label> <input type="text" id="SMSnumber" name="SMSnumber" value="[% SMSnumber | html %]" pattern="^\+?[1-9]\d{1,14}$" />
+                                    <label for="SMSnumber">SMS number:</label> <input type="text" id="SMSnumber" name="SMSnumber" value="[% SMSnumber | html %]" pattern="^\+?[0-9]\d{1,14}$" />
                                     <em>Please enter numbers only. <strong>(123) 456-7890</strong> would be entered as <strong>1234567890</strong>.</em>
                                 </li></ol>
                             [% END %]
