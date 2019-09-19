@@ -180,7 +180,7 @@
                                             </li>
                                             <li>
                                                 <label for="SMSnumber">SMS number:</label>
-                                                <input type="text" id="SMSnumber" name="SMSnumber" value="[% SMSnumber | html %]" pattern="^(\+[1-9]\d{0,2})?\d{1,12}$" />
+                                                <input type="text" id="SMSnumber" name="SMSnumber" value="[% SMSnumber | html %]" pattern="^\\+?[0-9]\\d{1,14}$" />
                                                 <span class="hint sms_number_help">Please enter numbers only. Prefix the number with + if including the country code.</span>
                                             </li>
 
