@@ -2032,6 +2032,7 @@ sub RevertWaitingStatus {
             priority    => 1,
             found       => undef,
             waitingdate => undef,
+            expirationdate => undef,
             itemnumber  => $hold->item_level_hold ? $hold->itemnumber : undef,
         }
     )->store();
