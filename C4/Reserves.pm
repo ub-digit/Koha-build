@@ -2096,7 +2096,7 @@ sub RevertWaitingStatus {
       priority = 1,
       found = NULL,
       waitingdate = NULL,
-      lastpickupdate = NULL,
+      lastpickupdate = NULL
     WHERE
       reserve_id = ?
     ";
