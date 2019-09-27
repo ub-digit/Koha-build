@@ -520,6 +520,16 @@ sub set_preference {
     my $variable_case = $variable;
     $variable = lc $variable;
 
+    use Koha::Plugins::Handler;
+    my $plugin_result = Koha::Plugins::Handler->run_hook(
+        {
+            method => 'set_preference_before',
+            params => {
+                variable => $variable,
+                value => $value
+            }
+        });
+
     my $syspref = Koha::Config::SysPrefs->find($variable);
     $type =
         $type    ? $type
