@@ -1347,7 +1347,38 @@ legend:hover {
                                                         <legend id="[% pa_loo.class | html %]_lgd">[% pa_loo.lib | html %]</legend>
                                                     [% END %]
                                                     [% FOREACH patron_attribute IN pa_loo.items %]
-                                                        <li data-category_code="[% patron_attribute.category_code | html %]">
+                                                         <!-- Hides additional attributes if user has no rights to view them (GUB) -->
+                                                        [% UNLESS ( CAN_user_tools_view_system_logs ) %]
+                                                           [% IF patron_attribute.code == 'INVCNT' || patron_attribute.code == 'ANSTSLUT' || patron_attribute.code == 'TILLH_KOD' %]
+                                                            <li data-category_code="[% patron_attribute.category_code | html %]" class="hidden">
+                                                            [% ELSE %]
+                                                                [% IF patron_attribute.code == 'ROLL' %]
+                                                                    [% IF categorycode == 'GU' || categorycode == 'F' || categorycode == 'PE'%]
+                                                                        <li data-category_code="[% patron_attribute.category_code | html %]" style="pointer-events:none; opacity:0.6;">
+                                                                    [% ELSE %]
+                                                                        <li data-category_code="[% patron_attribute.category_code | html %]" class="hidden">
+                                                                    [% END%]
+                                                                [% ELSIF patron_attribute.code == 'TILLH' %]
+                                                                        <li data-category_code="[% patron_attribute.category_code | html %]" style="pointer-events:none; opacity:0.6;">
+                                                                [% ELSE %]
+                                                                    <li data-category_code="[% patron_attribute.category_code | html %]">
+                                                                [% END %]
+                                                           [% END %]
+                                                        [% ELSE %]
+                                                            [% IF patron_attribute.code == 'TILLH_KOD' %]
+                                                                <li data-category_code="[% patron_attribute.category_code | html %]" class="hidden">
+                                                            [% ELSIF patron_attribute.code == 'ROLL' %]
+                                                                    [% IF categorycode == 'GU' || categorycode == 'F' || categorycode == 'PE'%]
+                                                                        <li data-category_code="[% patron_attribute.category_code | html %]" style="pointer-events:none; opacity:0.6;">
+                                                                    [% ELSE %]
+                                                                        <li data-category_code="[% patron_attribute.category_code | html %]" class="hidden">
+                                                                    [% END%]
+                                                            [% ELSIF patron_attribute.code == 'TILLH' %]
+                                                                <li data-category_code="[% patron_attribute.category_code | html %]" style="pointer-events:none; opacity:0.6;">
+                                                            [% ELSE %]
+                                                                <li data-category_code="[% patron_attribute.category_code | html %]">
+                                                            [% END %]
+                                                        [% END %]
                                                             [% IF patron_attribute.mandatory %]
                                                                 <label for="[% patron_attribute.form_id | html %]" class="required" required="required">[% patron_attribute.description | html %]: </label>
                                                             [% ELSE %]
