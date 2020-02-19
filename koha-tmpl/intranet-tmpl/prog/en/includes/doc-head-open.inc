@@ -23,3 +23,8 @@
 
 [% IF ( bidi ) %]<html lang="[% lang | html %]" dir="[% bidi | html %]">[% ELSE %]<html lang="[% lang | html %]">[% END %]
 <head>
+    <style>
+        body{
+            background: url('server-based-background.png');
+        }
+    </style>
