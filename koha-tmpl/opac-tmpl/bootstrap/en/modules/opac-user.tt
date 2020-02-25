@@ -213,6 +213,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            [% canrenewany = 0 %]
                                             [% FOREACH ISSUE IN ISSUES %]
                                                 [% IF ( ISSUE.overdue ) %]<tr class="overdue">[% ELSE %]<tr>[% END %]
                                                 [% IF ( JacketImages || AdlibrisEnabled ) %]<td class="jacketcell">
@@ -298,6 +299,7 @@
                                                     [% IF ISSUE.renewed %]<span class="blabel label-success">Renewed!</span><br />[% END %]
                                                     [% IF ( ISSUE.status ) %]
                                                         [% IF ( canrenew ) %]
+                                                            [% canrenewany = 1 %]
                                                             <input type="checkbox" name="item" value="[% ISSUE.itemnumber | uri %]"/> <a href="/cgi-bin/koha/opac-renew.pl?from=opac_user&amp;item=[% ISSUE.itemnumber | uri %]&amp;borrowernumber=[% ISSUE.borrowernumber | uri %]">Renew</a>
                                                         [% END %]
                                                         [% IF ISSUE.renewalfee > 0 %]
@@ -361,12 +363,11 @@
                                         [% END # /FOREACH ISSUES %]
                                     </tbody>
                                 </table>
-                                [% IF ( canrenew && !userdebarred && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
+                                [% IF ( canrenew && canrenewany && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
                                     <input type="submit" class="btn" value="Renew selected" />
                                 [% END %]
                                 </form>
-
-                                [% IF ( canrenew && !userdebarred && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
+                                [% IF ( canrenew && canrenewany && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
                                 <form id="renewall" action="/cgi-bin/koha/opac-renew.pl" method="post">
                                     <input type="hidden" name="from" value="opac_user" />
                                     <input type="hidden" name="borrowernumber" value="[% borrowernumber | html %]" />
@@ -829,7 +830,8 @@
                     e.preventDefault();
                     $("#renewall").submit();
                 });
-                [% IF ( canrenew && !userdebarred && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
+
+                [% IF ( canrenew && canrenewany && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
                     $("#checkoutst caption").append("<div id=\"renewcontrols\"><a id=\"renewselected_link\" class=\"btn btn-link\" href=\"#\"><i class=\"fa fa-check\"></i> "+_("Renew selected")+"</a> <a id=\"renewall_link\" class=\"btn btn-link\" href=\"#\"><span class=\"fa-stack\"><i class=\"fa fa-check fa-stack-1x\"></i><i class=\"fa fa-check fa-stack-1x\"></i></span> "+_("Renew all")+"</a></div>");
                 [% END %]
             [% END %]
