@@ -265,6 +265,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            [% canrenewany = 0 %]
                                             [% FOREACH ISSUE IN ISSUES %]
                                                 [% IF ( ISSUE.overdue ) %]<tr class="overdue">[% ELSE %]<tr>[% END %]
                                                 [% IF ( JacketImages || AdlibrisEnabled ) %]<td class="jacketcell">
@@ -359,6 +360,7 @@
                                                         [% IF ISSUE.renewed %]<span class="blabel label-success">Renewed!</span><br />[% END %]
                                                         [% IF ( ISSUE.status ) %]
                                                             [% IF ( canrenew ) %]
+                                                                [% canrenewany = 1 %]
                                                                 <input type="checkbox" name="item" value="[% ISSUE.itemnumber | uri %]"/> <a href="/cgi-bin/koha/opac-renew.pl?from=opac_user&amp;item=[% ISSUE.itemnumber | uri %]&amp;borrowernumber=[% ISSUE.borrowernumber | uri %]">Renew</a>
                                                             [% END %]
                                                             [% IF ISSUE.renewalfee > 0 %]
@@ -450,13 +452,13 @@
                                         [% END # /FOREACH ISSUES %]
                                     </tbody>
                                 </table>
-                                [% IF ( canrenew && !userdebarred && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
+                                [% IF ( canrenewany && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
                                     <input type="submit" class="btn btn-primary" value="Renew selected" />
                                     <button type="button" id="renewall_js" class="btn btn-primary">Renew all</button>
                                 [% END %]
                                 </form>
 
-                                [% IF ( canrenew && !userdebarred && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
+                                [% IF ( canrenew && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
                                     <form id="renewall" class="js-hide" action="/cgi-bin/koha/opac-renew.pl" method="post">
                                         <legend class="sr-only">Renew</legend>
                                         <input type="hidden" name="from" value="opac_user" />
@@ -466,7 +468,15 @@
                                                 <input type="hidden" name="item" value="[% ISSUE.itemnumber | html %]" />
                                             [% END %]
                                         [% END %]
+                                        [% IF canrenewany %]
                                         <input type="submit" class="btn btn-primary" value="Renew all" />
+                                        [% END %]
+                                        <div class="automatically-renewal-clarification">
+                                          <h4>Do you have loans that are automatically renewed?</h4>
+                                          <p>Automatically renewed means that you don't have to renew the loans yourself. They will be automatically renewed at the end of the loan period, unless the items have been requested by someone else.</p>
+                                          <p>You will receive a message when you need to return your loans. </p>
+                                          <p>Books are automatically renewed up to 35 times, which equals approximately three years. Journals are automatically renewed up to 77 times, approximately two years.</p>
+                                        </div>
                                     </form>
                                 [% END %]
                             [% ELSE %]
