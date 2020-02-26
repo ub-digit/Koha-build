@@ -41,6 +41,7 @@ use MARC::File::XML;
 use MIME::Base64;
 use Encode qw(encode);
 use Business::ISBN;
+use Scalar::Util qw(looks_like_number);
 
 __PACKAGE__->mk_ro_accessors(qw( index ));
 __PACKAGE__->mk_accessors(qw( sort_fields ));
@@ -348,7 +349,7 @@ sub sort_fields {
     return $self->_sort_fields_accessor();
 }
 
-=head2 _process_mappings($mappings, $data, $record_document, $altscript)
+=head2 _process_mappings($mappings, $data, $record_document, $meta)
 
     $self->_process_mappings($mappings, $marc_field_data, $record_document, 0)
 
@@ -376,23 +377,42 @@ The source data from a MARC record field.
 Hashref representing the Elasticsearch document on which mappings should be
 applied.
 
-=item C<$altscript>
+=item C<$meta>
 
-A boolean value indicating whether an alternate script presentation is being
+A hashref containing metadata useful for enforcing per mapping rules. For
+example for providing extra context for mapping options, or treating mapping
+targets differently depending on type (sort, search, facet etc). Combining
+this metadata with the mapping options and metadata allows us to mutate the
+data per mapping, or even replace it with other data retrieved from the
+metadata context.
+
+Current properties are:
+
+C<altscript>: A boolean value indicating whether an alternate script presentation is being
 processed.
+
+C<data_source>: The source of the $<data> argument. Possible values are: 'leader', 'control_field',
+'subfield' or 'subfields_group'.
+
+C<code>: The code of the subfield C<$data> was retrieved, if C<data_source> is 'subfield'.
+
+C<codes>: Subfield codes of the subfields group from which C<$data> was retrieved, if C<data_source>
+is 'subfields_group'.
+
+C<field>: The original C<MARC::Record> object.
 
 =back
 
 =cut
 
 sub _process_mappings {
-    my ($_self, $mappings, $data, $record_document, $altscript) = @_;
+    my ($_self, $mappings, $data, $record_document, $meta) = @_;
     foreach my $mapping (@{$mappings}) {
         my ($target, $options) = @{$mapping};
 
         # Don't process sort fields for alternate scripts
         my $sort = $target =~ /__sort$/;
-        if ($sort && $altscript) {
+        if ($sort && $meta->{altscript}) {
             next;
         }
 
@@ -416,7 +436,13 @@ sub _process_mappings {
                 $options->{property} => $_data
             }
         }
-
+        if (defined $options->{nonfiling_characters_indicator}) {
+            my $nonfiling_chars = $meta->{field}->indicator($options->{nonfiling_characters_indicator});
+            $nonfiling_chars = looks_like_number($nonfiling_chars) ? int($nonfiling_chars) : 0;
+            if ($nonfiling_chars) {
+                $_data = substr $_data, $nonfiling_chars;
+            }
+        }
         $record_document->{$target} //= [];
         push @{$record_document->{$target}}, $_data;
     }
@@ -455,13 +481,22 @@ sub marc_records_to_documents {
         my $record_document = {};
         my $mappings = $rules->{leader};
         if ($mappings) {
-            $self->_process_mappings($mappings, $record->leader(), $record_document, 0);
+            $self->_process_mappings($mappings, $record->leader(), $record_document, {
+                    altscript => 0,
+                    data_source => 'leader'
+                }
+            );
         }
         foreach my $field ($record->fields()) {
             if ($field->is_control_field()) {
                 my $mappings = $control_fields_rules->{$field->tag()};
                 if ($mappings) {
-                    $self->_process_mappings($mappings, $field->data(), $record_document, 0);
+                    $self->_process_mappings($mappings, $field->data(), $record_document, {
+                            altscript => 0,
+                            data_source => 'control_field',
+                            field => $field
+                        }
+                    );
                 }
             }
             else {
@@ -488,7 +523,13 @@ sub marc_records_to_documents {
                             $mappings = [@{$mappings}, @{$wildcard_mappings}];
                         }
                         if (@{$mappings}) {
-                            $self->_process_mappings($mappings, $data, $record_document, $altscript);
+                            $self->_process_mappings($mappings, $data, $record_document, {
+                                    altscript => $altscript,
+                                    data_source => 'subfield',
+                                    code => $code,
+                                    field => $field
+                                }
+                            );
                         }
                     }
 
@@ -504,7 +545,13 @@ sub marc_records_to_documents {
                                 )
                             );
                             if ($data) {
-                                $self->_process_mappings($subfields_join_mappings->{$subfields_group}, $data, $record_document, $altscript);
+                                $self->_process_mappings($subfields_join_mappings->{$subfields_group}, $data, $record_document, {
+                                        altscript => $altscript,
+                                        data_source => 'subfields_group',
+                                        codes => $subfields_group,
+                                        field => $field
+                                    }
+                                );
                             }
                         }
                     }
@@ -800,7 +847,9 @@ sub _field_mappings {
             push @{$mapping}, {%{$default_options}, property => 'input'};
         }
         else {
-            push @{$mapping}, $default_options;
+            # Important! Make shallow clone, or we end up with the same hashref
+            # shared by all mappings
+            push @{$mapping}, {%{$default_options}};
         }
         push @mappings, $mapping;
     }
@@ -935,6 +984,38 @@ sub _get_marc_mapping_rules {
             );
         }
     });
+
+    # Marc-flavour specific rule tweaks, could/should also provide hook for this
+    if ($marcflavour eq 'marc21') {
+        # Nonfiling characters processing for sort fields
+        my %title_fields;
+        if ($self->index eq $Koha::SearchEngine::BIBLIOS_INDEX) {
+            # Format is: nonfiling characters indicator => field names list
+            %title_fields = (
+                1 => [630, 730, 740],
+                2 => [130, 222, 240, 242, 243, 440, 830]
+            );
+        }
+        elsif ($self->index eq $Koha::SearchEngine::AUTHORITIES_INDEX) {
+            %title_fields = (
+                1 => [730],
+                2 => [130, 430, 530]
+            );
+        }
+        foreach my $indicator (keys %title_fields) {
+            foreach my $field_tag (@{$title_fields{$indicator}}) {
+                my $mappings = $rules->{data_fields}->{$field_tag}->{subfields}->{a} // [];
+                foreach my $mapping (@{$mappings}) {
+                    if ($mapping->[0] =~ /__sort$/) {
+                        # Mark this as to be processed for nonfiling characters indicator
+                        # later on in _process_mappings
+                        $mapping->[1]->{nonfiling_characters_indicator} = $indicator;
+                    }
+                }
+            }
+        }
+    }
+
     return $rules;
 }
 
