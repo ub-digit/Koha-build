@@ -20663,17 +20663,8 @@ if( CheckVersion( $DBversion ) ) {
 $DBversion = '19.12.00.017';
 if( CheckVersion( $DBversion ) ) {
     if( !index_exists( 'library_groups', 'library_groups_uniq_2' ) ) {
-        $dbh->do(q|
-            DELETE FROM library_groups
-            WHERE id NOT IN (
-                SELECT MIN(id)
-                FROM ( SELECT * FROM library_groups ) AS lg
-                WHERE parent_id IS NOT NULL
-                GROUP BY parent_id, branchcode
-            )
-            AND parent_id IS NOT NULL;
-        |);
-        $dbh->do(q|
+    // GUB: Remove delete of "conflicting" rows, since they delete too much.
+    $dbh->do(q|
             ALTER TABLE library_groups
             ADD UNIQUE KEY library_groups_uniq_2 (parent_id, branchcode)
         |);
