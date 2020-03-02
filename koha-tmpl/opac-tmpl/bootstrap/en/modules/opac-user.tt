@@ -367,14 +367,24 @@
                                     <input type="submit" class="btn" value="Renew selected" />
                                 [% END %]
                                 </form>
-                                [% IF ( canrenew && canrenewany && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
+                                [% IF ( canrenew && (!userdebarred || allowed_despite_restriction) && OpacRenewalAllowed && !( logged_in_user.is_expired && logged_in_user.category.effective_BlockExpiredPatronOpacActions ) ) %]
                                 <form id="renewall" action="/cgi-bin/koha/opac-renew.pl" method="post">
                                     <input type="hidden" name="from" value="opac_user" />
                                     <input type="hidden" name="borrowernumber" value="[% borrowernumber | html %]" />
                                     [% FOREACH ISSUE IN ISSUES %]
                                         <input type="hidden" name="item" value="[% ISSUE.itemnumber | html %]" />
                                     [% END %]
+                                    [% IF canrenewany %]
                                     <input type="submit" class="btn" value="Renew all" />
+                                    [% END %]
+                                    [% IF has_at_least_one_issue_auto_renewal %]
+                                    <div class="automatically-renewal-clarification">
+                                      <h4>Do you have loans that are automatically renewed?</h4>
+                                      <p>Automatically renewed means that you don't have to renew the loans yourself. They will be automatically renewed at the end of the loan period, unless the items have been requested by someone else.</p>
+                                      <p>You will receive a message when you need to return your loans. </p>
+                                      <p>Books are automatically renewed up to 35 times, which equals approximately three years. Journals are automatically renewed up to 77 times, approximately two years.</p>
+                                    </div>
+                                    [% END %]
                                 </form>
                                 [% END %]
                                 <p><a href="opac-ics.pl">Download as iCal/.ics file</a></p>
