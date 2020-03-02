@@ -1,6 +1,6 @@
 [% PROCESS 'accounts.inc' %]
 <form method="post" action="opac-account-pay.pl" class="form-horizontal">
-    [% IF ( ACCOUNT_LINES ) %]
+    [% IF  ACCOUNT_LINES.count > 0  %]
         <table class="table table-bordered table-striped" id="finestable">
             <caption class="sr-only">Your charges</caption>
             <thead>
@@ -82,7 +82,7 @@
 
 
     [% ELSE %]
-        <h3>You have no fines or charges</h3>
+        <h3>You have no fines or charges </h3>
     [% END # /IF ( ACCOUNT_LINES )  %]
 
     [% FOREACH r IN relatives %]
