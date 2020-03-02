@@ -1,7 +1,8 @@
 <h3>Charges</h3>
 
 <form method="post" action="opac-account-pay.pl" class="form-horizontal">
-[% IF ( ACCOUNT_LINES ) %]
+
+[% IF  ACCOUNT_LINES.count > 0  %]
     <table class="table table-bordered table-striped" id="finestable">
         <thead>
             <tr>
@@ -87,7 +88,7 @@
 
 
 [% ELSE %]
-    <h4>You have no fines or charges</h4>
+    <h4>You have no fines or charges </h4>
 [% END %]
 
 [% FOREACH r IN relatives %]
@@ -144,7 +145,6 @@
     <fieldset class="pay-online hidden">
         <legend>Pay selected fines and charges</legend>
             <span class="help-block"><h3>Payment method</h3></span>
-
             [% IF Koha.Preference('EnablePayPalOpacPayments') %]
                 <div class="control-group">
                     <label class="radio">
