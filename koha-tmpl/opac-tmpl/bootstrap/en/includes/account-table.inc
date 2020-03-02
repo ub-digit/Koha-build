@@ -1,6 +1,6 @@
 [% PROCESS 'accounts.inc' %]
 <form method="post" action="opac-account-pay.pl" class="form-horizontal">
-    [% IF ( ACCOUNT_LINES ) %]
+    [% IF  ACCOUNT_LINES.count > 0  %]
         <table class="table table-bordered table-striped" id="finestable">
             <caption class="sr-only">Your charges</caption>
             <thead>
