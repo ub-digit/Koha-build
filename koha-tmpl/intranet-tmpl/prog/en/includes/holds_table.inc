@@ -264,7 +264,7 @@
                         [%- END -%]
                     [%- END # IF SuspendHoldsIntranet -%]
                     [%- IF ( hold.found ) -%]
-                        <a class="btn btn-default  submit-form-link" href="#" id="revert_hold_[% hold.reserve_id | html %]" data-op="cud-move" data-where="down" data-first_priority="[% first_priority | html %]" data-last_priority="[% last_priority | html %]" data-prev_priority="0" data-next_priority="1" data-borrowernumber="[% hold.borrowernumber | html %]" data-biblionumber="[% hold.biblionumber | html %]" data-itemnumber="[% hold.itemnumber | html %]" data-reserve_id="[% hold.reserve_id | html %]" data-date="[% hold.date | html %]" data-action="request.pl" data-method="post">[% IF hold.intransit %]Revert transit status[% ELSE %]Revert waiting status[% END %]</a>
+                        <a class="btn btn-default  submit-form-link [% UNLESS hold.intransit %]hidden[% END %]" href="#" id="revert_hold_[% hold.reserve_id | html %]" data-op="cud-move" data-where="down" data-first_priority="[% first_priority | html %]" data-last_priority="[% last_priority | html %]" data-prev_priority="0" data-next_priority="1" data-borrowernumber="[% hold.borrowernumber | html %]" data-biblionumber="[% hold.biblionumber | html %]" data-itemnumber="[% hold.itemnumber | html %]" data-reserve_id="[% hold.reserve_id | html %]" data-date="[% hold.date | html %]" data-action="request.pl" data-method="post">[% IF hold.intransit %]Revert transit status[% ELSE %]Revert waiting status[% END %]</a>
                     [%- END -%]
                 </td>
                 [% IF ( hold.intransit || hold.atdestination ) %]
