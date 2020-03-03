@@ -16,7 +16,7 @@
             <th id="patron" data-colname="patron">Patron</th>
             <th id="notes" data-colname="notes">Notes</th>
             <th id="date" data-colname="date">Date</th>
-            <th id="expiration" data-colname="expiration">Expiration</th>
+            <!-- GUB hide expiration date header -->
             <th id="pickup_library" data-colname="pickup_library">Pickup library</th>
             <th id="details" data-colname="details">Details</th>
             [% IF ( CAN_user_reserveforothers_modify_holds_priority ) %]
@@ -130,7 +130,8 @@
                         [% hold.date | $KohaDates %]
                     [% END %]
                 </td>
-                <td>
+                <!-- GUB hide date picker column -->
+                <td style="display:none">
                     <input type="text" class="flatpickr" data-flatpickr-futuredate="true" value="[% hold.expirationdate | html %]" size="10" name="expirationdate" />
                 </td>
                 <td>
