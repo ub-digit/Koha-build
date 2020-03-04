@@ -37,7 +37,7 @@ use Search::Elasticsearch;
 use Try::Tiny;
 use YAML::Syck;
 
-use List::Util qw( sum0 reduce );
+use List::Util qw( sum0 reduce all );
 use MARC::File::XML;
 use MIME::Base64;
 use Encode qw(encode);
@@ -216,6 +216,8 @@ sub get_elasticsearch_mappings {
                     $es_type = 'integer';
                 } elsif ($type eq 'isbn' || $type eq 'stdno') {
                     $es_type = 'stdno';
+                } elsif ($type eq 'year') {
+                    $es_type = 'year';
                 }
 
                 if ($search) {
@@ -471,13 +473,16 @@ sub _process_mappings {
         # with differing options for (possibly) mutating data
         # so need a different copy for each
         my $_data = $data;
-        $record_document->{$target} //= [];
         if (defined $options->{substr}) {
             my ($start, $length) = @{$options->{substr}};
             $_data = length($data) > $start ? substr $data, $start, $length : '';
         }
         if (defined $options->{value_callbacks}) {
             $_data = reduce { $b->($a) } ($_data, @{$options->{value_callbacks}});
+        }
+        if (defined $options->{filter_callbacks}) {
+            # Skip mapping unless all filter callbacks return true
+            next unless all { $_->($_data) } @{$options->{filter_callbacks}};
         }
         if (defined $options->{property}) {
             $_data = {
@@ -491,6 +496,8 @@ sub _process_mappings {
                 $_data = substr $_data, $nonfiling_chars;
             }
         }
+
+        $record_document->{$target} //= [];
         push @{$record_document->{$target}}, $_data;
     }
 }
@@ -880,6 +887,13 @@ sub _field_mappings {
             # Trim whitespace at both ends
             $value =~ s/^\s+|\s+$//g;
             return $value ? 'true' : 'false';
+        };
+    }
+    elsif ($target_type eq 'year') {
+        $default_options->{filter_callbacks} //= [];
+        push @{$default_options->{filter_callbacks}}, sub {
+            my ($value) = @_;
+            return $value =~ /^\d+$/;
         };
     }
 
