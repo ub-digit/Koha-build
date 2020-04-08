@@ -482,7 +482,7 @@ sub _process_mappings {
         }
         if (defined $options->{filter_callbacks}) {
             # Skip mapping unless all filter callbacks return true
-            next unless all { $_->($_data) } @{$options->{filter_callbacks}};
+            next unless all { $_data = $_->($_data) } @{$options->{filter_callbacks}};
         }
         if (defined $options->{property}) {
             $_data = {
@@ -498,7 +498,11 @@ sub _process_mappings {
         }
 
         $record_document->{$target} //= [];
-        push @{$record_document->{$target}}, $_data;
+        if( ref $_data eq 'ARRAY' ){
+            push @{$record_document->{$target}}, @{$_data};
+        } else {
+            push @{$record_document->{$target}}, $_data;
+        }
     }
 }
 
@@ -893,7 +897,13 @@ sub _field_mappings {
         $default_options->{filter_callbacks} //= [];
         push @{$default_options->{filter_callbacks}}, sub {
             my ($value) = @_;
-            return $value =~ /^\d+$/;
+            my @years = ();
+            my @field_years = ( $value =~ /[0-9u]{4}/g );
+            foreach my $year (@field_years){
+                $year =~ s/[u]/0/g;
+                push @years, $year;
+            }
+            return \@years;
         };
     }
 
