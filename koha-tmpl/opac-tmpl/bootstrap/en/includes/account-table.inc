@@ -206,7 +206,10 @@
         [%- CASE 'UNRETURNED' -%]<span> (Accruing)</span>
         [%- CASE 'RETURNED'   -%]<span> (Returned)</span>
         [%- CASE 'REPLACED'   -%]<span> (Replaced)</span>
-        [%- CASE 'FORGIVEN'   -%]<span> (Forgiven  <td>Pay</td>
+        [%- CASE 'FORGIVEN'   -%]<span> (Forgiven)</span>
+        [%- CASE 'VOID'       -%]<span> (Voided)</span>
+        [%- CASE 'LOST'       -%]<span> (Lost)</span>
+        [%- CASE              -%]
     [%- END -%]
     </span>
 [%- END -%]
