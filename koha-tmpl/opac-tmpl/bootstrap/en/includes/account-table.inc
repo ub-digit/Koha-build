@@ -11,6 +11,7 @@
                 <th>Description</th>
                 <th>Amount</th>
                 <th>Amount outstanding</th>
+                <th>Include in payment</th>
             </tr>
         </thead>
 
@@ -37,6 +38,11 @@
                     </td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amount * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amount | $Price %][% END %]</td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amountoutstanding * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amountoutstanding | $Price %][% END %]</td>
+                    <td><input class="account-line-checkbox"  data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]" 
+                                data-payment-type="[% ACCOUNT_LINE.debit_type_code | html %]"  data-title="[% ACCOUNT_LINE.item.biblio.title| html %]"  
+                                data-subtitle="[% ACCOUNT_LINE.item.biblio.subtitle| html %]" data-amount="[% ACCOUNT_LINE.amountoutstanding | $Price %]" 
+                                data-lang="[% current_lang %]" data-library-code="[% ACCOUNT_LINE.branchcode %]" 
+                                data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox"></td>
                 </tr>
             [% END %]
         </tbody>
@@ -49,7 +55,7 @@
                     [%- SET COLSPAN = 4 -%]
                 [%- END -%]
                 <th class="sum" colspan="[% COLSPAN | html %]">Total due</th>
-                <td class="sum">[% total | $Price %]</td>
+                <td class="sum" colspan="2">[% total | $Price %]</td>
             </tr>
             [% IF outstanding_credits.total_outstanding < 0 %]
             [% FOREACH outstanding_credit IN outstanding_credits %]
@@ -200,10 +206,7 @@
         [%- CASE 'UNRETURNED' -%]<span> (Accruing)</span>
         [%- CASE 'RETURNED'   -%]<span> (Returned)</span>
         [%- CASE 'REPLACED'   -%]<span> (Replaced)</span>
-        [%- CASE 'FORGIVEN'   -%]<span> (Forgiven)</span>
-        [%- CASE 'VOID'       -%]<span> (Voided)</span>
-        [%- CASE 'LOST'       -%]<span> (Lost)</span>
-        [%- CASE              -%]
+        [%- CASE 'FORGIVEN'   -%]<span> (Forgiven  <td>Pay</td>
     [%- END -%]
     </span>
 [%- END -%]
