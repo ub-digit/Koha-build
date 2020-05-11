@@ -12,11 +12,12 @@
 [% BLOCK cssinclude %]
     [% Asset.css("css/datatables.css") | $raw %]
 [% END %]
+
+
 </head>
 
 [% INCLUDE 'bodytag.inc' bodyid='opac-account' bodyclass='scrollto' %]
 [% INCLUDE 'masthead.inc' %]
-
 <div class="main">
     <ul class="breadcrumb">
         <li><a href="/cgi-bin/koha/opac-main.pl">Home</a> <span class="divider">&rsaquo;</span></li>
@@ -68,6 +69,36 @@
 
                     [% PROCESS 'account-table.inc' ACCOUNT_LINES = ACCOUNT_LINES, ENABLE_OPAC_PAYMENTS = ENABLE_OPAC_PAYMENTS, plugins = plugins %]
 
+                    <div id="ub-debug-box" style="border:1px solid red; padding: 10px;">
+                        <h3>Debug: UB/KOFF integration</h3>
+                        <button id="ub-pay-btn" class="btn btn-default">Pay selected fines</button>
+                        <p>
+                            <div id="ub-debug-box-table">
+                                <table class="table table-bordered table-striped ">
+                                    <thead>
+                                        <tr>
+                                            <th>accountLineID</th>
+                                            <th>payment-type</th>
+                                            <th>title</th>
+                                            <th>subtitle</th>
+                                            <th>amount</th>
+                                            <th>lang</th>
+                                            <th>library-code</th>
+                                            <th>branch-group</th>
+                                            <th>barcode</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                    <tfoot>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </p>
+                        <h5>DEBUG: json payload</h5>
+                        <textarea id="ub-debug-json" style="width:80%; min-height:200px;"></textarea>
+                    </div>
+
                 </div> <!-- / #useraccount -->
             </div> <!-- / .span10 -->
         </div> <!-- / .row-fluid -->
@@ -83,6 +114,112 @@ $( document ).ready(function() {
     var MSG_MIN_THRESHOLD = _("Minimum amount needed by this service is %s");
     var txtActivefilter = _("Filter paid transactions");
     var txtInactivefilter = _("Show all transactions");
+
+   
+
+
+
+    let ubTotalAmountPayable = 0;
+    let paydata = {};
+    let returnURL = window.location.href + "?language=" + "[% current_lang %]";
+
+
+    function getPaymentName(type) {
+        let payment_type = {
+            "MANUAL"        : "MANUAL MAPPED",
+            "NEW_CARD"      : "NEW_CARD MAPPED",
+            "LOST"          : "LOST MAPPED"
+        }
+        return payment_type[type]
+    }
+
+    function getBranchGroup(id) {
+        let branches = {
+            "Gm": [40, 43, 49, 66],
+            "Gpek": [42, 47, 48, 50],
+            "G": [44, 60, 62]
+        }
+        let branchgroup = null;
+        var found = Object.entries(branches).some((item) => {
+            return item[1].some(function(el) {
+                if (el === parseInt(id)) {
+                    branchgroup = item[0];
+                    return item[0];
+                }
+            });
+        })
+        if (found) return branchgroup;
+        return null;
+    } 
+    
+    $(".account-line-checkbox").bind("change", function() {
+        ubTotalAmountPayable = 0;
+        paydata.language = "[% current_lang %]";
+        paydata.return_url = returnURL;
+        paydata.guid = "[% guid %]";
+        let payments = [];
+        $("#ub-debug-box-table tbody").empty();
+        $("#ub-debug-box-table tfoot").empty();
+        $(".account-line-checkbox:checked").each(function() {
+            // generate json
+            let branchGroup = getBranchGroup($(this).attr('data-library-code'));
+            let paymentName = getPaymentName($(this).attr('data-payment-type'));
+            let fullTitle =  `${$(this).attr('data-title')}  ${$(this).attr('data-subtitle')}`
+            let obj = {
+                account_id          :       parseInt($(this).attr('data-accountLineID')),
+                debit_title         :       paymentName,
+                debit_type          :       $(this).attr('data-payment-type'),
+                title               :       fullTitle,
+                amount              :       parseFloat($(this).attr('data-amount')),
+                library_group       :       branchGroup,
+                barcode             :       $(this).attr('data-barcode')
+            }
+            payments.push(obj);
+            ubTotalAmountPayable += parseInt($(this).attr('data-amount')) * 1;
+            $("#ub-debug-box-table tbody").append($(`<tr>
+                    <td>${$(this).attr('data-accountLineID')}</td>
+                    <td>${paymentName}</td>
+                    <td>${$(this).attr('data-title') ? $(this).attr('data-title') : "undef" }</td>
+                    <td>${$(this).attr('data-subtitle') ? $(this).attr('data-subtitle') : "undef" }</td>
+                    <td>${$(this).attr('data-amount')}</td>
+                    <td>${$(this).attr('data-lang')}</td>
+                    <td>${$(this).attr('data-library-code')}</td>
+                    <td>${branchGroup}</td>
+                    <td>${$(this).attr('data-barcode') ? $(this).attr('data-barcode') : "undef"}</td>
+                </tr>`))
+        });
+        paydata.payments = payments;
+        $("#ub-debug-box-table tfoot").append($(`<tr><th class="sum" colspan="4">Total amount payable</td><td class="sum" colspan="5">${ubTotalAmountPayable}</td></tr>`));
+        $("#ub-debug-json").val(JSON.stringify(paydata));
+    });
+    
+
+    $(".account-line-checkbox").prop("checked", true).trigger("change");
+    $("#ub-pay-btn").bind("click", function() {
+        // make new promise or link to webservice TBD. 
+        if ($(".account-line-checkbox:checked").length)  {
+            // Sending and receiving data in JSON format using POST method
+            var xhr = new XMLHttpRequest();
+            var url = "http://ub.gu.se/";
+
+            xhr.open("POST", url, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var json = JSON.parse(xhr.responseText);
+                    console.log("response recieved");
+                }
+            };
+            var data = JSON.stringify(paydata);
+            alert("will send json-data to API");
+            //xhr.send(data);
+        }
+        else {
+            alert("No fine(s) selected for payment.");
+        }
+        
+    });
+
 
     var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
         "columnDefs": [
@@ -167,4 +304,5 @@ $( document ).ready(function() {
     });
 });
 </script>
+
 [% END %]
