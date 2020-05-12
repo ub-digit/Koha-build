@@ -96,6 +96,7 @@ $( document ).ready(function() {
          "dom": '<"#filter_p">',
     } ));
 
+    /*
     $("#filter_p").html('<p><a href="#" id="filter_paid"><i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter+'</a>');
     $('#filter_paid').click(function(e) {
         e.preventDefault();
@@ -109,6 +110,7 @@ $( document ).ready(function() {
         fines_table.fnFilter(filteredValue, -1, true, false);
         $(this).toggleClass('filtered');
     });
+    */
 
     //Start filtered
     $('#filter_paid').click();
