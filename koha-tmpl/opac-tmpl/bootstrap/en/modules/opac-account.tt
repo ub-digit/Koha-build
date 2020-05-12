@@ -121,7 +121,6 @@ $( document ).ready(function() {
         return 0;
     }
 
-
     function getDebtTotal() {
         let total = 0;
         $(".account-line-checkbox").each(function(index, item) {
