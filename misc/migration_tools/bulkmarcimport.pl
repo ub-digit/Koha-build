@@ -581,7 +581,7 @@ RECORD: foreach my $record (@{$marc_records}) {
                 }
             }
             elsif ($insert) {
-                eval { ($record_id, $biblioitemnumber) = AddBiblio($record, $framework, { defer_marc_save => 1 }) };
+                eval { ($record_id, $biblioitemnumber) = AddBiblio($record, $framework) };
                 if ($@) {
                     warn "ERROR: Adding biblio $record_id failed: $@\n";
                     printlog( { id => $record_id, op => "insert", status => "ERROR" } ) if ($logfile);
@@ -603,13 +603,6 @@ RECORD: foreach my $record (@{$marc_records}) {
                 eval { ($itemnumbers_ref, $errors_ref) = AddItemBatchFromMarc($record, $record_id, $biblioitemnumber, $framework); };
                 $record_has_added_items = @{$itemnumbers_ref};
                 my $error_adding = $@;
-                # Work on a clone so that if there are real errors, we can maybe
-                # fix them up later.
-                my $clone_record = $record->clone();
-                C4::Biblio::_strip_item_fields($clone_record, $framework);
-                # This sets the marc fields if there was an error, and also calls
-                # defer_marc_save.
-                ModBiblioMarc($clone_record, $record_id, $framework, $modify_biblio_marc_options);
                 if ($error_adding) {
                     warn "ERROR: Adding items to bib $record_id failed: $error_adding";
                     printlog({ id => $record_id, op => "insert items", status => "ERROR"}) if ($logfile);
@@ -656,12 +649,6 @@ RECORD: foreach my $record (@{$marc_records}) {
                     if ($@) {
                         warn "ERROR: Adding items to bib $record_id failed: $@\n";
                         printlog({ id => $record_id, op => "insert items", status => "ERROR" }) if ($logfile);
-                        # if we failed because of an exception, assume that
-                        # the MARC columns in biblioitems were not set.
-
-                        # @FIXME: Why do we save here without stripping items? Besides,
-                        # save with stripped items has already been performed
-                        ModBiblioMarc($record, $record_id, $framework, $modify_biblio_marc_options);
                         next RECORD;
                     }
                     else {
