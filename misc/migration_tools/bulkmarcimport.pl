@@ -591,7 +591,7 @@ RECORD: foreach my $record (@{$marc_records}) {
                 }
             }
             elsif ($insert) {
-                eval { ($record_id, $biblioitemnumber) = AddBiblio($record, $framework, { defer_marc_save => 1 }) };
+                eval { ($record_id, $biblioitemnumber) = AddBiblio($record, $framework) };
                 if ($@) {
                     warn "ERROR: Adding biblio $record_id failed: $@\n";
                     printlog( { id => $record_id, op => "insert", status => "ERROR" } ) if ($logfile);
