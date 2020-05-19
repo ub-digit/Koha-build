@@ -296,7 +296,7 @@ RECORD: while (  ) {
          ($record, $guessed_charset, $charset_errors) = MarcToUTF8Record($record, $marcFlavour.(($authorities and $marcFlavour ne "MARC21")?'AUTH':''));
         if ($guessed_charset eq 'failed') {
             warn "ERROR: failed to perform character conversion for record $i\n";
-            next RECORD;            
+            next RECORD;
         }
     }
     SetUTF8Flag($record);
@@ -402,7 +402,7 @@ RECORD: while (  ) {
 				else{
 					printlog({id=>$originalid||$id||$authid, op=>"edit",status=>"ok"}) if ($logfile);
 				}
-            }  
+            }
 	        else {
             ## True insert in database
                 eval { ( $authid ) = AddAuthority($record,"", $authtypecode) };
@@ -463,7 +463,7 @@ RECORD: while (  ) {
                 }
             } else {
                 if ($insert) {
-                    eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio( $record, $framework, { defer_marc_save => 1 } ) };
+                    eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio( $record, $framework) };
                     if ($@) {
                         warn "ERROR: Adding biblio $biblionumber failed: $@\n";
                         printlog( { id => $id || $originalid || $biblionumber, op => "insert", status => "ERROR" } ) if ($logfile);
@@ -479,17 +479,10 @@ RECORD: while (  ) {
             }
             eval { ( $itemnumbers_ref, $errors_ref ) = AddItemBatchFromMarc( $record, $biblionumber, $biblioitemnumber, '' ); };
             my $error_adding = $@;
-            # Work on a clone so that if there are real errors, we can maybe
-            # fix them up later.
-			my $clone_record = $record->clone();
-            C4::Biblio::_strip_item_fields($clone_record, '');
-            # This sets the marc fields if there was an error, and also calls
-            # defer_marc_save.
-            ModBiblioMarc( $clone_record, $biblionumber );
             if ( $error_adding ) {
                 warn "ERROR: Adding items to bib $biblionumber failed: $error_adding";
 				printlog({id=>$id||$originalid||$biblionumber, op=>"insertitem",status=>"ERROR"}) if ($logfile);
-                # if we failed because of an exception, assume that 
+                # if we failed because of an exception, assume that
                 # the MARC columns in biblioitems were not set.
                 next RECORD;
             }
@@ -529,9 +522,6 @@ RECORD: while (  ) {
                 if ( $@ ) {
                     warn "ERROR: Adding items to bib $biblionumber failed: $@\n";
                     printlog({id=>$id||$originalid||$biblionumber, op=>"insertitem",status=>"ERROR"}) if ($logfile);
-                    # if we failed because of an exception, assume that
-                    # the MARC columns in biblioitems were not set.
-                    ModBiblioMarc( $record, $biblionumber );
                     next RECORD;
                 } else {
                     printlog({id=>$id||$originalid||$biblionumber, op=>"insertitem",status=>"ok"}) if ($logfile);
@@ -581,7 +571,7 @@ sub GetRecordId{
 	my $id;
 	if ($tag lt "010"){
 		return $marcrecord->field($tag)->data() if $marcrecord->field($tag);
-	} 
+	}
 	elsif ($subfield){
 		if ($marcrecord->field($tag)){
 			return $marcrecord->subfield($tag,$subfield);
