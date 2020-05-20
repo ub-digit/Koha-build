@@ -41,8 +41,8 @@
                     <td><input class="account-line-checkbox"  data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]" 
                                 data-payment-type="[% ACCOUNT_LINE.debit_type_code | html %]"  data-title="[% ACCOUNT_LINE.item.biblio.title| html %]"  
                                 data-subtitle="[% ACCOUNT_LINE.item.biblio.subtitle| html %]" data-amount="[% ACCOUNT_LINE.amountoutstanding | $Price %]" 
-                                data-lang="[% current_lang %]" data-library-code="[% ACCOUNT_LINE.branchcode %]" 
-                                data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox"></td>
+                                data-library-code="[% ACCOUNT_LINE.branchcode %]" data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox">
+                    </td>
                 </tr>
             [% END %]
         </tbody>
