@@ -66,7 +66,12 @@ unless ($json_text) {
 
     my ( $sql, undef ) = $report_rec->prep_report( \@param_names, \@sql_params );
 
-    my ( $sth, $errors ) = execute_query( $sql, $offset, $limit, undef, $report_id );
+    my ($sth, $errors);
+    if($report_rec->type() eq "PG") {
+        ( $sth, $errors ) = execute_query_pg( $sql, $offset, $limit, \@sql_params, $report_id );
+    } else {
+        ( $sth, $errors ) = execute_query( $sql, $offset, $limit, \@sql_params, $report_id );
+    }
     if ($sth) {
         my $lines;
         if ($report_annotation) {
