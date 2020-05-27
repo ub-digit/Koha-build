@@ -1076,6 +1076,13 @@
                                     <label for="notes">Notes:</label>
                                     <textarea id="notes" name="notes" cols="50" rows="2">[% notes | html %]</textarea>
                                 </li>
+                                <li>
+                                  <label for="report_type">Report source</label>
+                                  <select name="report_type" id="report_type">
+                                    <option value="1">Tabular (Koha)</option>
+                                    <option value="PG">PostgreSQL</option>
+                                  </select>
+                                </li>
                             </ol>
                         </fieldset> <!-- /.rows -->
 
@@ -1185,6 +1192,18 @@
                                 <li>
                                     <label for="notes">Notes:</label>
                                     <textarea id="notes" name="notes" cols="50" rows="2">[% notes | html %]</textarea>
+                                </li>
+                                <li>
+                                  <label for="type">Report source:</label>
+                                  <select name="report_type" id="report_type">
+                                    [% IF (report_type == "PG") %]
+                                    <option value="1">Tabular (Koha)</option>
+                                    <option value="PG" selected="selected">PostgreSQL</option>
+                                    [% ELSE %]
+                                    <option value="1" selected="selected">Tabular (Koha)</option>
+                                    <option value="PG">PostgreSQL</option>
+                                    [% END %]
+                                  </select>
                                 </li>
                             </ol>
                         </fieldset> <!-- /.rows -->
