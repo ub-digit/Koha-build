@@ -39,7 +39,6 @@ use Koha::Libraries;
 use Koha::Patron::Categories;
 use Koha::SharedContent;
 use Koha::Util::OpenDocument;
-
 =head1 NAME
 
 guided_reports.pl
@@ -206,7 +205,8 @@ elsif ( $phase eq 'Edit SQL'){
         'usecache' => $usecache,
         'editsql'    => 1,
         'mana_id' => $report->{mana_id},
-        'mana_comments' => $report->{comments}
+        'mana_comments' => $report->{comments},
+        'report_type' => $report->type
     );
 }
 
@@ -217,6 +217,7 @@ elsif ( $phase eq 'Update SQL'){
     my $group      = $input->param('group');
     my $subgroup   = $input->param('subgroup');
     my $notes      = $input->param('notes');
+    my $type       = $input->param('report_type');
     my $cache_expiry = $input->param('cache_expiry');
     my $cache_expiry_units = $input->param('cache_expiry_units');
     my $public = $input->param('public');
@@ -271,7 +272,8 @@ elsif ( $phase eq 'Update SQL'){
                 'public' => $public,
                 'problematic_authvals' => $problematic_authvals,
                 'warn_authval_problem' => 1,
-                'phase_update' => 1
+                'phase_update' => 1,
+                'report_type' => $type
             );
 
         } else {
@@ -284,6 +286,7 @@ elsif ( $phase eq 'Update SQL'){
                     notes => $notes,
                     public => $public,
                     cache_expiry => $cache_expiry,
+                    type => $type,
                 } );
             $template->param(
                 'save_successful'       => 1,
@@ -296,6 +299,7 @@ elsif ( $phase eq 'Update SQL'){
                 'cache_expiry'          => $cache_expiry,
                 'public'                => $public,
                 'usecache'              => $usecache,
+                'report_type'           => $type
             );
             logaction( "REPORTS", "MODIFY", $id, "$reportname | $sql" ) if C4::Context->preference("ReportsLog");
         }
@@ -577,7 +581,7 @@ elsif ( $phase eq 'Save Report' ) {
     my $subgroup = $input->param('subgroup');
     my $sql   = $input->param('sql');
     my $name  = $input->param('reportname');
-    my $type  = $input->param('types');
+    my $type  = $input->param('types') || $input->param('report_type');
     my $notes = $input->param('notes');
     my $cache_expiry = $input->param('cache_expiry');
     my $cache_expiry_units = $input->param('cache_expiry_units');
@@ -615,6 +619,7 @@ elsif ( $phase eq 'Save Report' ) {
             'sql'       => $sql,
             'reportname'=> $name,
             'type'      => $type,
+            'report_type' => $type,
             'notes'     => $notes,
             'cache_expiry' => $cache_expiry,
             'public'    => $public,
@@ -633,6 +638,7 @@ elsif ( $phase eq 'Save Report' ) {
                 'sql' => $sql,
                 'reportname' => $name,
                 'type' => $type,
+                'report_type' => $type,
                 'notes' => $notes,
                 'public' => $public,
                 'problematic_authvals' => $problematic_authvals,
@@ -669,6 +675,7 @@ elsif ( $phase eq 'Save Report' ) {
                 'groups_with_subgroups' => groups_with_subgroups($group, $subgroup),
                 'notes'      => $notes,
                 'cache_expiry' => $cache_expiry,
+                'report_type' => $type,
                 'public' => $public,
                 'usecache' => $usecache,
             );
@@ -720,7 +727,8 @@ elsif ($phase eq 'Run this report'){
             my @tmpl_parameters;
             my @authval_errors;
             my %uniq_params;
-            for(my $i=0;$i<($#split/2);$i++) {
+            my $tmp_length = $#split;
+            for(my $i=0;$i<($tmp_length/2);$i++) {
                 my ($text,$authorised_value_all) = split /\|/,$split[$i*2+1];
                 my $sep = $authorised_value_all ? "|" : "";
                 if( defined $uniq_params{$text.$sep.$authorised_value_all} ){
@@ -830,8 +838,16 @@ elsif ($phase eq 'Run this report'){
         } else {
             my ($sql,$header_types) = get_prepped_report( $sql, \@param_names, \@sql_params);
             $template->param(header_types => $header_types);
-            my ( $sth, $errors ) = execute_query( $sql, $offset, $limit, undef, $report_id );
-            my $total = nb_rows($sql) || 0;
+            my $sth;
+            my $errors;
+            my $total;
+            if($report->type eq "PG") {
+                ($sth, $errors) = execute_query_pg( $sql, $offset, $limit, undef, $report_id );
+                $total = nb_rows_pg($sql) || 0;
+            } else {
+                ($sth, $errors) = execute_query( $sql, $offset, $limit, undef, $report_id );
+                $total = nb_rows($sql) || 0;
+            }
             unless ($sth) {
                 die "execute_query failed to return sth for report $report_id: $sql";
             } else {
@@ -842,7 +858,12 @@ elsif ($phase eq 'Run this report'){
                     push @rows, { cells => \@cells };
                 }
                 if( $want_full_chart ){
-                    my ($sth2, $errors2) = execute_query($sql);
+                    my ($sth2, $errors2);
+                    if ($report->type eq "PG") {
+                        ($sth2, $errors2) = execute_query_pg($sql);
+                    } else {
+                        ($sth2, $errors2) = execute_query($sql);
+                    }
                     while (my $row = $sth2->fetchrow_arrayref()) {
                         my @cells = map { +{ cell => $_ } } @$row;
                         push @allrows, { cells => \@cells };
@@ -894,7 +915,12 @@ elsif ($phase eq 'Export'){
     my $reportfilename = $reportname ? "$reportname-reportresults.$format" : "reportresults.$format" ;
 
     ($sql, undef) = get_prepped_report( $sql, \@param_names, \@sql_params );
-	my ($sth, $q_errors) = execute_query($sql);
+    my ($sth, $q_errors);
+    if($report->type() eq "PG") {
+        ($sth, $q_errors) = execute_query_pg($sql);
+    } else {
+        ($sth, $q_errors) = execute_query($sql);
+    }
     unless ($q_errors and @$q_errors) {
         my ( $type, $content );
         if ($format eq 'tab') {
