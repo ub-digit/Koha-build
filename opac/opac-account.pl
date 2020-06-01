@@ -81,6 +81,7 @@ $template->param(
     ACCOUNT_LINES       => $accountlines,
     current_lang        => C4::Languages::getlanguage, 
     guid                => $guid,
+    staffClientBaseURL  => C4::Context->preference('staffClientBaseURL'),
     total               => $total_outstanding,
     outstanding_credits => $outstanding_credits,
     accountview         => 1,
