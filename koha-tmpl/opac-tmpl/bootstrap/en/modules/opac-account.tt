@@ -95,13 +95,25 @@ $( document ).ready(function() {
    
     let paydata = {};
     let returnURL = window.location.href + "?language=" + "[% current_lang %]";
-    let callbackURL = window.location.href;
+    let callbackURL = "[% staffClientBaseURL %]" + "/cgi-bin/koha/svc/onlinepayment";  // window.location.href;
 
     function getPaymentName(type) {
-        let payment_type = { // TBD 
-            "MANUAL"        : "MANUAL MAPPED", 
-            "NEW_CARD"      : "NEW_CARD MAPPED",
-            "LOST"          : "LOST MAPPED"
+        let payment_type = {};
+        if ("[% current_lang %]" === "en") {
+            payment_type = { // TBD 
+                "LOST"          : "LOST MAPPED EN",
+                "MANUAL"        : "MANUAL MAPPED EN", 
+                "OVERDUE"       : "OVEERDUE MAPPED EN",
+                "PROCESSING"    : "PROCESSING_MAPPED EN"
+            }
+        }
+        else {
+            payment_type = { // TBD 
+                "LOST"          : "LOST MAPPED SV",
+                "MANUAL"        : "MANUAL MAPPED SV", 
+                "OVERDUE"       : "OVEERDUE MAPPED SV",
+                "PROCESSING"    : "PROCESSING_MAPPED SV"
+            }
         }
         return payment_type[type]
     }

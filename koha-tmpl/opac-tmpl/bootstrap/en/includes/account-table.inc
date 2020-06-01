@@ -34,14 +34,14 @@
                     <td>
                         [%- IF ACCOUNT_LINE.payment_type %][% AuthorisedValues.GetByCode('PAYMENT_TYPE', ACCOUNT_LINE.payment_type, 1) | html %][% END %]
                         [%- IF ACCOUNT_LINE.description %][% ACCOUNT_LINE.description | html %][% END %]
-                        [% IF ACCOUNT_LINE.itemnumber %]([% ACCOUNT_LINE.item.biblio.title | html %])[% END %]
+                        [% IF ACCOUNT_LINE.itemnumber %]([% ACCOUNT_LINE.item.biblio.title | html %] [% ACCOUNT_LINE.item.biblio.subtitle | html %])[% END %]
                     </td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amount * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amount | $Price %][% END %]</td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amountoutstanding * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amountoutstanding | $Price %][% END %]</td>
                     <td><input class="account-line-checkbox"  data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]" 
                                 data-payment-type="[% ACCOUNT_LINE.debit_type_code | html %]"  data-title="[% ACCOUNT_LINE.item.biblio.title| html %]"  
                                 data-subtitle="[% ACCOUNT_LINE.item.biblio.subtitle| html %]" data-amount="[% ACCOUNT_LINE.amountoutstanding | $Price %]" 
-                                data-library-code="[% ACCOUNT_LINE.branchcode %]" data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox">
+                                data-library-code="[% ACCOUNT_LINE.item.homebranch %]" data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox">
                     </td>
                 </tr>
             [% END %]
