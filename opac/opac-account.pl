@@ -50,6 +50,8 @@ my $accountlines = $account->lines->search({ amountoutstanding => { '>=' => 0 }}
 my $total_outstanding = $accountlines->total_outstanding;
 my $outstanding_credits = $account->outstanding_credits;
 
+
+
 if ( C4::Context->preference('AllowPatronToSetFinesVisibilityForGuarantor')
     || C4::Context->preference('AllowStaffToSetFinesVisibilityForGuarantor')
   )

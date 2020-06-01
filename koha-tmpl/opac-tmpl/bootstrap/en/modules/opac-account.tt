@@ -101,6 +101,7 @@ $( document ).ready(function() {
         let payment_type = {};
         if ("[% current_lang %]" === "en") {
             payment_type = { // TBD 
+                "A"             : "A MAPPED EN",
                 "LOST"          : "LOST MAPPED EN",
                 "MANUAL"        : "MANUAL MAPPED EN", 
                 "OVERDUE"       : "OVEERDUE MAPPED EN",
@@ -109,6 +110,7 @@ $( document ).ready(function() {
         }
         else {
             payment_type = { // TBD 
+                "A"             : "A MAPPED SV",
                 "LOST"          : "LOST MAPPED SV",
                 "MANUAL"        : "MANUAL MAPPED SV", 
                 "OVERDUE"       : "OVEERDUE MAPPED SV",
@@ -159,8 +161,22 @@ $( document ).ready(function() {
         $("#ub-debug-json").val(JSON.stringify(paydata, undefined, 4));
     });
     
+    // disable payment-rows 
+    $(".account-line-checkbox").each(function(index, item) {
+        if ((item.dataset.paymentType === "LOST") && (parseFloat(item.dataset.amount) > 0)) {
+            return;
+        }
+        if ((item.dataset.paymentType === "A")  &&  (parseFloat(item.dataset.amount) > 0)) {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED") &&  (parseFloat(item.dataset.amount) > 0))  {
+            return;
+        }
+        item.disabled = true;
+    });
 
-    $(".account-line-checkbox").prop("checked", true).trigger("change");
+    $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+
     $("#ub-pay-btn").bind("click", function() {
         // make new promise or link to webservice TBD. 
         if ($(".account-line-checkbox:checked").length)  {
