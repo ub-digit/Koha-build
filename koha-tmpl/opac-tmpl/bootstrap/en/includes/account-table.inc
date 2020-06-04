@@ -39,7 +39,7 @@
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amount * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amount | $Price %][% END %]</td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amountoutstanding * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amountoutstanding | $Price %][% END %]</td>
                     <td><input class="account-line-checkbox" data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]" 
-                                data-payment-status="[% ACCOUNT_LINE.status | html %]"
+                                data-payment-status="[% ACCOUNT_LINE.status | html %]" data-item-itype="[% ACCOUNT_LINE.item.itype %]"
                                 data-payment-type="[% ACCOUNT_LINE.debit_type_code | html %]"  data-title="[% ACCOUNT_LINE.item.biblio.title| html %]"  
                                 data-subtitle="[% ACCOUNT_LINE.item.biblio.subtitle| html %]" data-amount="[% ACCOUNT_LINE.amountoutstanding | $Price %]" 
                                 data-library-code="[% ACCOUNT_LINE.item.homebranch %]" data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox">
