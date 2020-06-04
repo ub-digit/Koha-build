@@ -68,13 +68,12 @@
                     [% END %]
 
                     [% PROCESS 'account-table.inc' ACCOUNT_LINES = ACCOUNT_LINES, ENABLE_OPAC_PAYMENTS = ENABLE_OPAC_PAYMENTS, plugins = plugins %]
-
-                    <div id="ub-debug-box" style="border:1px solid red; padding: 10px;">
-                        <h3>Debug: UB/KOFF integration</h3>
-                        <button id="ub-pay-btn" class="btn btn-default">Pay selected fines</button>
-                        <h5>DEBUG: json payload</h5>
-                        <textarea id="ub-debug-json" style="width:80%; min-height:400px;"></textarea>
-                    </div>
+                    <form name="koff-payment" method="post" action="https://betala.ub.gu.se/Koha/Payment">
+                        <input type="submit" class="btn btn-default" value="Pay selected"></input>
+                        <textarea id="ub-debug-json" type="hidden" name="payment_data" style="display:none;"></textarea>
+                    </form>
+                    <!-- remove or hide when go live -->
+                    <textarea id="ub-debug-json-clean" name="payment_data_json_clean" style="width:80%; min-height:400px;"></textarea>
 
                 </div> <!-- / #useraccount -->
             </div> <!-- / .span10 -->
@@ -119,23 +118,28 @@ $( document ).ready(function() {
         }
         return payment_type[type]
     }
-    function getBranchGroup(id) {
+    function getLibraryGroup(id, itype) {
         let branches = {
             "Gm": [40, 43, 49, 66],
             "Gpek": [42, 47, 48, 50],
             "G": [44, 60, 62]
         }
-        let branchgroup = null;
+        let librarygroup = null;
         var found = Object.entries(branches).some((item) => {
             return item[1].some(function(el) {
                 if (el === parseInt(id)) {
-                    branchgroup = item[0];
+                    librarygroup = item[0];
                     return item[0];
                 }
             });
         })
-        if (found) return branchgroup;
-        return null;
+        if ((found) && (itype && itype != "2")) {
+            return librarygroup;
+        }
+        else if (found && (itype && itype === "2")) {
+            return librarygroup + "/kurs";
+        }
+        return "no group";
     } 
     
     $(".account-line-checkbox").bind("change", function() {
@@ -149,7 +153,7 @@ $( document ).ready(function() {
             let paymentRow = {
                 account_id          :       parseInt($(this).attr('data-accountLineID')),
                 amount              :       parseFloat($(this).attr('data-amount')),
-                library_group       :       getBranchGroup($(this).attr('data-library-code')),
+                library_group       :       getLibraryGroup($(this).attr('data-library-code'),  $(this).attr('data-item-itype')),  // ITEM.ITYPES
                 text                :       $(this).attr('data-barcode'), // STILL UNCLEAR WHAT IT SHOULD CONTAIN
                 title               :       fullTitle,
                 debit_type          :       $(this).attr('data-payment-type'),
@@ -158,50 +162,34 @@ $( document ).ready(function() {
             payments.push(paymentRow);
         });
         paydata.payments = payments;
-        $("#ub-debug-json").val(JSON.stringify(paydata, undefined, 4));
+        $("#ub-debug-json").val(encodeURIComponent(JSON.stringify(paydata, undefined, 4)));
+        $("#ub-debug-json-clean").val((JSON.stringify(paydata, undefined, 4)));
     });
     
     // disable payment-rows 
     $(".account-line-checkbox").each(function(index, item) {
-        if ((item.dataset.paymentType === "LOST") && (parseFloat(item.dataset.amount) > 0)) {
+        if (parseFloat(item.dataset.amount) <= 0) {
             return;
         }
-        if ((item.dataset.paymentType === "A")  &&  (parseFloat(item.dataset.amount) > 0)) {
+        if ((item.dataset.paymentType === "LOST")) {
             return;
         }
-        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED") &&  (parseFloat(item.dataset.amount) > 0))  {
+        if ((item.dataset.paymentType === "A")) {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED"))  {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "LOST"))  {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RENEWED"))  {
             return;
         }
         item.disabled = true;
     });
 
     $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
-
-    $("#ub-pay-btn").bind("click", function() {
-        // make new promise or link to webservice TBD. 
-        if ($(".account-line-checkbox:checked").length)  {
-            // Sending and receiving data in JSON format using POST method
-            var xhr = new XMLHttpRequest();
-            var url = "http://ub.gu.se/";
-
-            xhr.open("POST", url, true);
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var json = JSON.parse(xhr.responseText);
-                    console.log("response recieved");
-                }
-            };
-            var data = JSON.stringify(paydata);
-            alert("will send json-data to API");
-            //xhr.send(data);
-        }
-        else {
-            alert("No fine(s) selected for payment.");
-        }
-        
-    });
-
 
     var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
         "columnDefs": [
