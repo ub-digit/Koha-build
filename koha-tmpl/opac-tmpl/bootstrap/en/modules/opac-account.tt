@@ -116,9 +116,15 @@ $( document ).ready(function() {
         }
         return payment_type[type]
     }
+
+    function getSimpleDebitType(type) {
+        if (type === "OVERDUE") {
+            return "fine";
+        }
+        return "media";
+    }
+
     function getLibraryGroup(id, payment_type) {
-        // "G_media", "G_fines", "Gm_media", "Gm_fines", "Gpek_media", "Gpek_fines" med default till "Gpek_media". "fines" ska läggas på om det är OVERDUE, 
-        // och "media" för resten.
         let branches = {
             "G": [44, 60, 62],
             "Gm": [40, 43, 49, 66],
@@ -134,13 +140,10 @@ $( document ).ready(function() {
                 }
             });
         })
-        if ((found) && (payment_type && payment_type === "OVERDUE")) {
-            return librarygroup + "_fines";
+        if (found)  {
+            return librarygroup;
         }
-        else if (found) {
-            return librarygroup + "_media";
-        }
-        return "Gpek_media";
+        return "Gpek";
     } 
     
     $(".account-line-checkbox").bind("change", function() {
@@ -157,7 +160,7 @@ $( document ).ready(function() {
                 library_group       :       getLibraryGroup($(this).attr('data-library-code'),  $(this).attr('data-payment-type')),  // ITEM.ITYPES
                 text                :       $(this).attr('data-barcode'), // STILL UNCLEAR WHAT IT SHOULD CONTAIN
                 title               :       fullTitle,
-                debit_type          :       $(this).attr('data-payment-type'),
+                debit_type          :       getSimpleDebitType($(this).attr('data-payment-type')),
                 debit_title         :       getPaymentName($(this).attr('data-payment-type')),
             }
             payments.push(paymentRow);
