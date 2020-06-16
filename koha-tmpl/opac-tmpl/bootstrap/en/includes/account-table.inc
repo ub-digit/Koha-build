@@ -6,18 +6,24 @@
         <thead>
             <tr>
                 [% IF ENABLE_OPAC_PAYMENTS %]<th>&nbsp;</th>[% END %]
+                <th style="text-align:center"><input id="check-all-payable" type="checkbox"></input></th>
                 <th class="title-string">Date</th>
                 <th>Type</th>
                 <th>Description</th>
                 <th>Amount</th>
                 <th>Amount outstanding</th>
-                <th>Include in payment</th>
             </tr>
         </thead>
 
         <tbody>
             [% FOREACH ACCOUNT_LINE IN ACCOUNT_LINES %]
                 [% IF ACCOUNT_LINE.amountoutstanding > 0 || ACCOUNT_LINE.amountoutstanding < 0 %]<tr class="outstanding">[% ELSE %]<tr>[% END%]
+                    <td style="text-align:center"><input aria-label="[% ACCOUNT_LINE.item.biblio.title| html %] [% ACCOUNT_LINE.item.biblio.subtitle| html %] [% ACCOUNT_LINE.amountoutstanding | $Price %]" class="account-line-checkbox" data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]" 
+                                data-payment-status="[% ACCOUNT_LINE.status | html %]" data-item-itype="[% ACCOUNT_LINE.item.itype %]"
+                                data-payment-type="[% ACCOUNT_LINE.debit_type_code | html %]"  data-title="[% ACCOUNT_LINE.item.biblio.title| html %]"  
+                                data-subtitle="[% ACCOUNT_LINE.item.biblio.subtitle| html %]" data-amount="[% ACCOUNT_LINE.amountoutstanding | $Price %]" 
+                                data-library-code="[% ACCOUNT_LINE.item.homebranch %]" data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox">
+                    </td>
                     [% IF ENABLE_OPAC_PAYMENTS %]
                         <td>
                             [% IF ACCOUNT_LINE.amountoutstanding > 0 %]
@@ -38,12 +44,7 @@
                     </td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amount * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amount | $Price %][% END %]</td>
                     [% IF ( ACCOUNT_LINE.is_credit ) %]<td class="credit">[% ACCOUNT_LINE.amountoutstanding * -1 | $Price %][% ELSE %]<td class="debit">[% ACCOUNT_LINE.amountoutstanding | $Price %][% END %]</td>
-                    <td><input class="account-line-checkbox" data-accountLineID="[% ACCOUNT_LINE.accountlines_id | html %]" 
-                                data-payment-status="[% ACCOUNT_LINE.status | html %]" data-item-itype="[% ACCOUNT_LINE.item.itype %]"
-                                data-payment-type="[% ACCOUNT_LINE.debit_type_code | html %]"  data-title="[% ACCOUNT_LINE.item.biblio.title| html %]"  
-                                data-subtitle="[% ACCOUNT_LINE.item.biblio.subtitle| html %]" data-amount="[% ACCOUNT_LINE.amountoutstanding | $Price %]" 
-                                data-library-code="[% ACCOUNT_LINE.item.homebranch %]" data-misc="" data-barcode="[% ACCOUNT_LINE.item.barcode %]" type="checkbox">
-                    </td>
+          
                 </tr>
             [% END %]
         </tbody>

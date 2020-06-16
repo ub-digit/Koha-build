@@ -68,9 +68,11 @@
                     [% END %]
 
                     [% PROCESS 'account-table.inc' ACCOUNT_LINES = ACCOUNT_LINES, ENABLE_OPAC_PAYMENTS = ENABLE_OPAC_PAYMENTS, plugins = plugins %]
+                    <strong>Amount to pay: <span class="amount-payable"></span> SEK</strong>
+                    <p>(Debt after payment has been made: <span class="amount-debt-left-after-payment"></span> SEK)</p>
                     <form method="post" action="https://betala.ub.gu.se/Koha/Payment">
-                        <input type="submit" class="btn btn-default" value="Pay selected"></input>
-                        <textarea id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px;"></textarea>
+                        <input type="submit" class="btn btn-default" value="Pay selected fines"></input>
+                        <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
                     </form>
 
                 </div> <!-- / #useraccount -->
@@ -93,6 +95,23 @@ $( document ).ready(function() {
     let paydata = {};
     let returnURL = window.location.href + "?language=" + "[% current_lang %]";
     let callbackURL = "[% staffClientBaseURL %]" + "/cgi-bin/koha/svc/onlinepayment";  // window.location.href;
+
+    function getAmountPayable(payments) {
+        var amounts = payments.map(o => {return o['amount']});
+        if (amounts.length) {
+            return amounts.reduce((total, num) => total + num);
+        }
+        return 0;
+    }
+
+
+    function getDebtTotal() {
+        let total = 0;
+        $(".account-line-checkbox").each(function(index, item) {
+            total += parseFloat($(item).attr("data-amount").replace(/\s/g, ""));
+        });
+        return total;
+    }
 
     function getPaymentName(type) {
         let payment_type = {};
@@ -146,6 +165,15 @@ $( document ).ready(function() {
         return "Gpek";
     } 
     
+
+    $("#check-all-payable").bind("change", function(val) {
+        if ($("#check-all-payable").prop("checked")) {
+            $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+            return;
+        }
+        $(".account-line-checkbox:not(:disabled)").prop("checked", false).trigger("change");
+    });
+
     $(".account-line-checkbox").bind("change", function() {
         paydata.uid = "[% guid %]";
         paydata.language = "[% current_lang %]"; // MAYBE NOT NEEDED IF RETURN_URL CONTAINS LANGUAGE
@@ -156,8 +184,8 @@ $( document ).ready(function() {
             let fullTitle =  `${$(this).attr('data-title')}  ${$(this).attr('data-subtitle')}` // THIS MIGHT CHANGE 
             let paymentRow = {
                 account_id          :       parseInt($(this).attr('data-accountLineID')),
-                amount              :       parseFloat($(this).attr('data-amount')),
-                library_group       :       getLibraryGroup($(this).attr('data-library-code'),  $(this).attr('data-payment-type')),  // ITEM.ITYPES
+                amount              :       parseFloat($(this).attr('data-amount').replace(/\s/g, "")),
+                library_group       :       getLibraryGroup($(this).attr('data-library-code'),  $(this).attr('data-item-itype')),  // ITEM.ITYPES
                 text                :       $(this).attr('data-barcode'), // STILL UNCLEAR WHAT IT SHOULD CONTAIN
                 title               :       fullTitle,
                 debit_type          :       getSimpleDebitType($(this).attr('data-payment-type')),
@@ -166,6 +194,9 @@ $( document ).ready(function() {
             payments.push(paymentRow);
         });
         paydata.payments = payments;
+        let amountPayable = getAmountPayable(payments);
+        $(".amount-payable").text(amountPayable);
+        $(".amount-debt-left-after-payment").text(getDebtTotal() - amountPayable);
         $("#ub-debug-json").val((JSON.stringify(paydata, undefined, 4)));
     });
     
@@ -191,13 +222,20 @@ $( document ).ready(function() {
         }
         item.disabled = true;
     });
-
+    $("#check-all-payable").prop("checked", true);
     $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
 
     var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
         "columnDefs": [
              { "type": "title-string", "targets" : [ "title-string" ] }
          ],
+        "columns": [
+            { "orderable": false },
+            null,
+            null,
+            null,
+            null
+        ],
          [% IF ENABLE_OPAC_PAYMENTS %]
          "order": [[ 1, "desc" ]],
          [% ELSE %]
