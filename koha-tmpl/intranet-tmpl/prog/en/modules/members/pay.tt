@@ -61,8 +61,10 @@
 [% FOREACH line IN accounts %]
 <tr>
     <td>
-    [% IF ( line.amountoutstanding > 0 ) %]
+    [% IF ( line.amountoutstanding > 0 ) and (!(line.debit_type_code.match("^.*_INVOICED$"))) and ((line.status != "UNRETURNED") or CAN_user_updatecharges_writeoff) %]
         <input class="cb" type="checkbox" checked="checked" name="incl_par_[% line.accountlines_id | html %]" />
+    [% ELSE %]
+        <input class="cb" type="checkbox" disabled="true" name="incl_par_[% line.accountlines_id | html %]" />
     [% END %]
     </td>
     <td class="actions">
@@ -139,10 +141,8 @@
 
 </table>
 <fieldset class="action">
-<input type="submit" id="paycollect" name="paycollect"  value="Pay amount" class="submit" />
 <input type="submit" id="payselected" name="payselected"  value="Pay selected" class="submit" />
-[% IF CAN_user_updatecharges_writeoff %]<input type="submit" name="woall"  id="woall" value="Write off all" class="submit" />
-<input type="submit" id="writeoff-selected" name="writeoff_selected"  value="Write off selected" class="submit" />[% END %]
+[% IF CAN_user_updatecharges_writeoff %]<input type="submit" name="woall"  id="woall" value="Write off all" class="submit" />[% END %]
 <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% patron.borrowernumber | html %]">Cancel</a>
 </fieldset>
 </form>
