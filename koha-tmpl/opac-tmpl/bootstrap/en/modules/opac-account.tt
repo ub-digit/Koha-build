@@ -4,6 +4,7 @@
 [% USE KohaDates %]
 [% USE AuthorisedValues %]
 [% USE Price %]
+[% USE UBOnlinePayment %]
 [% SET ENABLE_OPAC_PAYMENTS = Koha.Preference('EnablePayPalOpacPayments') || plugins %]
 [% SET DISPLAY_PAYMENT_BLOCK = 0 %]
 [% INCLUDE 'doc-head-open.inc' %]
@@ -12,11 +13,12 @@
 [% BLOCK cssinclude %]
     [% Asset.css("css/datatables.css") | $raw %]
 [% END %]
+
+
 </head>
 
 [% INCLUDE 'bodytag.inc' bodyid='opac-account' bodyclass='scrollto' %]
 [% INCLUDE 'masthead.inc' %]
-
 <div class="main">
     <ul class="breadcrumb">
         <li><a href="/cgi-bin/koha/opac-main.pl">Home</a> <span class="divider">&rsaquo;</span></li>
@@ -68,6 +70,17 @@
 
                     [% PROCESS 'account-table.inc' ACCOUNT_LINES = ACCOUNT_LINES, ENABLE_OPAC_PAYMENTS = ENABLE_OPAC_PAYMENTS, plugins = plugins %]
 
+                    [% IF ( UBOnlinePayment.Active() ) %]
+                        [% IF  ACCOUNT_LINES.count > 0  %]
+                        <strong>Amount to pay: <span class="amount-payable"></span> SEK</strong>
+                        <p>(Debt after payment has been made: <span class="amount-debt-left-after-payment"></span> SEK)</p>
+                        <form method="post" action="[% UBOnlinePayment.URL() | html %]?language=[%current_lang%]">
+                            <input type="submit" class="btn btn-default" value="Pay selected fines"></input>
+                            <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
+                        </form>
+                        [% END %]
+                    [% END %]
+
                 </div> <!-- / #useraccount -->
             </div> <!-- / .span10 -->
         </div> <!-- / .row-fluid -->
@@ -84,87 +97,185 @@ $( document ).ready(function() {
     var txtActivefilter = _("Filter paid transactions");
     var txtInactivefilter = _("Show all transactions");
 
+    let paydata = {};
+    let returnURL = window.location.href + "?language=" + "[% current_lang %]";
+    let callbackURL = "[% staffClientBaseURL %]" + "/cgi-bin/koha/svc/onlinepayment";  // window.location.href;
+
+    function getAmountPayable(payments) {
+        var amounts = payments.map(o => {return o['amount']});
+        if (amounts.length) {
+            return amounts.reduce((total, num) => total + num);
+        }
+        return 0;
+    }
+
+
+    function getDebtTotal() {
+        let total = 0;
+        $(".account-line-checkbox").each(function(index, item) {
+            total += parseFloat($(item).attr("data-amount").replace(/\s/g, ""));
+        });
+        return total;
+    }
+
+    function getPaymentName(type) {
+        let payment_type = {};
+        if ("[% current_lang %]" === "en-US") {
+            payment_type = { // TBD
+                "A"             : "A MAPPED EN",
+                "LOST"          : "LOST MAPPED EN",
+                "MANUAL"        : "MANUAL MAPPED EN",
+                "OVERDUE"       : "OVEERDUE MAPPED EN",
+                "PROCESSING"    : "PROCESSING_MAPPED EN"
+            }
+        }
+        else {
+            payment_type = { // TBD
+                "A"             : "A MAPPED SV",
+                "LOST"          : "LOST MAPPED SV",
+                "MANUAL"        : "MANUAL MAPPED SV",
+                "OVERDUE"       : "OVEERDUE MAPPED SV",
+                "PROCESSING"    : "PROCESSING_MAPPED SV"
+            }
+        }
+        if (!payment_type[type]) {
+            if ("[% current_lang %]" === "en-US") {
+                return 'Other Payment';
+            }
+            return 'Annan avgift';
+        }
+        return payment_type[type]
+    }
+
+    function getSimpleDebitType(type) {
+        if (type === "OVERDUE") {
+            return "fine";
+        }
+        return "media";
+    }
+
+    function getLibraryGroup(id, payment_type) {
+        let branches = {
+            "G": [44, 60, 62],
+            "Gm": [40, 43, 49, 66],
+            "Gpek": [42, 47, 48, 50]
+
+        }
+        let librarygroup = null;
+        var found = Object.entries(branches).some((item) => {
+            return item[1].some(function(el) {
+                if (el === parseInt(id)) {
+                    librarygroup = item[0];
+                    return item[0];
+                }
+            });
+        })
+        if (found)  {
+            return librarygroup;
+        }
+        return "Gpek";
+    }
+
+    function getFullTitle() {
+        var title = $(this).attr('data-title') ? $(this).attr('data-title') : '';
+        var subtitle = $(this).attr('data-subtitle') ? $(this).attr('data-subtitle') : '';
+        var fullTitle = title + subtitle;
+        if (fullTitle === '' || fullTitle === ' ' || fullTitle === undefined) {
+            if ("[% current_lang %]" === "en-US") {
+                return 'Title missing'
+            }
+            return 'Okänd titel';
+        }
+        return fullTitle;
+    }
+
+    function getBarcode() {
+        var barcode = $(this).attr('data-barcode') ? $(this).attr('data-barcode') : '';
+        if (barcode === '') {
+             if ("[% current_lang %]" === "en-US") {
+                 return "barcode missing";
+             }
+             return "streckkod saknas";
+        }
+    }
+
+    $("#check-all-payable").bind("change", function(val) {
+        if ($("#check-all-payable").prop("checked")) {
+            $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+            return;
+        }
+        $(".account-line-checkbox:not(:disabled)").prop("checked", false).trigger("change");
+    });
+
+    $(".account-line-checkbox").bind("change", function() {
+        paydata.uid = "[% guid %]";
+        paydata.language = "[% current_lang %]"; // MAYBE NOT NEEDED IF RETURN_URL CONTAINS LANGUAGE
+        paydata.return_url = returnURL;
+        paydata.callback_url = callbackURL;
+        let payments = [];
+        $(".account-line-checkbox:checked").each(function() {
+            let paymentRow = {
+                account_id          :       parseInt($(this).attr('data-accountLineID')),
+                amount              :       parseFloat($(this).attr('data-amount').replace(/\s/g, "")),
+                library_group       :       getLibraryGroup($(this).attr('data-library-code'),  $(this).attr('data-item-itype')),  // ITEM.ITYPES
+                debit_type          :       getSimpleDebitType($(this).attr('data-payment-type')),
+                debit_title         :       getPaymentName($(this).attr('data-payment-type')),
+                text                :       getBarcode(),
+                title               :       getFullTitle(),
+            }
+            payments.push(paymentRow);
+        });
+        paydata.payments = payments;
+        let amountPayable = getAmountPayable(payments);
+        $(".amount-payable").text(amountPayable);
+        $(".amount-debt-left-after-payment").text(getDebtTotal() - amountPayable);
+        $("#ub-debug-json").val((JSON.stringify(paydata, undefined, 4)));
+    });
+
+    // disable payment-rows
+    $(".account-line-checkbox").each(function(index, item) {
+        if (parseFloat(item.dataset.amount) <= 0) {
+            return;
+        }
+        if ((item.dataset.paymentType === "LOST")) {
+            return;
+        }
+        if ((item.dataset.paymentType === "A")) {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED"))  {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "LOST"))  {
+            return;
+        }
+        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RENEWED"))  {
+            return;
+        }
+        item.disabled = true;
+    });
+    $("#check-all-payable").prop("checked", true);
+    $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+
     var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
+        [% IF UBOnlinePayment.Active() %]
+            "order": [[ 1, "desc" ]],
+        [% ELSE %]
+            "order": [[ 0, "desc" ]],
+        [% END %]
         "columnDefs": [
              { "type": "title-string", "targets" : [ "title-string" ] }
          ],
-         [% IF ENABLE_OPAC_PAYMENTS %]
-         "order": [[ 1, "desc" ]],
-         [% ELSE %]
-         "order": [[ 0, "desc" ]],
-         [% END %]
+        "columns": [
+            [% IF UBOnlinePayment.Active() %]{ "orderable": false },[% END %]
+            null,
+            null,
+            null,
+            null
+        ],
          "dom": '<"#filter_p">',
-    } ));
-
-    $("#filter_p").html('<p><a href="#" id="filter_paid"><i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter+'</a>');
-    $('#filter_paid').click(function(e) {
-        e.preventDefault();
-        if ($(this).hasClass('filtered')) {
-            var filteredValue = '';
-            $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter);
-        } else { //Not filtered. Let's do it!
-            var filteredValue = '^((?!0.00).*)$'; //Filter not matching 0.00 http://stackoverflow.com/a/406408
-            $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> '+txtInactivefilter);
-        }
-        fines_table.fnFilter(filteredValue, -1, true, false);
-        $(this).toggleClass('filtered');
-    });
-
-    //Start filtered
-    $('#filter_paid').click();
-
-    $(".paypal").on("click", function() {
-        window.open('https://www.paypal.com/webapps/mpp/paypal-popup','WIPaypal','toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, width=1060, height=700');
-        return false;
-    });
-
-    $(".pay-online").removeClass("hidden");
-
-    $("#amount-to-pay-label").hide();
-
-    $(".checkbox-pay, input[name='payment_method']").change( function() {
-        // Disable the pay button if no fees are selected
-        //$("#submit-pay").prop("disabled", ! $(".checkbox-pay:checked").length );
-
-        // Calculate the total amount to be paid based on selected fees
-        var total = 0;
-        $(".checkbox-pay").each( function() {
-            if ( $(this).is(":checked") ) {
-                var id = this.id.split("checkbox-pay-")[1];
-                total += parseFloat( $("#amount-" + id).val() );
-            }
-        });
-
-        var p = Promise.resolve();
-        if ( total ) {
-            p = Promise.all(
-                $('input[name="payment_method"]').map(function() {
-                    var self = this;
-                    return new Promise(function(resolve, reject) {
-                        var threshold = $(self).data('threshold');
-                        var help = $(self).parent().siblings('.help-block');
-                        if(!threshold || threshold == '' || threshold <= total) {
-                            $(self).prop('disabled', false);
-                            help.addClass('hide');
-                        } else {
-                            $(self).prop('disabled', true);
-                            help.html(MSG_MIN_THRESHOLD.format(parseInt(threshold,10).toFixed(2))).removeClass('hide');
-                        }
-                        resolve();
-                    })
-                }).toArray()
-            );
-
-            $("#amount-to-pay").html( total.toFixed(2) );
-            $("#amount-to-pay-label").show();
-        } else {
-            $('input[name="payment_method"]').prop('disabled', false).parent().siblings('.help-block').addClass('hide');
-            $("#amount-to-pay-label").hide();
-        }
-        p.then(function() {
-            $("#submit-pay").prop("disabled", ! $(".checkbox-pay:checked").length || ! $('input[name="payment_method"]:checked:not(:disabled)').length);
-        })
-    });
+    }));
 });
 </script>
+
 [% END %]
