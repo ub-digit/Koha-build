@@ -4,6 +4,7 @@
 [% USE KohaDates %]
 [% USE AuthorisedValues %]
 [% USE Price %]
+[% USE UBOnlinePayment %]
 [% SET ENABLE_OPAC_PAYMENTS = payment_methods %]
 [% SET DISPLAY_PAYMENT_BLOCK = 0 %]
 [% INCLUDE 'doc-head-open.inc' %]
@@ -69,6 +70,31 @@
 
                     [% PROCESS 'account-table.inc' ACCOUNT_LINES = ACCOUNT_LINES, ENABLE_OPAC_PAYMENTS = ENABLE_OPAC_PAYMENTS, plugins = plugins %]
 
+                    [% IF ( UBOnlinePayment.Active() ) %]
+                        [% IF ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
+                            <div id="no-online-payment" style="max-width:500px">
+                                <p id="no-online-payment-text">
+                                    You will receive an invoice with your fines.
+                                </p>
+                            </div>
+                        [% ELSE %]
+                            [% IF  ACCOUNT_LINES.count > 0  %]
+                            <div id="online-payment">
+                                <strong><span id="online-payment-amount">Selected fines to pay:</span> <span class="amount-payable sv-SE"></span> SEK <span class="amount-payable en-US"></span></strong>
+                                <p><span id="online-payment-debt-after-payment">(outstanding debt after payment:</span> <span class="amount-debt-left-after-payment sv-SE"></span> SEK <span class="amount-debt-left-after-payment en-US"></span>)</p>
+                                <p id="no-online-payment-info" class="en-US">When you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
+                                <p id="no-online-payment-info" class="sv-SE"> When you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
+                                <form id="onlinePaymentForm" method="post" action="[% UBOnlinePayment.URL() | html %]?language=">
+                                    <input type="submit" class="btn btn-default" value="Pay online"></input>
+                                    <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
+                                </form>
+                            </div>
+                            [% END %]
+                        [% END %]
+                        <p id="no-online-payment-link" class="en-US"><a href="[% UBOnlinePayment.ExternalInfoURLEn() %]">More information about loans and fines</a></p>
+                        <p id="no-online-payment-link" class="sv-SE"><a href="[% UBOnlinePayment.ExternalInfoURLSv() %]">More information about loans and fines</a></p>
+                    [% END %]
+
                 </div> <!-- / #useraccount -->
             </div> <!-- / .col-10 -->
         </div> <!-- / .row -->
@@ -85,79 +111,256 @@ $( document ).ready(function() {
     var txtActivefilter = _("Filter paid transactions");
     var txtInactivefilter = _("Show all transactions");
 
-    var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
-         [% IF ENABLE_OPAC_PAYMENTS %]
-         "order": [[ 1, "desc" ]],
-         [% ELSE %]
-         "order": [[ 0, "desc" ]],
-         [% END %]
-         "dom": '<"#filter_p">',
-    } ));
+    let paydata = {};
+    let returnURL = window.location.href + "?language=" + getLang();
+    let callbackURL = "[% staffClientBaseURL %]" + "/cgi-bin/koha/svc/onlinepayment";  // window.location.href;
 
-    $("#filter_p").html('<p><a href="#" id="filter_paid"><i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter+'</a>');
-    $('#filter_paid').click(function(e) {
-        e.preventDefault();
-        if ($(this).hasClass('filtered')) {
-            var filteredValue = '';
-            $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter);
-        } else { //Not filtered. Let's do it!
-            var filteredValue = '^((?!0.00).*)$'; //Filter not matching 0.00 http://stackoverflow.com/a/406408
-            $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> '+txtInactivefilter);
+    function getAmountPayable(payments) {
+        var amounts = payments.map(function(o)  {return o['amount']});
+        if (amounts.length) {
+            return amounts.reduce(function(total, num) {return total + num});
         }
-        fines_table.fnFilter(filteredValue, -1, true, false);
-        $(this).toggleClass('filtered');
-    });
+        return 0;
+    }
 
-    //Start filtered
-    $('#filter_paid').click();
 
-    $(".pay-online").removeClass("hidden");
-
-    $("#amount-to-pay-label").hide();
-
-    $(".checkbox-pay, input[name='payment_method']").change( function() {
-        // Disable the pay button if no fees are selected
-        //$("#submit-pay").prop("disabled", ! $(".checkbox-pay:checked").length );
-
-        // Calculate the total amount to be paid based on selected fees
-        var total = 0;
-        $(".checkbox-pay").each( function() {
-            if ( $(this).is(":checked") ) {
-                var id = this.id.split("checkbox-pay-")[1];
-                total += parseFloat( $("#amount-" + id).val() );
-            }
+    function getDebtTotal() {
+        let total = 0;
+        $(".account-line-checkbox").each(function(index, item) {
+            total += parseFloat($(item).attr("data-amount").replace(/\s/g, ""));
         });
+        return total;
+    }
 
-        var p = Promise.resolve();
-        if ( total ) {
-            p = Promise.all(
-                $('input[name="payment_method"]').map(function() {
-                    var self = this;
-                    return new Promise(function(resolve, reject) {
-                        var threshold = $(self).data('threshold');
-                        var help = $(self).parent().siblings('.help-block');
-                        if(!threshold || threshold == '' || threshold <= total) {
-                            $(self).prop('disabled', false);
-                            help.addClass('hide');
-                        } else {
-                            $(self).prop('disabled', true);
-                            help.html(MSG_MIN_THRESHOLD.format(parseInt(threshold,10).toFixed(2))).removeClass('hide');
-                        }
-                        resolve();
-                    })
-                }).toArray()
-            );
-
-            $("#amount-to-pay").html( total.toFixed(2) );
-            $("#amount-to-pay-label").show();
-        } else {
-            $('input[name="payment_method"]').prop('disabled', false).parent().siblings('.help-block').addClass('hide');
-            $("#amount-to-pay-label").hide();
+    function getPaymentName(type) {
+        let payment_type = {};
+        if (getLang() === "en-US") {
+            payment_type = { // TBD
+                "A"             : "Processing fee",
+                "LOST"          : "Lost item",
+                "OVERDUE"       : "Overdue fine",
+            }
         }
-        p.then(function() {
-            $("#submit-pay").prop("disabled", ! $(".checkbox-pay:checked").length || ! $('input[name="payment_method"]:checked:not(:disabled)').length);
+        else {
+            payment_type = { // TBD
+                "A"             : "Arbetskostnad",
+                "LOST"          : "Ersättningskostnad",
+                "OVERDUE"       : "Förseningsavgift",
+            }
+        }
+        if (!payment_type[type]) {
+            if (getLang() === "en-US") {
+                return 'Other Payment';
+            }
+            return 'Annan avgift';
+        }
+        return payment_type[type]
+    }
+
+    function getSimpleDebitType(type) {
+        if (type === "OVERDUE") {
+            return "fine";
+        }
+        return "media";
+    }
+
+    function getLibraryGroup(id, payment_type) {
+        let branches = {
+            "G": [44, 60, 62],
+            "Gm": [40, 43, 49, 66],
+            "Gpek": [42, 47, 48, 50]
+
+        }
+        let librarygroup = null;
+        // polyfill for IE https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries
+        if (!Object.entries) {
+        Object.entries = function( obj ){
+            var ownProps = Object.keys( obj ),
+                i = ownProps.length,
+                resArray = new Array(i); // preallocate the Array
+            while (i--)
+            resArray[i] = [ownProps[i], obj[ownProps[i]]];
+
+            return resArray;
+        };
+        }
+        var found = Object.entries(branches).some(function(item) {
+            return item[1].some(function(el) {
+                if (el === parseInt(id)) {
+                    librarygroup = item[0];
+                    return item[0];
+                }
+            });
         })
+        if (found)  {
+            return librarygroup;
+        }
+        return "Gpek";
+    }
+
+    function getFullTitle(row) {
+        var title = $(row).attr('data-title') ? $(row).attr('data-title') : '';
+        var subtitle = $(row).attr('data-subtitle') ? $(row).attr('data-subtitle') : '';
+        var fullTitle = title + subtitle;
+        if (fullTitle === '' || fullTitle === ' ' || fullTitle === undefined) {
+            if (getLang() === "en-US") {
+                return 'Title missing'
+            }
+            return 'Okänd titel';
+        }
+        return fullTitle;
+    }
+
+    function getBarcode(row) {
+        var barcode = $(row).attr('data-barcode') ? $(row).attr('data-barcode') : '';
+        if (barcode === '') {
+             if (getLang() === "en-US") {
+                 return "barcode missing";
+             }
+             return "streckkod saknas";
+        }
+        return barcode;
+    }
+
+    function zeroPaymentsSelected() {
+        if ($(".account-line-checkbox:checked").length) {
+            return false;
+        }
+        return true;
+    }
+    function allPaymentsDisabled() {
+        if ($(".account-line-checkbox:not(':disabled')").length) {
+            return false;
+        }
+        return true
+    }
+
+    function getLang() {
+        if ($("html").prop("lang") === 'en') {
+            return "en-US";
+        }
+        return  "sv-SE";
+    }
+    // update post-url with lang-attr
+    var url = $("#onlinePaymentForm").attr('action');
+    $("#onlinePaymentForm").attr('action',url+getLang());
+
+    $("#check-all-payable").bind("change", function(val) {
+        if (allPaymentsDisabled()) {
+            $("#check-all-payable").prop("checked", false);
+            $("#check-all-payable").prop("disabled", true);
+            $(".account-line-checkbox:not(:disabled)").prop("checked", false);
+            $("input[type=submit]").prop("disabled", true);
+            $(".account-line-checkbox").trigger("change");
+            return;
+        }
+
+        if ($("#check-all-payable").prop("checked")) {
+            $("#check-all-payable").prop("disabled", false);
+            $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+            return;
+        }
+        $(".account-line-checkbox:not(:disabled)").prop("checked", false).trigger("change");
     });
+
+    $(".account-line-checkbox").bind("change", function() {
+        paydata.uid = "[% guid %]";
+        paydata.language = getLang(); // MAYBE NOT NEEDED IF RETURN_URL CONTAINS LANGUAGE
+        paydata.return_url = returnURL;
+        paydata.callback_url = callbackURL;
+        let payments = [];
+        $(".account-line-checkbox:checked").each(function() {
+            let paymentRow = {
+                account_id          :       parseInt($(this).attr('data-accountLineID')),
+                amount              :       parseFloat($(this).attr('data-amount').replace(/\s/g, "")),
+                library_group       :       getLibraryGroup($(this).attr('data-library-code'),  $(this).attr('data-item-itype')),  // ITEM.ITYPES
+                debit_type          :       getSimpleDebitType($(this).attr('data-payment-type')),
+                debit_title         :       getPaymentName($(this).attr('data-payment-type')),
+                text                :       getBarcode(this),
+                title               :       getFullTitle(this),
+            }
+            payments.push(paymentRow);
+        });
+        paydata.payments = payments;
+        let amountPayable = getAmountPayable(payments);
+        if (zeroPaymentsSelected()) {
+            $("#check-all-payable").prop("checked", false);
+            $("input[type=submit]").prop("disabled", true);
+        } else {
+            $("input[type=submit]").prop("disabled", false);
+        }
+        $(".amount-payable").text(amountPayable);
+        $(".amount-debt-left-after-payment").text(getDebtTotal() - amountPayable);
+        $("#ub-debug-json").val((JSON.stringify(paydata, undefined, 4)));
+    })
+    // disable payment-rows
+    $(".account-line-checkbox").each(function(index, item) {
+        [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
+            if (parseFloat(item.dataset.amount) <= 0) {
+                return;
+            }
+            if ((item.dataset.paymentType === "LOST")) {
+                return;
+            }
+            if ((item.dataset.paymentType === "A")) {
+                return;
+            }
+            if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED"))  {
+                return;
+            }
+            if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "LOST"))  {
+                return;
+            }
+            if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RENEWED"))  {
+                return;
+            }
+        [% END %]
+        item.disabled = true;
+    });
+    $("#check-all-payable").prop("checked", true).trigger("change");
+
+    [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
+         //$(".account-line-checkbox").trigger("change");
+      //  $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+    [% ELSE %]
+        $("#check-all-payable").prop("disabled", true);
+    [% END %]
+    if (getLang() === "en-US") {
+        $("#no-online-payment-info.en-US").show();
+        $("#no-online-payment-info.sv-SE").hide();
+        $("#no-online-payment-link.en-US").show();
+        $("#no-online-payment-link.sv-SE").hide();
+        $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").show();
+        $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").hide();
+    }
+    else {
+        $("#no-online-payment-info.en-US").hide();
+        $("#no-online-payment-info.sv-SE").show();
+        $("#no-online-payment-link.sv-SE").show();
+        $("#no-online-payment-link.en-US").hide();
+        $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").hide();
+        $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").show();
+    }
+
+    var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
+        [% IF UBOnlinePayment.Active() %]
+            "order": [[ 1, "desc" ]],
+        [% ELSE %]
+            "order": [[ 0, "desc" ]],
+        [% END %]
+        "columnDefs": [
+             { "type": "title-string", "targets" : [ "title-string" ] }
+         ],
+        "columns": [
+            [% IF UBOnlinePayment.Active() %]{ "orderable": false },[% END %]
+            null,
+            null,
+            null,
+            null
+        ],
+         "dom": '<"#filter_p">',
+    }));
 });
 </script>
+
 [% END %]
