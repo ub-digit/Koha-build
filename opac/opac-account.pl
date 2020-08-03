@@ -27,6 +27,11 @@ use C4::Output qw( output_html_with_http_headers );
 use Koha::Account::Lines;
 use Koha::Patrons;
 use Koha::Plugins;
+use Data::UUID;
+
+
+my $ug = Data::UUID->new;
+my $guid =  $ug->to_string($ug->create());
 
 my $query = CGI->new;
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
@@ -70,9 +75,10 @@ if ( C4::Context->preference('AllowPatronToSetFinesVisibilityForGuarantor')
     $template->param( relatives => \@relatives );
 }
 
-
 $template->param(
     ACCOUNT_LINES       => $accountlines,
+    guid                => $guid,
+    staffClientBaseURL  => C4::Context->preference('staffClientBaseURL'),
     total               => $total_outstanding,
     outstanding_credits => $outstanding_credits,
     accountview         => 1,
