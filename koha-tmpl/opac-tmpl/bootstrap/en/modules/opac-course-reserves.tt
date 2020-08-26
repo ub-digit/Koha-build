@@ -72,7 +72,7 @@
         columns_settings = [% TablesSettings.GetColumns( 'opac', 'biblio-detail', 'course_reserves_table', 'json' ) | $raw %]
 
         KohaTable("#course_reserves_table", {
-            "dom": '<"top"flp>rt<"clear">',
+            "dom": '<"top"f>rt<"clear">',
             "sorting": [[ 1, "asc" ]],
             "autoWidth": false,
             "asColumnDefs": [
