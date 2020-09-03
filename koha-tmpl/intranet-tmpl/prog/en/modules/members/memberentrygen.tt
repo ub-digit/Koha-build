@@ -1572,6 +1572,108 @@ legend:hover {
                     [% END %]
                 [% END %]
             [% END %]
+            [% IF pa_loo.class %]</fieldset>[% END %]
+        </ol>
+    [% END %]
+  </fieldset>
+[% END %][% END %][% END %]
+
+[% IF ( step_5 ) %][% IF ( EnhancedMessagingPreferences ) %]
+  <fieldset class="rows" id="memberentry_messaging_prefs">
+    <legend id="patron_messaging_prefs_lgd">Patron messaging preferences</legend>
+    <div id="messaging_prefs_loading" class="form-message" style="display:none">
+        <img src="[% interface | html %]/[% theme | html %]/img/spinner-small.gif" alt="" /> Loading new messaging defaults
+    </div>
+    <input type="hidden" name="setting_messaging_prefs" value="1" />
+    [% INCLUDE 'messaging-preference-form.inc' %]
+    [% IF ( SMSSendDriver ) %]
+        <p><label for="SMSnumber">SMS number:</label>
+            <input type="text" id="SMSnumber" name="SMSnumber" value="[% SMSnumber | html %]" />
+            <span id="missing_sms_number_error" class="required">Inget sms-nummer angivet</span>
+            <span class="hint">SMS number should be in the format 1234567890 or +11234567890</span>
+        </p>
+        [% UNLESS nosms_provider_id %]
+        <p>
+            <label for="sms_provider_id">SMS provider:</label>
+            <select id="sms_provider_id" name="sms_provider_id">
+                <option value="">Unknown</option>
+                [% FOREACH s IN sms_providers %]
+                    [% IF s.id == sms_provider_id %]
+                        <option value="[% s.id | html %]" selected="selected">[% s.name | html %]</option>
+                    [% ELSE %]
+                        <option value="[% s.id | html %]">[% s.name | html %]</option>
+                    [% END %]
+                [% END %]
+            </select>
+        </p>
+        [% END %]
+    [% END %]
+  </fieldset>
+[% END %] [% END %]
+
+</form>
+
+[% IF quickadd && opadd  && !check_member %]
+    <form id="quick_add_form" class="toggler">
+        <fieldset class="rows quick_add"><legend>Quick add</legend>
+            <ol id="quick_add_list">
+            </ol>
+        </fieldset>
+    </form>
+[% END %]
+
+[% END %]
+            </main>
+        </div> <!-- /.col-sm-10.col-sm-push-2 -->
+
+        [% UNLESS ( opadd ) %]
+            <div class="col-sm-2 col-sm-pull-10">
+                <aside>
+                    [% INCLUDE 'circ-menu.inc' %]
+                </aside>
+            </div> <!-- /.col-sm-2.col-sm-pull-10 -->
+        [% END %]
+     </div> <!-- /.row -->
+
+[% MACRO jsinclude BLOCK %]
+    [% Asset.js("lib/hc-sticky.js") | $raw %]
+    [% INCLUDE 'calendar.inc' %]
+    [% INCLUDE 'str/members-menu.inc' %]
+    [% Asset.js("js/members-menu.js") | $raw %]
+    <script>
+        [% IF Koha.Preference('enableSimpleOpacMessaging') && !is_admin_page %]
+            $(document).ready(function() {
+                $("#missing_sms_number_error").hide();
+                $("#saverecord").attr("disabled", false);
+                if ( ($("input[name='opacmessaging-simple-radios']:checked").val() === "sms") || ($("input[name='opacmessaging-simple-radios']:checked").val() === "SmsAndEmail") ) {
+                    if ($("#SMSnumber").val() === "") {
+                        $("#missing_sms_number_error").show();
+                        $("#saverecord").attr("disabled", true);
+                    }
+                }
+                $("input[name='opacmessaging-simple-radios']").change(function(e){
+                    if( ($(this).val() === 'sms') || ($(this).val() === 'SmsAndEmail') ) {
+                        if ($("#SMSnumber").val() === "") {
+                            $("#missing_sms_number_error").show();
+                            $("#saverecord").attr("disabled", true);
+                        }
+                    } else {
+                       $("#missing_sms_number_error").hide();
+                       $("#saverecord").attr("disabled", false);
+                    }
+                });
+                $("#SMSnumber").on("change paste keyup", function() {
+                    $("input[name='opacmessaging-simple-radios']").trigger("change");
+                });
+            });
+        [% END %]
+        function update_cardnumber_warning(size){
+            var max_len = [% maxlength_cardnumber | html %];
+            if ( size >= max_len ) {
+                $("#cn_max").show();
+            } else {
+                $("#cn_max").hide();
+            }
         }
 
         $(document).ready(function() {
@@ -1763,6 +1865,7 @@ legend:hover {
     [% Asset.js("js/messaging-preference-form.js") | $raw %]
     [% PROCESS 'password_check.inc' %]
     [% PROCESS 'add_password_check' new_password => 'password' %]
+
 [% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]
