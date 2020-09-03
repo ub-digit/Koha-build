@@ -293,6 +293,8 @@
     </div> <!-- / .container-fluid -->
 </div> <!-- / .main -->
 
+
+
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
 <script>//<![CDATA[
@@ -333,6 +335,29 @@ if (typeof sms_input !== 'undefined' && sms_input !== null) {
   });
 }
 
+
+  $(document).ready(function() {
+    if ( ($("input[name='opacmessaging-simple-radios']:checked").val() === "sms") || ($("input[name='opacmessaging-simple-radios']:checked").val() === "SmsAndEmail") ) {
+        if ($(".gub-no-sms-info").length) {
+            $("input[type='submit']").attr("disabled", true);
+            $(".gub-no-sms-info").css({"font-weight": "bold", "color": "red"});
+        }
+    }
+    $("input[name='opacmessaging-simple-radios']").change(function(e){
+        if( ($(this).val() === 'sms') || ($(this).val() === 'SmsAndEmail') ) {
+            if ($(".gub-no-sms-info").length) {
+                $("input[type='submit']").attr("disabled", true);
+                 $(".gub-no-sms-info").css({"font-weight": "bold", "color": "red"});
+            }
+        } else {
+            $("input[type='submit']").attr("disabled", false);
+             $(".gub-no-sms-info").css({"font-weight": "normal", "color": "inherit"});
+        }
+    });
+  });
+
+
 //]]>
+
 </script>
 [% END %]
