@@ -348,6 +348,7 @@ if ($barcode) {
 }
 $template->param( inputloop => \@inputloop );
 
+
 my $found    = 0;
 my $waiting  = 0;
 my $reserved = 0;
@@ -428,11 +429,9 @@ if ( $messages->{'ResFound'}) {
         if ( $messages->{'transfert'} ) {
             $template->param(
                 itemtitle        => $biblio->title,
-                itemnumber       => $item->itemnumber,
                 itembiblionumber => $biblio->biblionumber,
                 iteminfo         => $biblio->author,
                 diffbranch       => 1,
-                itemnumber       => $itemnumber,
             );
         }
     }
@@ -460,7 +459,6 @@ if ( $messages->{'ResFound'}) {
         patron         => $patron,
 #        barcode        => $barcode,
         destbranch     => $reserve->{'branchcode'},
-        itemnumber     => $reserve->{'itemnumber'},
         reservenotes   => $reserve->{'reservenotes'},
         reserve_id     => $reserve->{reserve_id},
         bormessagepref => $holdmsgpreferences->{'transports'},
