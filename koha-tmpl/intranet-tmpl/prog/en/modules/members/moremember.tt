@@ -431,12 +431,7 @@
                                                                     <li>
                                                                 [% END %]
                                                             [% END %]
-                                                            <span class="label">[% item.description | html %]: </span>
-                                                            [% IF ( item.value_description ) %]
-                                                                [% item.value_description | html %]
-                                                            [% ELSE %]
-                                                                [% item.value| html | html_line_break %]
-                                                            [% END %]
+                                                            <span class="label">[% item.type.description | html %]: </span>
                                                             </li>
                                                         [% END %]
                                                     </ol>
