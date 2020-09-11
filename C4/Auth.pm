@@ -41,7 +41,6 @@ use Koha::Libraries;
 use Koha::Desks;
 use Koha::Patrons;
 use Koha::Patron::Consents;
-use C4::Members::Attributes qw( GetBorrowerAttributeValue );
 use POSIX qw/strftime/;
 use List::MoreUtils qw/ any /;
 use Encode qw( encode is_utf8);
@@ -1911,8 +1910,18 @@ sub checkpw_internal_personalnumber {
             $surname, $branchcode, $branchname, $flags )
           = $sth->fetchrow;
 
-        my $pnr12 = GetBorrowerAttributeValue($borrowernumber, "PNR12");
-        my $pnr = GetBorrowerAttributeValue($borrowernumber, "PNR");
+        my $patron = Koha::Patrons->find({ userid => $userid });
+        my $pnr12obj = $patron->get_extended_attribute("PNR12");
+        my $pnrobj = $patron->get_extended_attribute("PNR");
+        my $pnr12 = "";
+        my $pnr = "";
+        if ($pnr12obj) {
+          $pnr12 = $pnr12obj->attribute;
+        }
+        if ($pnrobj) {
+          $pnr = $pnrobj->attribute;
+        }
+
         my $match = "false";
         if (($pnr12 and (($password eq $pnr12) or ($password eq substr($pnr12, 2)))) or ($pnr and (($password eq $pnr) or (substr($password, 2) eq $pnr)))) {
           $match = "true";
