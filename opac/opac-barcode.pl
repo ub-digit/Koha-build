@@ -24,11 +24,8 @@ use CGI qw ( -utf8 );
 use C4::Auth;
 use C4::Koha;
 use C4::Members;
-use C4::Members::AttributeTypes;
-use C4::Members::Attributes qw/GetBorrowerAttributeValue/;
 use C4::Output;
 use Koha::DateUtils;
-use Koha::Patron::Attribute::Types;
 use Koha::Patrons;
 
 use constant ATTRIBUTE_SHOW_BARCODE => 'SHOW_BCODE';
