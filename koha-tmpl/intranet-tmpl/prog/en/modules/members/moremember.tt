@@ -432,6 +432,7 @@
                                                                 [% END %]
                                                             [% END %]
                                                             <span class="label">[% item.type.description | html %]: </span>
+                                                            [% item.description | html %]
                                                             </li>
                                                         [% END %]
                                                     </ol>
