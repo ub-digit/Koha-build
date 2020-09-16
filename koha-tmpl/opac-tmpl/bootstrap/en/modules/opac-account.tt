@@ -71,13 +71,24 @@
                     [% PROCESS 'account-table.inc' ACCOUNT_LINES = ACCOUNT_LINES, ENABLE_OPAC_PAYMENTS = ENABLE_OPAC_PAYMENTS, plugins = plugins %]
 
                     [% IF ( UBOnlinePayment.Active() ) %]
-                        [% IF  ACCOUNT_LINES.count > 0  %]
-                        <strong>Amount to pay: <span class="amount-payable"></span> SEK</strong>
-                        <p>(Debt after payment has been made: <span class="amount-debt-left-after-payment"></span> SEK)</p>
-                        <form method="post" action="[% UBOnlinePayment.URL() | html %]?language=[%current_lang%]">
-                            <input type="submit" class="btn btn-default" value="Pay selected fines"></input>
-                            <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
-                        </form>
+                        [% IF ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
+                            <div id="no-online-payment" style="max-width:500px">
+                                <p id="no-online-payment-text">
+                                    Your payments will be invoiced lorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsum
+                                </p>
+                                <p id="no-online-payment-link"><a href="[% UBOnlinePayment.ExternalInfoURL() %]">More info about loans and fines</a></p>
+                            </div>
+                        [% ELSE %]
+                            [% IF  ACCOUNT_LINES.count > 0  %]
+                            <div id="online-payment">
+                                <strong><span id="online-payment-amount">Amount to pay:</span> <span class="amount-payable"></span> SEK</strong>
+                                <p><span id="online-payment-debt-after-payment">(Debt after payment has been made:</span> <span class="amount-debt-left-after-payment"></span> SEK)</p>
+                                <form method="post" action="[% UBOnlinePayment.URL() | html %]?language=[%current_lang%]">
+                                    <input type="submit" class="btn btn-default" value="Pay selected fines"></input>
+                                    <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
+                                </form>
+                            </div>
+                            [% END %]
                         [% END %]
                     [% END %]
 
@@ -234,28 +245,34 @@ $( document ).ready(function() {
 
     // disable payment-rows
     $(".account-line-checkbox").each(function(index, item) {
-        if (parseFloat(item.dataset.amount) <= 0) {
-            return;
-        }
-        if ((item.dataset.paymentType === "LOST")) {
-            return;
-        }
-        if ((item.dataset.paymentType === "A")) {
-            return;
-        }
-        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED"))  {
-            return;
-        }
-        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "LOST"))  {
-            return;
-        }
-        if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RENEWED"))  {
-            return;
-        }
+        [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
+            if (parseFloat(item.dataset.amount) <= 0) {
+                return;
+            }
+            if ((item.dataset.paymentType === "LOST")) {
+                return;
+            }
+            if ((item.dataset.paymentType === "A")) {
+                return;
+            }
+            if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RETURNED"))  {
+                return;
+            }
+            if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "LOST"))  {
+                return;
+            }
+            if ((item.dataset.paymentType === "OVERDUE") && (item.dataset.paymentStatus === "RENEWED"))  {
+                return;
+            }
+        [% END %]
         item.disabled = true;
     });
-    $("#check-all-payable").prop("checked", true);
-    $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+    [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
+        $("#check-all-payable").prop("checked", true);
+        $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+    [% ELSE %]
+        $("#check-all-payable").prop("disabled", true);
+    [% END %]
 
     var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
         [% IF UBOnlinePayment.Active() %]
