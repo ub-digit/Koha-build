@@ -468,7 +468,15 @@ RECORD: while (  ) {
                 }
             } else {
                 if ($insert) {
-                    eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio( $record, '') };
+                    my $record_clone = $record->clone();
+                    my $_framework = '';
+                    C4::Biblio::_strip_item_fields($record_clone, $_framework );
+                    eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio( $record_clone, $_framework ) };
+                    # If incoming record has bib ids set we need to transfer
+                    # new ids from record_clone to incoming record to avoid
+                    # working on wrong record (the original record) later on
+                    # when adding items for example
+                    C4::Biblio::_koha_marc_update_bib_ids($record, $_framework, $biblionumber, $biblioitemnumber);
                     if ($@) {
                         warn "ERROR: Adding biblio $biblionumber failed: $@\n";
                         printlog( { id => $id || $originalid || $biblionumber, op => "insert", status => "ERROR" } ) if ($logfile);
