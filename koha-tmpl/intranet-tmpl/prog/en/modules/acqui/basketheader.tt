@@ -50,7 +50,7 @@
                 [% END %]
                 <li>
                     <label for="basketname" class="required">Basket name: </label>
-                    <input type="text" name="basketname" id="basketname" size="40" maxlength="80" value="[% basketname | html %]" required="required" class="required" autofocus />
+                    <input type="text" name="basketname" id="basketname" size="40" maxlength="80" value="[% basketname | html %]" required="required" class="required"/>
                     <span class="required">Required</span>
                 </li>
                 <li>
@@ -146,6 +146,7 @@
     </form>
     [% END %]
 </div>
+
 </div>
 
 [% MACRO jsinclude BLOCK %]
@@ -154,3 +155,11 @@
 [% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]
+<!-- GUB - set focus to new basket name input field -->
+<script>
+  $(document).ready(function(){
+    setTimeout(function(){
+      $('#basketname').focus();
+    }, 1);
+  });
+</script>
