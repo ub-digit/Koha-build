@@ -1,6 +1,6 @@
--- Change description (was library(852bc))
+-- Change label (was library(852bc))
 UPDATE search_field sf
-  SET sf.description = 'library' WHERE sf.name = 'library';
+  SET sf.label = 'library' WHERE sf.name = 'library';
 
 -- Change mapping (852bc => 852b)
 UPDATE search_marc_map smm
