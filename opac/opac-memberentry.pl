@@ -72,6 +72,22 @@ if ( $action eq q{} ) {
         $action = 'new';
     }
 }
+# if enableSimpleOpacMessaging is true if any of the messaging options has sms as transport a number is required
+my $sms_number_is_required = 0;
+if (C4::Context->preference('enableSimpleOpacMessaging')) {
+    my $messaging_options = C4::Members::Messaging::GetMessagingOptions();
+    my $prefs;
+    foreach my $item (@$messaging_options) {
+        $prefs = C4::Members::Messaging::GetMessagingPreferences({
+                    borrowernumber => $borrowernumber,
+                    message_name   => $item->{'message_name'},
+                });
+        if ($prefs->{'transports'}->{'sms'}) {
+            $sms_number_is_required = 1;
+            last;
+        }
+    }
+}
 
 my $mandatory = GetMandatoryFields($action);
 
@@ -395,6 +411,9 @@ sub GetMandatoryFields {
 
     foreach (@fields) {
         $mandatory_fields{$_} = 1;
+    }
+    if ($sms_number_is_required) {
+        $mandatory_fields{'smsalertnumber'} = 1;
     }
 
     if ( $action eq 'create' || $action eq 'new' ) {
