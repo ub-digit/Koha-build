@@ -536,7 +536,7 @@
                                     [% ELSE %]
                                         <label for="borrower_smsalertnumber">Mobile number for SMS:</label>
                                     [% END %]
-                                    <input type="text" id="borrower_smsalertnumber" name="borrower_smsalertnumber" value="[% borrower.smsalertnumber %]" />
+                                    <input type="text" id="borrower_smsalertnumber" name="borrower_smsalertnumber" value="[% borrower.smsalertnumber | html%]" />[% IF mandatory.defined('smsalertnumber')%]<span class="required">Required</span>[% END %]
                                 </li>
                             [% END %]
 
@@ -1129,7 +1129,7 @@
                         $.ajax({
                             url: "/api/v1/public/patrons/[% logged_in_user.borrowernumber | uri %]/guarantors/can_see_charges",
                             type: 'PUT',
-                            data: JSON.stringify({ 
+                            data: JSON.stringify({
                                 allowed: can_see_charges
                             }),
                             contentType: 'application/json',
