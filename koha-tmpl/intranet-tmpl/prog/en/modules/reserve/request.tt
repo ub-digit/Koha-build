@@ -111,22 +111,7 @@
                                 [% INCLUDE 'circ-patron-search-results.inc' destination = "holds" %]
                             [% END %]
                         </div>
-                        <div id="holds_clubsearch_pane">
-                            <form id="holds_clubsearch" action="request.pl?biblionumber=[% biblionumber | html %]" method="post">
-                                <div class="hint">Enter club ID or partial name:</div>
-                                <input type="text" size="40" id="club" class="focus" name="findclub" autocomplete="off" />
-                                <input type="submit" value="Search" />
-                                [% IF multi_hold %]
-                                    <input type="hidden" name="biblionumbers" value="[% biblionumbers | html %]"/>
-                                [% ELSE %]
-                                    <input type="hidden" name="biblionumber" value="[% biblionumber | html %]" />
-                                [% END %]
-
-                            </form> <!-- /#holds_patronsearch -->
-                            [% IF clubs %]
-                                [% INCLUDE 'clubs-table.inc' destination = "holds" %]
-                            [% END %]
-                        </div>
+                        <!-- GUB removed clubs pane -->
                     </div>
                 </fieldset>
             [% ELSIF club %]
