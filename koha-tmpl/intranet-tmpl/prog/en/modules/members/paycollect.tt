@@ -135,10 +135,10 @@
     [% ELSE %]
 
     <ul class="nav nav-pills">
-        <li class="nav-item">
+        <li style="visibility:hidden" class="nav-item">
             <a href="#" class="nav-link active" aria-current="page">Pay</a>
         </li>
-        <li class="nav-item">
+        <li style="visibility:hidden" class="nav-item">
             <a href="/cgi-bin/koha/members/paycollect.pl?writeoff_individual=1&borrowernumber=[% patron.borrowernumber | uri %]&debit_type_code=[% debit_type_code | uri %]&amount=[% amount | uri %]&amountoutstanding=[% amountoutstanding | uri %]&description=[% individual_description | uri %]&itemnumber=[% itemnumber | uri %]&accountlines_id=[% accountlines_id | uri %]&payment_note=[% payment_note | uri %]" class="nav-link">Write off</a>
         </li>
     </ul>
@@ -236,10 +236,10 @@
     [% END %]
 [% ELSIF ( writeoff_individual ) %]
     <ul class="nav nav-pills">
-        <li class="nav-item">
+        <li style="visibility:hidden" class="nav-item">
             <a href="/cgi-bin/koha/members/paycollect.pl?pay_individual=1&borrowernumber=[% patron.borrowernumber | uri %]&debit_type_code=[% debit_type_code | uri %]&amount=[% amount | uri %]&amountoutstanding=[% amountoutstanding | uri %]&description=[% individual_description | uri %]&itemnumber=[% itemnumber | uri %]&accountlines_id=[% accountlines_id | uri %]&payment_note=[% payment_note | uri %]" class="nav-link">Pay</a>
         </li>
-        <li class="nav-item">
+        <li style="visibility:hidden" class="nav-item">
             <a href="#" class="nav-link active" aria-current="page">Write off</a>
         </li>
     </ul>
@@ -302,17 +302,17 @@
     [% IF selected_accts %]
         <ul class="nav nav-pills">
             [% IF type == 'WRITEOFF' %]
-                <li class="nav-item">
+                <li style="visibility:hidden" class="nav-item">
                     <a href="/cgi-bin/koha/members/paycollect.pl?borrowernumber=[% patron.borrowernumber | uri %]&type=PAYMENT&amt=[% amt | uri %]&selected=[% selected_accts | uri %]&notes=[% selected_accts_notes | uri %]" class="nav-link">Pay</a>
                 </li>
-                <li class="nav-item">
+                <li style="visibility:hidden" class="nav-item">
                     <a href="#" class="nav-link active" aria-hidden="page">Write off</a>
                 </li>
             [% ELSE %]
-                <li class="nav-item">
+                <li style="visibility:hidden" class="nav-item">
                     <a href="#" class="nav-link active" aria-hidden="page">Pay</a>
                 </li>
-                <li class="nav-item">
+                <li style="visibility:hidden" class="nav-item">
                     <a href="/cgi-bin/koha/members/paycollect.pl?borrowernumber=[% patron.borrowernumber | uri %]&type=WRITEOFF&amt=[% amt | uri %]&selected=[% selected_accts | uri %]&notes=[% selected_accts_notes | uri %]" class="nav-link">Write off</a>
                 </li>
             [% END %]
