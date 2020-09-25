@@ -138,6 +138,43 @@ Searching:
                   1: use
                   0: "don't use"
             - 'the operator "phr" in the callnumber and standard number staff interface searches.'
+        -
+            - pref: EnableElasticsearchSearchResultExport
+              type: boolean
+              default: yes
+              choices:
+                  1: Enable
+                  0: Disable
+            - Enable exporting search results. Records exceeding the ISO2709 record size will be send at separate MARC XML attachment regardless of chosen export format (Elasticsearch only).
+        -
+            - pref: ElasticsearchSearchResultExportCustomFormats
+              type: textarea
+              syntax: text/x-yaml
+              class: code
+            - <p>Define custom export formats as a YAML list of associative arrays (Elasticsearch only).</p>
+            - <p>Formats are defined using three properties, a required "<strong>name</strong>" and "<strong>fields</strong>" and an optional "<strong>multiple</strong>".</p>
+            - '<p><strong>name</strong>: the human readable name of the format exposed in the staff interface.</p>'
+            - '<p><strong>fields</strong>: a list of Elasticsearch fields to be included in the export.'
+            - If <strong>fields</strong> has a single field the export result will contain one value per row, for multiple fields a CSV-file will be produced.</p>
+            - '<p><strong>multiple</strong>: <i>ignore</i>|<i>join</i>|<i>newline</i></p>'
+            - <p>The behavior when handling fields with multiple values.</p>
+            - '<p><i>ignore</i>: the default option, only the first value is included, the rest ignored.</p>'
+            - '<p><i>join</i>: multiple values are concatenated using \"|\" as a separator.</p>'
+            - '<p><i>newline</i>: a newline is inserted after each value. This option does not allow \"<strong>fields</strong>\" to contain multiple fields.</p>'
+            - 'Example:</br>'
+            - '- name: Biblionumbers<br />'
+            - '&nbsp;&nbsp;fields: [local-number]<br />'
+            - '&nbsp;&nbsp;multiple: ignore<br />'
+            - '- name: Title and author<br />'
+            - '&nbsp;&nbsp;fields: [title, author]<br />'
+            - '&nbsp;&nbsp;multiple: join<br /><br />'
+            - '<p>See also: <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=EnableElasticsearchSearchResultExport">EnableElasticsearchSearchResultExport</a></p>'
+        -
+            - Limit export from search results to a maximum of
+            - pref: ElasticsearchSearchResultExportLimit
+              class: integer
+            - search result items (Elasticsearch only).<br /><br />
+            - '<p>See also: <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=EnableElasticsearchSearchResultExport">EnableElasticsearchSearchResultExport</a></p>'
     Results display:
         -
             - pref: numSearchResultsDropdown
