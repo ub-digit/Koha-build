@@ -16,7 +16,7 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use Encode;
+use utf8;
 
 use Test::More tests => 8;
 use Test::Exception;
@@ -187,10 +187,10 @@ subtest 'get_elasticsearch_mappings() tests' => sub {
 
 subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' => sub {
 
-    plan tests => 70;
+    plan tests => 81;
 
     t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
-    t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'ISO2709');
+    t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'base64ISO2709');
 
     my @mappings = (
         {
@@ -404,6 +404,16 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
             marc_type   => 'marc21',
             marc_field  => '522a',
         },
+        {
+            name => 'local-number',
+            type => 'string',
+            facet => 0,
+            suggestible => 0,
+            searchable => 1,
+            sort => 1,
+            marc_type => 'marc21',
+            marc_field => '999c',
+        },
     );
 
     my $se = Test::MockModule->new('Koha::SearchEngine::Elasticsearch');
@@ -432,7 +442,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     my $long_callno = '1234567890' x 30;
 
     my $marc_record_1 = MARC::Record->new();
-    $marc_record_1->leader('     cam  22      a 4500');
+    $marc_record_1->leader('     cam a22      a 4500');
     $marc_record_1->append_fields(
         MARC::Field->new('001', '123'),
         MARC::Field->new('007', 'ku'),
@@ -452,8 +462,9 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
         MARC::Field->new('952', '', '', 0 => 0, g => '127.20', o => $callno2, l => 2),
         MARC::Field->new('952', '', '', 0 => 1, g => '0.00', o => $long_callno, l => 1),
     );
+
     my $marc_record_2 = MARC::Record->new();
-    $marc_record_2->leader('     cam  22      a 4500');
+    $marc_record_2->leader('     cam a22      a 4500');
     $marc_record_2->append_fields(
         MARC::Field->new('008', '901111s19uu xxk|||| |00| ||eng c'),
         MARC::Field->new('100', '', '', a => 'Author 2'),
@@ -465,7 +476,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     );
 
     my $marc_record_3 = MARC::Record->new();
-    $marc_record_3->leader('     cam  22      a 4500');
+    $marc_record_3->leader('     cam a22      a 4500');
     $marc_record_3->append_fields(
         MARC::Field->new('008', '901111s19uu xxk|||| |00| ||eng c'),
         MARC::Field->new('100', '', '', a => 'Author 2'),
@@ -477,7 +488,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     );
 
     my $marc_record_4 = MARC::Record->new();
-    $marc_record_4->leader('     cam  22      a 4500');
+    $marc_record_4->leader('     cam a22      a 4500');
     $marc_record_4->append_fields(
         MARC::Field->new( '008', '901111s19uu xxk|||| |00| ||eng c' ),
         MARC::Field->new( '100', '', '', a => 'Author 2' ),
@@ -580,7 +591,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     ok(defined $docs->[0]->{marc_format}, 'First document marc_format field should be set');
     is($docs->[0]->{marc_format}, 'base64ISO2709', 'First document marc_format should be set correctly');
 
-    my $decoded_marc_record = $see->decode_record_from_result($docs->[0]);
+    my $decoded_marc_record = $see->search_document_marc_record_decode($docs->[0]);
 
     ok($decoded_marc_record->isa('MARC::Record'), "base64ISO2709 record successfully decoded from result");
     is($decoded_marc_record->as_usmarc(), $marc_record_1->as_usmarc(), "Decoded base64ISO2709 record has same data as original record");
@@ -681,17 +692,18 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     # Marc serialization format fallback for records exceeding ISO2709 max record size
 
     my $large_marc_record = MARC::Record->new();
-    $large_marc_record->leader('     cam  22      a 4500');
+    $large_marc_record->leader('     cam a22      a 4500');
 
     $large_marc_record->append_fields(
         MARC::Field->new('100', '', '', a => 'Author 1'),
         MARC::Field->new('110', '', '', a => 'Corp Author'),
         MARC::Field->new('210', '', '', a => 'Title 1'),
-        MARC::Field->new('245', '', '', a => 'Title:', b => 'large record'),
-        MARC::Field->new('999', '', '', c => '1234567'),
+        # "|" is for testing escaping for multiple values with custom format
+        MARC::Field->new('245', '', '', a => 'Title:', b => 'large | record'),
+        MARC::Field->new('999', '', '', c => '1234569'),
     );
 
-    my $item_field = MARC::Field->new('952', '', '', o => '123456789123456789123456789', p => '123456789', z => Encode::decode('UTF-8','To naprawdę bardzo długa notatka. Myślę, że będzie sprawiać kłopoty.'));
+    my $item_field = MARC::Field->new('952', '', '', o => '123456789123456789123456789', p => '123456789', z => 'To naprawdę bardzo długa notatka. Myślę, że będzie sprawiać kłopoty.');
     my $items_count = 1638;
     while(--$items_count) {
         $large_marc_record->append_fields($item_field);
@@ -701,10 +713,99 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
 
     is($docs->[0]->{marc_format}, 'MARCXML', 'For record exceeding max record size marc_format should be set correctly');
 
-    $decoded_marc_record = $see->decode_record_from_result($docs->[0]);
+    $decoded_marc_record = $see->search_document_marc_record_decode($docs->[0]);
 
     ok($decoded_marc_record->isa('MARC::Record'), "MARCXML record successfully decoded from result");
     is($decoded_marc_record->as_xml_record(), $large_marc_record->as_xml_record(), "Decoded MARCXML record has same data as original record");
+
+    # Search export functionality
+    # Koha::SearchEngine::Elasticsearch::search_documents_encode()
+    my @source_docs = ($marc_record_1, $marc_record_2, $large_marc_record);
+    my @es_response_docs;
+    my $records_data;
+
+    for my $es_marc_format ('MARCXML', 'ARRAY', 'base64ISO2709') {
+
+        t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', $es_marc_format);
+
+        $docs = $see->marc_records_to_documents(\@source_docs);
+
+        # Emulate Elasticsearch response docs structure
+        @es_response_docs = map { { _source => $_ } } @{$docs};
+
+        $records_data = $see->search_documents_encode(\@es_response_docs, 'ISO2709');
+
+        # $large_marc_record should not have been encoded as ISO2709
+        # since exceeds maximum size, see above
+        my @tmp = ($marc_record_1, $marc_record_2);
+        is(
+            $records_data->{ISO2709},
+            join('', map { $_->as_usmarc() } @tmp),
+            "ISO2709 encoded records from Elasticsearch result are identical with source records using index format \"$es_marc_format\""
+        );
+
+        my $expected_marc_xml = join("\n",
+            MARC::File::XML::header(),
+            MARC::File::XML::record($large_marc_record, 'MARC21'),
+            MARC::File::XML::footer()
+        );
+
+        is(
+            $records_data->{MARCXML},
+            $expected_marc_xml,
+            "Record from search result encoded as MARCXML since exceeding ISO2709 maximum size is identical with source record using index format \"$es_marc_format\""
+        );
+
+        $records_data = $see->search_documents_encode(\@es_response_docs, 'MARCXML');
+
+        $expected_marc_xml = join("\n",
+            MARC::File::XML::header(),
+            join("\n", map { MARC::File::XML::record($_, 'MARC21') } @source_docs),
+            MARC::File::XML::footer()
+        );
+
+        is(
+            $records_data->{MARCXML},
+            $expected_marc_xml,
+            "MARCXML encoded records from Elasticsearch result are identical with source records using index format \"$es_marc_format\""
+        );
+    }
+
+    my $custom_formats = <<'END';
+- name: Biblionumbers
+  fields: [local-number]
+  multiple: ignore
+- name: Title and author
+  fields: [title, author]
+  multiple: join
+END
+    t::lib::Mocks::mock_preference('ElasticsearchSearchResultExportCustomFormats', $custom_formats);
+    $custom_formats = C4::Context->yaml_preference('ElasticsearchSearchResultExportCustomFormats');
+
+    # Biblionumbers custom format
+    $records_data = $see->search_documents_custom_format_encode(\@es_response_docs, $custom_formats->[0]);
+    # UTF-8 encode?
+    is(
+        $records_data,
+        "1234567\n1234568\n1234569",
+        "Records where correctly encoded for the custom format \"Biblionumbers\""
+    );
+
+    # Title and author custom format
+    $records_data = $see->search_documents_custom_format_encode(\@es_response_docs, $custom_formats->[1]);
+
+    my $encoded_data = join(
+        "\n",
+        "\"Title:|first record|Title: first record\",\"Author 1|Corp Author\"",
+        "\"\",\"Author 2\"",
+        "\"Title:|large \\| record|Title: large \\| record\",\"Author 1|Corp Author\""
+    );
+
+    is(
+        $records_data,
+        $encoded_data,
+        "Records where correctly encoded for the custom format \"Title and author\""
+    );
 
     push @mappings, {
         name => 'title',
@@ -751,7 +852,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
 
     pop @mappings;
     my $marc_record_with_blank_field = MARC::Record->new();
-    $marc_record_with_blank_field->leader('     cam  22      a 4500');
+    $marc_record_with_blank_field->leader('     cam a22      a 4500');
 
     $marc_record_with_blank_field->append_fields(
         MARC::Field->new('100', '', '', a => ''),
@@ -764,7 +865,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     is_deeply( $docs->[0]->{author__suggestion},[],'No value placed into suggestion if mapped marc field is blank');
 
     my $marc_record_with_large_field = MARC::Record->new();
-    $marc_record_with_large_field->leader('     cam  22      a 4500');
+    $marc_record_with_large_field->leader('     cam a22      a 4500');
 
     my $xs = 'X' x 8191;
     my $ys = 'Y' x 8191;
@@ -794,7 +895,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
 
     is( $docs->[0]->{marc_format}, 'MARCXML', 'For record with large field marc_format should be set correctly' );
 
-    $decoded_marc_record = $see->decode_record_from_result( $docs->[0] );
+    $decoded_marc_record = $see->search_document_marc_record_decode( $docs->[0] );
 
     ok( $decoded_marc_record->isa('MARC::Record'), "MARCXML record successfully decoded from result" );
     is(
@@ -846,7 +947,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents_array () t
     my $see = Koha::SearchEngine::Elasticsearch::Search->new({ index => $Koha::SearchEngine::Elasticsearch::BIBLIOS_INDEX });
 
     my $marc_record_1 = MARC::Record->new();
-    $marc_record_1->leader('     cam  22      a 4500');
+    $marc_record_1->leader('     cam a22      a 4500');
     $marc_record_1->append_fields(
         MARC::Field->new('001', '123'),
         MARC::Field->new('020', '', '', a => '1-56619-909-3'),
@@ -857,7 +958,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents_array () t
         MARC::Field->new('999', '', '', c => '1234567'),
     );
     my $marc_record_2 = MARC::Record->new();
-    $marc_record_2->leader('     cam  22      a 4500');
+    $marc_record_2->leader('     cam a22      a 4500');
     $marc_record_2->append_fields(
         MARC::Field->new('100', '', '', a => 'Author 2'),
         # MARC::Field->new('210', '', '', a => 'Title 2'),
@@ -878,7 +979,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents_array () t
 
     is($docs->[0]->{marc_format}, 'ARRAY', 'First document marc_format should be set correctly');
 
-    my $decoded_marc_record = $see->decode_record_from_result($docs->[0]);
+    my $decoded_marc_record = $see->search_document_marc_record_decode($docs->[0]);
 
     ok($decoded_marc_record->isa('MARC::Record'), "ARRAY record successfully decoded from result");
     is($decoded_marc_record->as_usmarc(), $marc_record_1->as_usmarc(), "Decoded ARRAY record has same data as original record");
@@ -889,7 +990,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () authori
     plan tests => 5;
 
     t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
-    t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'ISO2709');
+    t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'base64ISO2709');
 
     my $builder = t::lib::TestBuilder->new;
     my $auth_type = $builder->build_object({ class => 'Koha::Authority::Types', value =>{
@@ -1005,6 +1106,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents with Inclu
         MARC::Field->new(150, '', '', a => 'Foo'),
         MARC::Field->new(450, '', '', a => 'Bar'),
     );
+    $authority_record->encoding('UTF-8');
     $dbh->do( "INSERT INTO auth_header (datecreated,marcxml) values (NOW(),?)", undef, ($authority_record->as_xml_record('MARC21') ) );
     my $authid = $dbh->last_insert_id( undef, undef, 'auth_header', 'authid' );
 
@@ -1043,7 +1145,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents with Inclu
     my $see = Koha::SearchEngine::Elasticsearch::Search->new({ index => $Koha::SearchEngine::Elasticsearch::BIBLIOS_INDEX });
 
     my $marc_record_1 = MARC::Record->new();
-    $marc_record_1->leader('     cam  22      a 4500');
+    $marc_record_1->leader('     cam a22      a 4500');
     $marc_record_1->append_fields(
         MARC::Field->new('001', '123'),
         MARC::Field->new('245', '', '', a => 'Title'),
@@ -1077,7 +1179,7 @@ subtest 'marc_records_to_documents should set the "available" field' => sub {
     $see->get_elasticsearch_mappings();
 
     my $marc_record_1 = MARC::Record->new();
-    $marc_record_1->leader('     cam  22      a 4500');
+    $marc_record_1->leader('     cam a22      a 4500');
     $marc_record_1->append_fields(
         MARC::Field->new('245', '', '', a => 'Title'),
     );
