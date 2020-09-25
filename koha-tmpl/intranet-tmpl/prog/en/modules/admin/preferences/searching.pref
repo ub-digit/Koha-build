@@ -131,6 +131,19 @@ Searching:
                   yes: use
                   no: "don't use"
             - 'the operator "phr" in the callnumber and standard number staff client searches'
+        -
+            - pref: EnableSearchResultMARCExport
+              type: boolean
+              default: yes
+              choices:
+                  yes: Enable
+                  no: Disable
+            - "MARC export of search results. The export will be sent to to the logged in user's email address. Records exceeding the ISO2709 record size will be send at separate MARC XML attachment regardless of chosen export format (ElasticSearch only)."
+        -
+            - "Limit exported MARC records from search results to a maximum of"
+            - pref: SearchResultMARCExportLimit
+              class: integer
+            - "records."
     Results display:
         -
             - pref: numSearchResultsDropdown
