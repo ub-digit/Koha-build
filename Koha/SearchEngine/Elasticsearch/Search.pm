@@ -173,9 +173,9 @@ sub search_compat {
     # opac-search expects results to be put in the
     # right place in the array, according to $offset
     my $index = $offset;
-    my $hits = $results->{'hits'};
-    foreach my $es_record (@{$hits->{'hits'}}) {
-        $records[$index++] = $self->decode_record_from_result($es_record->{'_source'});
+    my $hits  = $results->{'hits'};
+    foreach my $es_record ( @{ $hits->{'hits'} } ) {
+        $records[ $index++ ] = $self->search_document_marc_record_decode( $es_record->{'_source'} );
     }
 
     # consumers of this expect a name-spaced result, we provide the default
@@ -242,7 +242,7 @@ sub search_auth_compat {
             # it's not reproduced here yet.
             my $authtype           = $rs->single;
             my $auth_tag_to_report = $authtype ? $authtype->auth_tag_to_report : "";
-            my $marc               = $self->decode_record_from_result($record);
+            my $marc               = $self->search_document_marc_record_decode($record);
             my $mainentry          = $marc->field($auth_tag_to_report);
             my $reported_tag;
             if ($mainentry) {
@@ -375,8 +375,8 @@ sub simple_search_compat {
     my $results = $self->search($query, undef, $max_results, %options);
     my @records;
     my $hits = $results->{'hits'};
-    foreach my $es_record (@{$hits->{'hits'}}) {
-        push @records, $self->decode_record_from_result($es_record->{'_source'});
+    foreach my $es_record ( @{ $hits->{'hits'} } ) {
+        push @records, $self->search_document_marc_record_decode( $es_record->{'_source'} );
     }
     return (undef, \@records, $hits->{'total'});
 }
@@ -394,31 +394,6 @@ Returns the biblionumber from the search result record.
 sub extract_biblionumber {
     my ( $self, $searchresultrecord ) = @_;
     return Koha::SearchEngine::Search::extract_biblionumber( $searchresultrecord );
-}
-
-=head2 decode_record_from_result
-    my $marc_record = $self->decode_record_from_result(@result);
-
-Extracts marc data from Elasticsearch result and decodes to MARC::Record object
-
-=cut
-
-sub decode_record_from_result {
-    # Result is passed in as array, will get flattened
-    # and first element will be $result
-    my ( $self, $result ) = @_;
-    if ($result->{marc_format} eq 'base64ISO2709') {
-        return MARC::Record->new_from_usmarc(decode_base64($result->{marc_data}));
-    }
-    elsif ($result->{marc_format} eq 'MARCXML') {
-        return MARC::Record->new_from_xml($result->{marc_data}, 'UTF-8', uc C4::Context->preference('marcflavour'));
-    }
-    elsif ($result->{marc_format} eq 'ARRAY') {
-        return $self->_array_to_marc($result->{marc_data_array});
-    }
-    else {
-        Koha::Exceptions::Elasticsearch->throw("Missing marc_format field in Elasticsearch result");
-    }
 }
 
 =head2 max_result_window
