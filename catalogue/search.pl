@@ -148,6 +148,7 @@ use C4::Languages qw( getlanguage getLanguages );
 use C4::Koha qw( getitemtypeimagelocation GetAuthorisedValues );
 use URI::Escape;
 use POSIX qw(ceil floor);
+use Carp qw(croak);
 
 use Koha::ItemTypes;
 use Koha::Library::Groups;
@@ -157,6 +158,7 @@ use Koha::SearchEngine::QueryBuilder;
 use Koha::Virtualshelves;
 use Koha::SearchFields;
 use Koha::SearchFilters;
+use Koha::BackgroundJob::SearchResultExport;
 
 use URI::Escape;
 use JSON qw( decode_json encode_json );
@@ -736,6 +738,49 @@ $template->param(
     add_to_some_private_shelves => $some_private_shelves,
     add_to_some_public_shelves  => $some_public_shelves,
 );
+
+my $patron = Koha::Patrons->find( $borrowernumber );
+my $export_enabled =
+    C4::Context->preference('EnableElasticsearchSearchResultExport') &&
+    C4::Context->preference('SearchEngine') eq 'Elasticsearch' &&
+    $patron && $patron->has_permission({ tools => 'export_catalog' });
+
+$template->param(export_enabled => $export_enabled) if $template_name eq 'catalogue/results.tt';
+
+if ($export_enabled) {
+
+    my $export = $cgi->param('export');
+    my $preferred_format = $cgi->param('export_format');
+    my $custom_export_formats = $searcher->search_result_export_custom_formats;
+
+    $template->param(custom_export_formats => $custom_export_formats);
+
+    # TODO: Need to handle $hits = 0?
+    my $hits = $results_hashref->{biblioserver}->{'hits'} // 0;
+
+    if ($export && $preferred_format && $hits) {
+        unless (
+            $preferred_format eq 'ISO2709' ||
+            $preferred_format eq 'MARCXML'
+        ) {
+            if (!exists $custom_export_formats->{$preferred_format}) {
+                croak "Invalid export format: $preferred_format";
+            }
+            else {
+                $preferred_format = $custom_export_formats->{$preferred_format};
+            }
+        }
+        my $size_limit = C4::Context->preference('SearchResultExportLimit') || 0;
+        my %export_query = $size_limit ? (%{$query}, (size => $size_limit)) : %{$query};
+        my $size = $size_limit && $hits > $size_limit ? $size_limit : $hits;
+        my $export_job_id = Koha::BackgroundJob::SearchResultExport->new->enqueue({
+            size => $size,
+            preferred_format => $preferred_format,
+            elasticsearch_query => \%export_query
+        });
+        $template->param(export_job_id => $export_job_id);
+    }
+}
 
 output_html_with_http_headers $cgi, $cookie, $template->output;
 
