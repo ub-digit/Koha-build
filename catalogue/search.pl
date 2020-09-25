@@ -158,6 +158,10 @@ use Koha::Virtualshelves;
 use Koha::SearchFields;
 
 use URI::Escape;
+use Mail::Sendmail;
+use File::Spec;
+use File::Path qw(mkpath);
+use POSIX qw(strftime);
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -500,6 +504,177 @@ $template->param ( LIMIT_INPUTS => \@limit_inputs );
 my $total = 0; # the total results for the whole set
 my $facets; # this object stores the faceted results that display on the left-hand of the results page
 my $results_hashref;
+
+my $export = $cgi->param('export');
+my $preferred_format = $cgi->param('export_format');
+my $export_user_email = undef;
+
+if ($template_name eq 'catalogue/results.tt' && $export && $preferred_format && C4::Context->preference('SearchEngine') eq 'Elasticsearch') {
+
+    my $uid;
+    my $userenv = C4::Context->userenv;
+    if ($userenv) {
+        $uid = $userenv->{number};
+        if ($userenv->{emailaddress}) {
+            $export_user_email = $userenv->{emailaddress};
+        }
+        else {
+            die "Unable to fetch user email";
+        }
+    }
+    else {
+        die "Unable to fetch userenv";
+    }
+
+    my $patron = Koha::Patrons->find( $borrowernumber );
+    #if (!C4::Auth::haspermission($uid, { catalogue => 1 })) {
+    if (!($patron && $patron->has_permission({ catalogue => 1 }))) {
+        die "Missing permission \"catalogue\" required for exporting search results";
+    }
+
+
+    my $elasticsearch = $searcher->get_elasticsearch();
+
+    my $size_limit = C4::Context->preference('SearchResultMARCExportLimit') || 0;
+
+    my %export_query = $size_limit ? (%{$query}, (size => $size_limit)) : %{$query};
+
+    #my %query_size_limit = (size => (C4::Context->preference('SearchResultMARCExportLimit') || 0));
+    #my %export_query = (%{$query}, %query_size_limit);
+    #
+    #use Data::Dumper;
+    #die Dumper(%export_query);
+    #delete $export_query{aggregations};
+
+    my $error;
+
+    #my $scroll = eval {
+    #    $elasticsearch->scroll_helper(
+    #        index => $searcher->index_name,
+    #        scroll => '1m', #TODO: Syspref for scroll time limit?
+    #        size => 1000, # TODO: Syspref for batch size?
+    #        body => \%export_query
+    #    );
+    #};
+
+    my $results = eval {
+        $elasticsearch->search(
+            index => $searcher->index_name,
+            scroll => '1m', #TODO: Syspref for scroll time limit?
+            size => 1000,  #TODO: Syspref for batch size?
+            body => \%export_query
+        );
+    };
+    if ($@) {
+        $error = $@;
+        $searcher->process_error($error);
+    }
+
+    my @docs;
+    for my $doc (@{$results->{hits}->{hits}}) {
+        push @docs, $doc;
+    }
+
+    my $scroll_id = $results->{_scroll_id};
+
+    while (@{$results->{hits}->{hits}}) {
+        $results = $elasticsearch->scroll(
+            scroll => '1m',
+            scroll_id => $scroll_id
+        );
+        for my $doc (@{$results->{hits}->{hits}}) {
+            push @docs, $doc;
+        }
+    }
+
+    my $koha_email = Koha::Email->new();
+    my %mail;
+
+    if (!$error) {
+        my $encoded_records = $searcher->search_document_marc_records_encode_from_docs(\@docs, $preferred_format);
+
+        my %format_extensions = (
+            'ISO2709' => '.mrc',
+            'MARCXML' => '.xml'
+        );
+
+        my $upload_dir = Koha::UploadedFile->permanent_directory;
+        my $base_url = C4::Context->preference("staffClientBaseURL") . "/cgi-bin/koha";
+        my %export_links;
+
+        while (my ($format, $data) = each %{$encoded_records}) {
+            my $hash = Digest::MD5::md5_hex($data); # TODO: USE?
+            my $category = "search_marc_export";
+            my $time = strftime "%Y%m%d_%H%M", localtime time;
+            my $filename = $category . '_' . $time . $format_extensions{$format};
+            my $file_dir = File::Spec->catfile($upload_dir, $category);
+            if ( !-d $file_dir) {
+                mkpath $file_dir or die "Failed to create $file_dir";
+            }
+            my $filepath = File::Spec->catfile($file_dir, "${hash}_${filename}");
+
+            my $fh = IO::File->new($filepath, "w");
+
+            if ($fh) {
+                $fh->binmode;
+                print $fh $data;
+                $fh->close;
+
+                my $size = -s $filepath;
+                my $file = Koha::UploadedFile->new({
+                        hashvalue => $hash,
+                        filename  => $filename,
+                        dir       => $category,
+                        filesize  => $size,
+                        owner     => $uid,
+                        uploadcategorycode => 'search_marc_export',
+                        public    => 1,
+                        permanent => 1,
+                    })->store;
+                my $id = $file->_result()->get_column('id');
+                $export_links{$format} = "$base_url/tools/upload.pl?op=download&id=$id";
+            }
+            else {
+                die "Failed to write \"$filepath\"";
+            }
+        }
+
+        if (%export_links) {
+            my $links_output = '';
+            while (my ($format, $link) = each %export_links) {
+                $links_output = "$format: $link\n";
+            }
+
+            # TODO: Encoding, make sure always utf-8 or will be trouble
+            # TODO: Break out into function and place in mail module?
+
+            my $query_string = $query->{query}->{query_string}->{query};
+            my $links_count = keys %export_links;
+            my $message = $links_count > 1 ?
+                "Some records exceeded maximum size supported by ISO2709 and was exported as MARCXML instead.\n\n" . $links_output : $links_output;
+
+            %mail = $koha_email->create_message_headers({
+                    to => $export_user_email,
+                    from => 'noreply@ub.gu.se',
+                    subject => "Marc export for query: $query_string",
+                    message => $message,
+                });
+        }
+    }
+    else {
+        %mail = $koha_email->create_message_headers({
+                to => $export_user_email,
+                from => 'noreply@ub.gu.se',
+                subject => "Marc export error",
+                message => "An error occured during marc export: $error",
+            });
+    }
+    $Mail::Sendmail::mailcfg{smtp} = ['smtp.gu.se'];
+    $Mail::Sendmail::mailcfg{port} = 25;
+    sendmail(%mail) || print "Error: $Mail::Sendmail::error\n";
+
+    $template->param(export_user_email => $export_user_email);
+}
 
 eval {
     my $itemtypes = { map { $_->{itemtype} => $_ } @{ Koha::ItemTypes->search_with_localization->unblessed } };
