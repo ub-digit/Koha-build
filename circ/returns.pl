@@ -437,6 +437,7 @@ if ( $messages->{'ResFound'}) {
         if ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(
                 waiting      => $branchCheck ? 1 : undef,
+                itemnumber   => $itemnumber,
             );
         } elsif ( $reserve->{'ResFound'} eq "Reserved" ) {
             $template->param(
@@ -453,7 +454,7 @@ if ( $messages->{'ResFound'}) {
     $template->param(
         found          => 1,
         patron         => $patron,
-        barcode        => $barcode,
+#        barcode        => $barcode,
         destbranch     => $reserve->{'branchcode'},
         itemnumber     => $reserve->{'itemnumber'},
         reservenotes   => $reserve->{'reservenotes'},
