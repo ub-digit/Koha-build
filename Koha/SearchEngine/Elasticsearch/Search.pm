@@ -52,7 +52,11 @@ use MARC::Record;
 use MARC::File::XML;
 use Data::Dumper; #TODO remove
 use Carp qw(cluck);
-use MIME::Base64;
+use Mail::Sendmail;
+use Koha::Email;
+use Koha::UploadedFiles;
+use File::Path;
+use Encode qw(encode);
 
 Koha::SearchEngine::Elasticsearch::Search->mk_accessors(qw( store ));
 
@@ -166,7 +170,7 @@ sub search_compat {
     my $index = $offset;
     my $hits = $results->{'hits'};
     foreach my $es_record (@{$hits->{'hits'}}) {
-        $records[$index++] = $self->decode_record_from_result($es_record->{'_source'});
+        $records[$index++] = $self->search_document_marc_record_decode($es_record->{'_source'});
     }
 
     # consumers of this expect a name-spaced result, we provide the default
@@ -227,7 +231,7 @@ sub search_auth_compat {
             # it's not reproduced here yet.
             my $authtype           = $rs->single;
             my $auth_tag_to_report = $authtype ? $authtype->auth_tag_to_report : "";
-            my $marc               = $self->decode_record_from_result($record);
+            my $marc               = $self->search_document_marc_record_decode($record);
             my $mainentry          = $marc->field($auth_tag_to_report);
             my $reported_tag;
             if ($mainentry) {
@@ -347,7 +351,7 @@ sub simple_search_compat {
     my @records;
     my $hits = $results->{'hits'};
     foreach my $es_record (@{$hits->{'hits'}}) {
-        push @records, $self->decode_record_from_result($es_record->{'_source'});
+        push @records, $self->search_document_marc_record_decode($es_record->{'_source'});
     }
     return (undef, \@records, $hits->{'total'});
 }
@@ -365,31 +369,6 @@ Returns the biblionumber from the search result record.
 sub extract_biblionumber {
     my ( $self, $searchresultrecord ) = @_;
     return Koha::SearchEngine::Search::extract_biblionumber( $searchresultrecord );
-}
-
-=head2 decode_record_from_result
-    my $marc_record = $self->decode_record_from_result(@result);
-
-Extracts marc data from Elasticsearch result and decodes to MARC::Record object
-
-=cut
-
-sub decode_record_from_result {
-    # Result is passed in as array, will get flattened
-    # and first element will be $result
-    my ( $self, $result ) = @_;
-    if ($result->{marc_format} eq 'base64ISO2709') {
-        return MARC::Record->new_from_usmarc(decode_base64($result->{marc_data}));
-    }
-    elsif ($result->{marc_format} eq 'MARCXML') {
-        return MARC::Record->new_from_xml($result->{marc_data}, 'UTF-8', uc C4::Context->preference('marcflavour'));
-    }
-    elsif ($result->{marc_format} eq 'ARRAY') {
-        return $self->_array_to_marc($result->{marc_data_array});
-    }
-    else {
-        Koha::Exceptions::Elasticsearch->throw("Missing marc_format field in Elasticsearch result");
-    }
 }
 
 =head2 max_result_window
@@ -571,5 +550,91 @@ sub _aggregation_scan {
     $result{biblioserver}{RECORDS} = \@records;
     return (undef, \%result, undef);
 }
+
+=head2 search_document_marc_records_encode_from_docs($docs, $preferred_format)
+
+    $records_data = $self->search_document_marc_records_encode_from_docs($docs, $preferred_format)
+
+Return marc encoded records from ElasticSearch search result documents. The return value
+C<$marc_records> is a hashref of encoded records keyed by MARC format.
+
+=over 4
+
+=item C<$docs>
+
+An arrayref of Elasticsearch search documents
+
+=item C<$preferred_format>
+
+The preferred marc format: 'MARCXML' or 'ISO2709'. Records exceeding maximum
+length supported by ISO2709 will be exported as 'MARCXML' even if C<$preferred_format>
+is set to 'ISO2709'.
+
+=back
+
+=cut
+
+sub search_document_marc_records_encode_from_docs {
+
+    my ($self, $docs, $preferred_format) = @_;
+
+    my %encoded_records = (
+        'ISO2709' => [],
+        'MARCXML' => []
+    );
+
+    for my $es_record (@{$docs}) {
+        # Special optimized cases
+        my $marc_data;
+        my $resulting_format = $preferred_format;
+        if ($preferred_format eq 'MARCXML' && $es_record->{_source}{marc_format} eq 'MARCXML') {
+            # TODO: Untested as MARCXML not currently enabled as serialization
+            # format, might have to strip headers
+            $marc_data = $es_record->{_source}{marc_data};
+        }
+        elsif ($preferred_format eq 'ISO2709' && $es_record->{_source}->{marc_format} eq 'base64ISO2709' && 0) {
+            $marc_data = decode_base64($es_record->{_source}->{marc_data});
+        }
+        else {
+            my $record = $self->search_document_marc_record_decode($es_record->{'_source'});
+
+            ($marc_data, $resulting_format) = $self->search_document_marc_record_encode($record, $preferred_format);
+
+            if ($resulting_format eq 'MARCXML') {
+                $marc_data = encode('UTF-8', MARC::File::XML::record($record), 1);
+            }
+            elsif ($resulting_format eq 'ISO2709') {
+                # Convert from internal perl encoding
+                $marc_data = encode('UTF-8', $record->as_usmarc(), 1);
+            }
+            else {
+                # TODO: croak/throw error
+            }
+        }
+        push @{$encoded_records{$resulting_format}}, $marc_data;
+    }
+    if (@{$encoded_records{'ISO2709'}}) {
+        #TODO: Verify this utf-8 shit, is perl encoded or not?
+        # Or just write as utf-8?
+        $encoded_records{'ISO2709'} = join("", @{$encoded_records{'ISO2709'}});
+    }
+    else {
+        delete $encoded_records{'ISO2709'};
+    }
+
+    if (@{$encoded_records{'MARCXML'}}) {
+        $encoded_records{'MARCXML'} = join("\n",
+            encode('UTF-8', MARC::File::XML::header(), 1),
+            join("\n", @{$encoded_records{'MARCXML'}}),
+            encode('UTF-8', MARC::File::XML::footer(), 1)
+        );
+    }
+    else {
+        delete $encoded_records{'MARCXML'};
+    }
+
+    return \%encoded_records;
+}
+
 
 1;
