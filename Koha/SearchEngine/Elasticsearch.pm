@@ -524,7 +524,6 @@ sub marc_records_to_documents {
     my $control_fields_rules = $rules->{control_fields};
     my $data_fields_rules = $rules->{data_fields};
     my $marcflavour = lc C4::Context->preference('marcflavour');
-    my $use_array = C4::Context->preference('ElasticsearchMARCFormat') eq 'ARRAY';
 
     my @record_documents;
 
@@ -679,39 +678,105 @@ sub marc_records_to_documents {
                 }
             }
         }
+        my $preferred_format = C4::Context->preference('ElasticsearchMARCFormat');
 
-        # TODO: Perhaps should check if $records_document non empty, but really should never be the case
-        $record->encoding('UTF-8');
-        if ($use_array) {
-            $record_document->{'marc_data_array'} = $self->_marc_to_array($record);
-            $record_document->{'marc_format'} = 'ARRAY';
+        my ($encoded_record, $format) = $self->search_document_marc_record_encode(
+            $record,
+            $preferred_format,
+            $marcflavour
+        );
+
+        if ($preferred_format eq 'ARRAY') {
+            $record_document->{'marc_data_array'} = $encoded_record;
         } else {
-            my @warnings;
-            {
-                # Temporarily intercept all warn signals (MARC::Record carps when record length > 99999)
-                local $SIG{__WARN__} = sub {
-                    push @warnings, $_[0];
-                };
-                $record_document->{'marc_data'} = encode_base64(encode('UTF-8', $record->as_usmarc()));
-            }
-            if (@warnings) {
-                # Suppress warnings if record length exceeded
-                unless (substr($record->leader(), 0, 5) eq '99999') {
-                    foreach my $warning (@warnings) {
-                        carp $warning;
-                    }
-                }
-                $record_document->{'marc_data'} = $record->as_xml_record($marcflavour);
-                $record_document->{'marc_format'} = 'MARCXML';
-            }
-            else {
-                $record_document->{'marc_format'} = 'base64ISO2709';
-            }
+            $record_document->{'marc_data'} = $encoded_record;
         }
+        $record_document->{'marc_format'} = $format;
+
         push @record_documents, $record_document;
     }
     return \@record_documents;
 }
+
+=head2 search_document_marc_record_encode($record, $forma)
+    my ($encoded_record, $format) = search_document_marc_record_encode($record, $format)
+
+Encode a MARC::Record to the prefered marc document record format. If record exceeds ISO2709 maximum
+size record size and C<$format> is set to 'base64ISO2709' format will fallback to 'MARCXML' instead.
+
+=over 4
+
+=item C<$record>
+
+A MARC::Record object
+
+=item C<$marcflavour>
+
+The marcflavour to use
+
+=back
+
+=cut
+
+sub search_document_marc_record_encode {
+    my ($self, $record, $format, $marcflavour) = @_;
+
+    $record->encoding('UTF-8');
+
+    if ($format eq 'ARRAY') {
+        return ($self->_marc_to_array($record), $format);
+    }
+    else {
+        my @warnings;
+        my $marc_data;
+        {
+            # Temporarily intercept all warn signals (MARC::Record carps when record length > 99999)
+            local $SIG{__WARN__} = sub {
+                push @warnings, $_[0];
+            };
+            $marc_data = encode_base64(encode('UTF-8', $record->as_usmarc()));
+        }
+        if (@warnings) {
+            # Suppress warnings if record length exceeded
+            unless (substr($record->leader(), 0, 5) eq '99999') {
+                foreach my $warning (@warnings) {
+                    carp $warning;
+                }
+            }
+            return ($record->as_xml_record($marcflavour), 'MARCXML');
+        }
+        else {
+            return ($marc_data, $format);
+        }
+    }
+}
+
+=head2 search_document_marc_record_decode
+    my $marc_record = $self->search_document_marc_record_decode(@result);
+
+Extract marc data from Elasticsearch result and decode to MARC::Record object
+
+=cut
+
+sub search_document_marc_record_decode {
+    # Result is passed in as array, will get flattened
+    # and first element will be $result
+    my ($self, $result) = @_;
+    if ($result->{marc_format} eq 'base64ISO2709') {
+        return MARC::Record->new_from_usmarc(decode_base64($result->{marc_data}));
+    }
+    elsif ($result->{marc_format} eq 'MARCXML') {
+        return MARC::Record->new_from_xml($result->{marc_data}, 'UTF-8', uc C4::Context->preference('marcflavour'));
+    }
+    elsif ($result->{marc_format} eq 'ARRAY') {
+        return $self->_array_to_marc($result->{marc_data_array});
+    }
+    else {
+        Koha::Exceptions::Elasticsearch->throw("Missing marc_format field in Elasticsearch result");
+    }
+}
+
+
 
 =head2 _marc_to_array($record)
 
