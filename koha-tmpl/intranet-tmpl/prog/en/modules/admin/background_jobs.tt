@@ -238,6 +238,10 @@
                 '_id': 'import_from_kbart_file',
                 '_str': _("Import titles from a KBART file")
             },
+            {
+                '_id': 'search_result_export',
+                '_str': _("Search result export")
+            },
         ];
 
         function get_job_type (job_type) {
