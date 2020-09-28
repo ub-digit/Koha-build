@@ -1440,7 +1440,7 @@ legend:hover {
                                                 <label for="SMSnumber">SMS number:</label>
                                                 <input type="text" id="SMSnumber" name="SMSnumber" value="[% SMSnumber | html %]" />
                                                 <span id="missing_sms_number_error" class="required">Inget sms-nummer angivet</span>
-                                                <span class="hint">SMS number should be in the format 1234567890 or +11234567890</span>
+                                                <span class="hint hidden">SMS number should be in the format 1234567890 or +11234567890</span>
                                             </p>
                                             [% UNLESS nosms_provider_id %]
                                                 <p>
