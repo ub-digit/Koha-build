@@ -5,7 +5,7 @@
     <table class="table table-bordered table-striped" id="finestable">
         <thead>
             <tr>
-                [% IF ( UBOnlinePayment.Active() ) %]<th style="text-align:center"><input id="check-all-payable" type="checkbox"></input></th>[% END %]
+                [% IF ( UBOnlinePayment.Active() ) %]<th width="20" style="text-align:center"><input id="check-all-payable" type="checkbox"></input></th>[% END %]
                 <th class="title-string">Date</th>
                 <th>Type</th>
                 <th>Description</th>
