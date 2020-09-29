@@ -389,6 +389,7 @@ if (@$barcodes) {
             delete $question->{'ressurname'};
             delete $question->{'resbranchcode'};
             delete $question->{'resreservedate'};
+            delete $question->{'reserve_id'};
         }
     }
 
