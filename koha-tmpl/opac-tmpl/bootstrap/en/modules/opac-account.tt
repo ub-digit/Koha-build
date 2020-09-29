@@ -74,17 +74,17 @@
                         [% IF ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
                             <div id="no-online-payment" style="max-width:500px">
                                 <p id="no-online-payment-text">
-                                    Your payments will be invoiced lorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsumlorum ipsum
+                                    Your payments will be invoiced.
                                 </p>
-                                <p id="no-online-payment-link"><a href="[% UBOnlinePayment.ExternalInfoURL() %]">More info about loans and fines</a></p>
+                                <p id="no-online-payment-link"><a href="[% UBOnlinePayment.ExternalInfoURL() %]">More information about loans and fines</a></p>
                             </div>
                         [% ELSE %]
                             [% IF  ACCOUNT_LINES.count > 0  %]
                             <div id="online-payment">
-                                <strong><span id="online-payment-amount">Amount to pay:</span> <span class="amount-payable"></span> SEK</strong>
-                                <p><span id="online-payment-debt-after-payment">(Debt after payment has been made:</span> <span class="amount-debt-left-after-payment"></span> SEK)</p>
+                                <strong><span id="online-payment-amount">Selected fines to pay:</span> <span class="amount-payable sv-SE"></span> SEK <span class="amount-payable en"></span></strong>
+                                <p><span id="online-payment-debt-after-payment">(outstanding debt after payment:</span> <span class="amount-debt-left-after-payment sv-SE"></span> SEK <span class="amount-debt-left-after-payment en"></span>)</p>
                                 <form method="post" action="[% UBOnlinePayment.URL() | html %]?language=[%current_lang%]">
-                                    <input type="submit" class="btn btn-default" value="Pay selected fines"></input>
+                                    <input type="submit" class="btn btn-default" value="Pay online"></input>
                                     <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
                                 </form>
                             </div>
@@ -133,20 +133,16 @@ $( document ).ready(function() {
         let payment_type = {};
         if ("[% current_lang %]" === "en-US") {
             payment_type = { // TBD
-                "A"             : "A MAPPED EN",
-                "LOST"          : "LOST MAPPED EN",
-                "MANUAL"        : "MANUAL MAPPED EN",
-                "OVERDUE"       : "OVEERDUE MAPPED EN",
-                "PROCESSING"    : "PROCESSING_MAPPED EN"
+                "A"             : "Processing fee",
+                "LOST"          : "Ersättningskostnad",
+                "OVERDUE"       : "Förseningsavgift",
             }
         }
         else {
             payment_type = { // TBD
-                "A"             : "A MAPPED SV",
-                "LOST"          : "LOST MAPPED SV",
-                "MANUAL"        : "MANUAL MAPPED SV",
-                "OVERDUE"       : "OVEERDUE MAPPED SV",
-                "PROCESSING"    : "PROCESSING_MAPPED SV"
+                "A"             : "Arbetskostnad",
+                "LOST"          : "Lost item",
+                "OVERDUE"       : "Overdue fine",
             }
         }
         if (!payment_type[type]) {
