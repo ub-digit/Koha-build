@@ -206,6 +206,13 @@ $( document ).ready(function() {
         }
     }
 
+    function zeroPaymentsSelected() {
+        if ($(".account-line-checkbox:checked").length) {
+            return false;
+        }
+        return true;
+    }
+
     $("#check-all-payable").bind("change", function(val) {
         if ($("#check-all-payable").prop("checked")) {
             $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
@@ -236,6 +243,13 @@ $( document ).ready(function() {
         let amountPayable = getAmountPayable(payments);
         $(".amount-payable").text(amountPayable);
         $(".amount-debt-left-after-payment").text(getDebtTotal() - amountPayable);
+        if (zeroPaymentsSelected()) {
+            $("input[type=submit]").prop("disabled", true);
+            $("#check-all-payable").prop("checked", false);
+        }
+        else {
+            $("input[type=submit]").prop("disabled", false);
+        }
         $("#ub-debug-json").val((JSON.stringify(paydata, undefined, 4)));
     });
 
