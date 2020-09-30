@@ -81,8 +81,8 @@
                         [% ELSE %]
                             [% IF  ACCOUNT_LINES.count > 0  %]
                             <div id="online-payment">
-                                <strong><span id="online-payment-amount">Selected fines to pay:</span> <span class="amount-payable sv-SE"></span> SEK <span class="amount-payable en"></span></strong>
-                                <p><span id="online-payment-debt-after-payment">(outstanding debt after payment:</span> <span class="amount-debt-left-after-payment sv-SE"></span> SEK <span class="amount-debt-left-after-payment en"></span>)</p>
+                                <strong><span id="online-payment-amount">Selected fines to pay:</span> <span class="amount-payable sv-SE"></span> SEK <span class="amount-payable en-US"></span></strong>
+                                <p><span id="online-payment-debt-after-payment">(outstanding debt after payment:</span> <span class="amount-debt-left-after-payment sv-SE"></span> SEK <span class="amount-debt-left-after-payment en-US"></span>)</p>
                                 <form method="post" action="[% UBOnlinePayment.URL() | html %]?language=[%current_lang%]">
                                     <input type="submit" class="btn btn-default" value="Pay online"></input>
                                     <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
@@ -280,6 +280,14 @@ $( document ).ready(function() {
     [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
         $("#check-all-payable").prop("checked", true);
         $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+        if ("[% current_lang %]" === "en-US") {
+            $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").show();
+            $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").hide();
+        }
+        else {
+            $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").hide();
+            $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").show();
+        }
     [% ELSE %]
         $("#check-all-payable").prop("disabled", true);
     [% END %]
