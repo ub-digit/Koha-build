@@ -269,7 +269,7 @@
                                         </li>
                                         <li>
                                             [% IF (SMSnumber) %]
-                                                <span class="gub-sms-info"><strong>Mobile/SMS: </strong> [% SMSnumber | html %]<a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend"><i class="icon-edit"></i></span>
+                                                <span class="gub-sms-info"><strong>Mobile/SMS: </strong> [% SMSnumber | html %]<a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend"><i class="icon-edit"></i></a></span>
                                             [% ELSE %]
                                                 <span class="gub-no-sms-info">You have not yet registered a mobile/sms number.</span> <a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend">Click here to add number. </a>
                                             [% END %]
