@@ -180,7 +180,7 @@
                     [% IF Koha.Preference('enableSimpleOpacMessaging') %]
                         <!-- START - Simplified form -->
                         <form action="/cgi-bin/koha/opac-messaging.pl" method="post" name="opacmessaging-simple">
-                            <input type="hidden" name="csrf_token" value="[% csrf_token | html %]" />                        
+                            <input type="hidden" name="csrf_token" value="[% csrf_token | html %]" />
                             <input type="hidden" name="simple" value="yes" />
                             <input type="hidden" name="modify" value="yes" />
                                 <table class="table table-bordered table-condensed table-striped">
@@ -269,7 +269,7 @@
                                         </li>
                                         <li>
                                             [% IF (SMSnumber) %]
-                                                <span class="gub-sms-info"><strong>Mobile/SMS: </strong> [% SMSnumber | html %]<a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend"><i class="icon-edit"></i></span>
+                                                <span class="gub-sms-info"><strong>Mobile/SMS: </strong> [% SMSnumber | html %]<a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend"><i class="icon-edit"></i></a></span>
                                             [% ELSE %]
                                                 <span class="gub-no-sms-info">You have not yet registered a mobile/sms number.</span> <a href="/cgi-bin/koha/opac-memberentry.pl#contact_legend">Click here to add number. </a>
                                             [% END %]
