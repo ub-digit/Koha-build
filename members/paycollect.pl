@@ -230,7 +230,7 @@ if ( $total_paid and $total_paid ne '0.00' ) {
             }
             else {
                 my $note = $input->param('selected_accts_notes');
-                $pay_result = $payment_id = $account->pay(
+                $pay_result = $account->pay(
                     {
                         amount       => $total_paid,
                         library_id   => $library_id,
@@ -241,6 +241,7 @@ if ( $total_paid and $total_paid ne '0.00' ) {
                         cash_register => $registerid
                     }
                 );
+                $payment_id = $pay_result->{payment_id};
             }
             $payment_id = $pay_result->{payment_id};
 
