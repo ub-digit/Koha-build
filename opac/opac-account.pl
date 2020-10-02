@@ -50,7 +50,7 @@ my $accountlines = $account->lines->search({ amountoutstanding => { '>=' => 0 }}
 my $total_outstanding = $accountlines->total_outstanding;
 my $outstanding_credits = $account->outstanding_credits;
 
-my $lang = C4::Languages::getlanguage;
+my $lang = C4::Languages::getlanguage();
 my $lang_str_transformed = '';
 if ($lang == 'en') {
     $lang_str_transformed = "en-US";
