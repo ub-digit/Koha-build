@@ -212,9 +212,26 @@ $( document ).ready(function() {
         }
         return true;
     }
+    function allPaymentsDisabled() {
+        if ($(".account-line-checkbox:not(':disabled')").length) {
+            return false;
+        }
+        return true
+    }
+
 
     $("#check-all-payable").bind("change", function(val) {
+        if (allPaymentsDisabled()) {
+            $("#check-all-payable").prop("checked", false);
+            $("#check-all-payable").prop("disabled", true);
+            $(".account-line-checkbox:not(:disabled)").prop("checked", false);
+            $("input[type=submit]").prop("disabled", true);
+            $(".account-line-checkbox").trigger("change");
+            return;
+        }
+
         if ($("#check-all-payable").prop("checked")) {
+            $("#check-all-payable").prop("disabled", false);
             $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
             return;
         }
@@ -241,18 +258,16 @@ $( document ).ready(function() {
         });
         paydata.payments = payments;
         let amountPayable = getAmountPayable(payments);
-        $(".amount-payable").text(amountPayable);
-        $(".amount-debt-left-after-payment").text(getDebtTotal() - amountPayable);
         if (zeroPaymentsSelected()) {
-            $("input[type=submit]").prop("disabled", true);
             $("#check-all-payable").prop("checked", false);
-        }
-        else {
+            $("input[type=submit]").prop("disabled", true);
+        } else {
             $("input[type=submit]").prop("disabled", false);
         }
+        $(".amount-payable").text(amountPayable);
+        $(".amount-debt-left-after-payment").text(getDebtTotal() - amountPayable);
         $("#ub-debug-json").val((JSON.stringify(paydata, undefined, 4)));
-    });
-
+    })
     // disable payment-rows
     $(".account-line-checkbox").each(function(index, item) {
         [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
@@ -277,9 +292,11 @@ $( document ).ready(function() {
         [% END %]
         item.disabled = true;
     });
+    $("#check-all-payable").prop("checked", true).trigger("change");
+
     [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
-        $("#check-all-payable").prop("checked", true);
-        $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
+         //$(".account-line-checkbox").trigger("change");
+      //  $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
         if ("[% current_lang %]" === "en-US") {
             $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").show();
             $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").hide();
