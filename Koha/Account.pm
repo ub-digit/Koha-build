@@ -139,7 +139,7 @@ sub pay {
         # Same logic exists in Koha::Account::Line::apply
         if ( C4::Context->preference('MarkLostItemsAsReturned') =~ m|onpayment|
             && $fine->debit_type_code
-            && $fine->debit_type_code eq 'LOST'
+            && ($fine->debit_type_code eq 'LOST' || $fine->debit_type_code eq 'LOST_INVOICED')
             && $new_amountoutstanding == 0
             && $fine->itemnumber
             && !(  $credit_type eq 'LOST_FOUND'
@@ -210,7 +210,7 @@ sub pay {
 
         if ( C4::Context->preference('MarkLostItemsAsReturned') =~ m|onpayment|
             && $fine->debit_type_code
-            && $fine->debit_type_code eq 'LOST'
+            && ($fine->debit_type_code eq 'LOST' || $fine->debit_type_code eq 'LOST_INVOICED')
             && $fine->amountoutstanding == 0
             && $fine->itemnumber
             && !(  $credit_type eq 'LOST_FOUND'
