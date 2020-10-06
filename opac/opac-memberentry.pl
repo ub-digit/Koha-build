@@ -89,7 +89,7 @@ if (C4::Context->preference('enableSimpleOpacMessaging')) {
     }
 }
 
-my $mandatory = GetMandatoryFields($action);
+my $mandatory = GetMandatoryFields($action,$sms_number_is_required);
 
 my @libraries = Koha::Libraries->search;
 if ( $action eq 'new'
@@ -399,7 +399,7 @@ sub GetHiddenFields {
 }
 
 sub GetMandatoryFields {
-    my ($action) = @_;
+    my ($action, $sms_number_is_required) = @_;
 
     my %mandatory_fields;
 
