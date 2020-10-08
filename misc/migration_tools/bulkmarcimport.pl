@@ -190,6 +190,7 @@ if($marc_mod_template ne '') {
 
 my $dbh = C4::Context->dbh;
 my $heading_fields = get_heading_fields();
+my $idmapfh;
 
 if (defined $idmapfl) {
   open($idmapfh, '>', $idmapfl) or die "cannot open $idmapfl \n";
