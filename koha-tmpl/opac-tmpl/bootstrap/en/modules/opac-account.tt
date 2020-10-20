@@ -134,15 +134,15 @@ $( document ).ready(function() {
         if (getLang() === "en-US") {
             payment_type = { // TBD
                 "A"             : "Processing fee",
-                "LOST"          : "Ersättningskostnad",
-                "OVERDUE"       : "Förseningsavgift",
+                "LOST"          : "Lost item",
+                "OVERDUE"       : "Overdue fine",
             }
         }
         else {
             payment_type = { // TBD
                 "A"             : "Arbetskostnad",
-                "LOST"          : "Lost item",
-                "OVERDUE"       : "Overdue fine",
+                "LOST"          : "Ersättningskostnad",
+                "OVERDUE"       : "Förseningsavgift",
             }
         }
         if (!payment_type[type]) {
