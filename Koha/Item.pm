@@ -214,6 +214,8 @@ sub delete {
     # FIXME check the item has no current issues
     # i.e. raise the appropriate exception
 
+    my $result = $self->SUPER::delete;
+
     C4::Biblio::ModZebra( $self->biblionumber, "specialUpdate", "biblioserver" )
         unless $params->{skip_modzebra_update};
 
@@ -222,7 +224,7 @@ sub delete {
     logaction( "CATALOGUING", "DELETE", $self->itemnumber, "item" )
       if C4::Context->preference("CataloguingLog");
 
-    return $self->SUPER::delete;
+    return $result;
 }
 
 =head3 safe_delete
