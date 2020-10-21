@@ -13,9 +13,14 @@ sub URL {
     return C4::Context->config("online_payment_portal_url");
 }
 
-sub ExternalInfoURL {
-    return C4::Context->config("online_payment_exclude_patron_categories_info_url");
+sub ExternalInfoURLSv {
+    return C4::Context->config("online_payment_info_url_sv");
 }
+
+sub ExternalInfoURLEn {
+    return C4::Context->config("online_payment_info_url_en");
+}
+
 
 sub isExcludedFromOnlinePayment {
     my $borrowernumber = C4::Context->userenv->{number};
