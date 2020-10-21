@@ -26,7 +26,7 @@
                         </td>
                     [% END %]
                     <td><span title="[% ACCOUNT_LINE.date | html %]">[% ACCOUNT_LINE.date | $KohaDates %]</span></td>
-                    <td>
+                    <td class="[% ACCOUNT_LINE.debit_type_code | html %]">
                         [% PROCESS account_type_description account=ACCOUNT_LINE %]
                     </td>
                     <td>
