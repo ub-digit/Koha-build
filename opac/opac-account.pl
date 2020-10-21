@@ -50,15 +50,6 @@ my $accountlines = $account->lines->search({ amountoutstanding => { '>=' => 0 }}
 my $total_outstanding = $accountlines->total_outstanding;
 my $outstanding_credits = $account->outstanding_credits;
 
-my $lang = C4::Languages::getlanguage();
-my $lang_str_transformed = '';
-if ($lang == 'en') {
-    $lang_str_transformed = "en-US";
-}
-else {
-    $lang_str_transformed ="sv-SE";
-}
-
 if ( C4::Context->preference('AllowPatronToSetFinesVisibilityForGuarantor')
     || C4::Context->preference('AllowStaffToSetFinesVisibilityForGuarantor')
   )
@@ -88,7 +79,6 @@ if ( C4::Context->preference('AllowPatronToSetFinesVisibilityForGuarantor')
 
 $template->param(
     ACCOUNT_LINES       => $accountlines,
-    current_lang        => $lang_str_transformed,
     guid                => $guid,
     staffClientBaseURL  => C4::Context->preference('staffClientBaseURL'),
     total               => $total_outstanding,
