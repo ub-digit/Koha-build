@@ -27,7 +27,16 @@
                     [% END %]
                     <td><span title="[% ACCOUNT_LINE.date | html %]">[% ACCOUNT_LINE.date | $KohaDates %]</span></td>
                     <td class="[% ACCOUNT_LINE.debit_type_code | html %]">
-                        [% PROCESS account_type_description account=ACCOUNT_LINE %]
+                        <span class="debit-type">[% PROCESS account_type_description account=ACCOUNT_LINE %]</span>
+                        [%- SWITCH account.status -%]
+                        [%- CASE 'UNRETURNED' -%]<span class="debit-status"> (Accruing)</span>
+                        [%- CASE 'RETURNED'   -%]<span class="debit-status"> (Returned)</span>
+                        [%- CASE 'REPLACED'   -%]<span class="debit-status"> (Replaced)</span>
+                        [%- CASE 'FORGIVEN'   -%]<span class="debit-status"> (Forgiven)</span>
+                        [%- CASE 'VOID'       -%]<span class="debit-status"> (Voided)</span>
+                        [%- CASE 'LOST'       -%]<span class="debit-status"> (Lost)</span>
+                        [%- CASE              -%]
+                    [%- END -%]
                     </td>
                     <td>
                         [%- IF ACCOUNT_LINE.payment_type %][% AuthorisedValues.GetByCode('PAYMENT_TYPE', ACCOUNT_LINE.payment_type, 1) | html %][% END %]
