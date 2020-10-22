@@ -308,21 +308,21 @@ $( document ).ready(function() {
     [% UNLESS ( UBOnlinePayment.isExcludedFromOnlinePayment) %]
          //$(".account-line-checkbox").trigger("change");
       //  $(".account-line-checkbox:not(:disabled)").prop("checked", true).trigger("change");
-        if (getLang() === "en-US") {
-            $("#no-online-payment-link.en-US").show();
-            $("#no-online-payment-link.sv-SE").hide();
-            $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").show();
-            $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").hide();
-        }
-        else {
-            $("#no-online-payment-link.sv-SE").show();
-             $("#no-online-payment-link.en-US").hide();
-            $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").hide();
-            $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").show();
-        }
     [% ELSE %]
         $("#check-all-payable").prop("disabled", true);
     [% END %]
+    if (getLang() === "en-US") {
+        $("#no-online-payment-link.en-US").show();
+        $("#no-online-payment-link.sv-SE").hide();
+        $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").show();
+        $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").hide();
+    }
+    else {
+        $("#no-online-payment-link.sv-SE").show();
+        $("#no-online-payment-link.en-US").hide();
+        $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").hide();
+        $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").show();
+    }
 
     var fines_table = $("#finestable").dataTable($.extend(true, {}, dataTablesDefaults, {
         [% IF UBOnlinePayment.Active() %]
