@@ -82,7 +82,7 @@
         [% END %]
         [% IF ( UBOnlinePayment.Active() ) %]
         [% IF (CAN_user_updatecharges_writeoff and (line.debit_type_code == "A" or line.debit_type_code == "LOST" or ( line.debit_type_code == "OVERDUE" and line.status != "UNRETURNED"))) %]
-            <button type="submit" class="btn btn-default btn-xs" id="markinv" name="markinv_indiv_[% line.accountlines_id | html %]" value="Mark as invoiced">Mark as invoiced</button>
+            <button type="submit" class="btn btn-default btn-xs" id="markinv" name="markinv_indiv_[% line.accountlines_id | html %]" value="Mark as invoiced">Markera som fakturerad</button>
         [% END %]
         [% END %]
     [% END %]
@@ -237,7 +237,7 @@
                 "autoWidth": false
             }, columns_settings );
                 $("#markinv").click(function(event){
-                var msg = _("Are you sure you want to mark this payment as invoiced?" );
+                var msg = _("Är du säker på att du vill markera denna betalning som fakturerad?" );
                 var answer = confirm(msg);
                     if (!answer){
                         event.preventDefault();
