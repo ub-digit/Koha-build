@@ -48,6 +48,7 @@ my $verbose;
 my $output_dir;
 my $log;
 my $maxdays;
+my $run_everyday;
 
 GetOptions(
     'h|help'    => \$help,
@@ -55,6 +56,7 @@ GetOptions(
     'l|log'     => \$log,
     'o|out:s'   => \$output_dir,
     'm|maxdays:i' => \$maxdays,
+    'e|run_everyday' => \$run_everyday,
 );
 my $usage = << 'ENDUSAGE';
 
@@ -132,9 +134,15 @@ for my $overdue ( @{$overdues} ) {
       : ( $control eq 'PatronLibrary' )   ? $patron->branchcode
       :                                     $overdue->{branchcode};
 
-# In final case, CircControl must be PickupLibrary. (branchcode comes from issues table here).
-    if ( !exists $is_holiday{$branchcode} ) {
-        $is_holiday{$branchcode} = set_holiday( $branchcode, $today );
+    # If we want fines.pl to run regardless of the day being marked as holiday or not,
+    # --run_everyday can be used to skip the default behaviour where holidays do not
+    # update fines.
+    # This makes sure that fines.pl only sees holidays when using the default behaviour.
+    if(!$run_everyday) {
+        # In final case, CircControl must be PickupLibrary. (branchcode comes from issues table here).
+        if ( !exists $is_holiday{$branchcode} ) {
+            $is_holiday{$branchcode} = set_holiday( $branchcode, $today );
+        }
     }
 
     my $datedue = dt_from_string( $overdue->{date_due} );
