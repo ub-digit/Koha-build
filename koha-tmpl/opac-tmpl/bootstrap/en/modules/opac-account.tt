@@ -170,6 +170,18 @@ $( document ).ready(function() {
 
         }
         let librarygroup = null;
+        // polyfill for IE https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries
+        if (!Object.entries) {
+        Object.entries = function( obj ){
+            var ownProps = Object.keys( obj ),
+                i = ownProps.length,
+                resArray = new Array(i); // preallocate the Array
+            while (i--)
+            resArray[i] = [ownProps[i], obj[ownProps[i]]];
+
+            return resArray;
+        };
+        }
         var found = Object.entries(branches).some(function(item) {
             return item[1].some(function(el) {
                 if (el === parseInt(id)) {
