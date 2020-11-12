@@ -114,9 +114,9 @@ $( document ).ready(function() {
     let callbackURL = "[% staffClientBaseURL %]" + "/cgi-bin/koha/svc/onlinepayment";  // window.location.href;
 
     function getAmountPayable(payments) {
-        var amounts = payments.map(o => {return o['amount']});
+        var amounts = payments.map(function(o)  {return o['amount']});
         if (amounts.length) {
-            return amounts.reduce((total, num) => total + num);
+            return amounts.reduce(function(total, num) {return total + num});
         }
         return 0;
     }
@@ -170,7 +170,7 @@ $( document ).ready(function() {
 
         }
         let librarygroup = null;
-        var found = Object.entries(branches).some((item) => {
+        var found = Object.entries(branches).some(function(item) {
             return item[1].some(function(el) {
                 if (el === parseInt(id)) {
                     librarygroup = item[0];
