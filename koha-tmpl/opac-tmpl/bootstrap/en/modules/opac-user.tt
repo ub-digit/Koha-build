@@ -128,7 +128,7 @@
                                 [% END %]
                                 [% IF ( restrictionCode == 'FINES_EXCEEDED') %]
                                     <li class="restriction-FINES_EXCEEDED">
-                                        <span>Your</span> <a href="/cgi-bin/koha/opac-account.pl">fines</a> <span>exceed the allowed limit.</span> <a href="http://www.ub.gu.se/bibliotek/">Visit any of the libraries</a> <span>to pay your fines. We only accept card payments.</span>
+                                        <span>You have excessive overdue fines.</span> <a href='/cgi-bin/koha/opac-account.pl'>Pay your fines</a> <span>to be able to borrow from the library again.</span>
                                     </li>
                                 [% END %]
                                 [% IF ( restrictionCode == 'ADDRESS_MISSING') %]
@@ -142,7 +142,7 @@
                                 [% END %]
                                 [% IF ( restrictionCode == 'OVERDUES_PROCESS') %]
                                     <li class="restriction-OVERDUES_PROCESS">
-                                        <span>You have overdue loans.</span> <a href="/cgi-bin/koha/opac-user.pl">Renew the loans</a> <span>or return the material to the library to unblock your account.</span>
+                                        <span>You have overdue items. Return items to be able to borrow from the library again.</span> <a href='/cgi-bin/koha/opac-account.pl'>Pay any outstanding fines</a>.
                                     </li>
                                 [% END %]
                             [% END %]
