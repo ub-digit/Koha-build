@@ -27,13 +27,13 @@ function confirm_deletion(link) {
         is_confirmed = alert( MSG_DELETE_ALL_ITEMS.format(count) );
     } else if (countorders > 0){
         if( order_manage_permission ){
-            is_confirmed = confirm( CONFIRM_RECORD_USED_IN_ORDERS.format(countorders) );
+            is_confirmed = alert( MSG_RECORD_USED_IN_ORDERS.format(countorders) );
         } else {
             is_confirmed = alert( MSG_RECORD_USED_IN_ORDERS.format(countorders) );
         }
     } else if (countdeletedorders > 0){
         if( order_manage_permission ){
-            is_confirmed = confirm( CONFIRM_IN_DELETED_ORDERS.format(countdeletedorders) );
+            is_confirmed = alert( MSG_IN_DELETED_ORDERS.format(countdeletedorders) );
         } else {
             is_confirmed = alert( MSG_IN_DELETED_ORDERS.format(countdeletedorders) );
         }
