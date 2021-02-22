@@ -89,6 +89,8 @@
                             </div>
                             [% END %]
                         [% END %]
+                        <p id="no-online-payment-info" class="en-US"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
+                        <p id="no-online-payment-info" class="sv-SE"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
                         <p id="no-online-payment-link" class="en-US"><a href="[% UBOnlinePayment.ExternalInfoURLEn() %]">More information about loans and fines</a></p>
                         <p id="no-online-payment-link" class="sv-SE"><a href="[% UBOnlinePayment.ExternalInfoURLSv() %]">More information about loans and fines</a></p>
                     [% END %]
@@ -324,6 +326,8 @@ $( document ).ready(function() {
         $("#check-all-payable").prop("disabled", true);
     [% END %]
     if (getLang() === "en-US") {
+        $("#no-online-payment-info.en-US").show();
+        $("#no-online-payment-info.sv-SE").hide();
         $("#no-online-payment-link.en-US").show();
         $("#no-online-payment-link.sv-SE").hide();
         $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").show();
