@@ -58,7 +58,7 @@ BEGIN {
 
 =head1 NAME
 
-C4::Reports::Guided - Module for generating guided reports 
+C4::Reports::Guided - Module for generating guided reports
 
 =head1 SYNOPSIS
 
@@ -162,7 +162,7 @@ sub get_report_groups {
 
 =head2 get_all_tables
 
-This will return a list of all tables in the database 
+This will return a list of all tables in the database
 
 =cut
 
@@ -227,7 +227,7 @@ sub _get_columns {
 
 =head2 build_query($columns,$criteria,$orderby,$area)
 
-This will build the sql needed to return the results asked for, 
+This will build the sql needed to return the results asked for,
 $columns is expected to be of the format tablename.columnname.
 This is what get_columns returns.
 
@@ -289,7 +289,7 @@ sub _build_query {
 		}
 		else {
 			$deftext  =~ s/AND/WHERE/;
-			$query .= $deftext;			
+			$query .= $deftext;
 		}
 	}
     if ($totals) {
@@ -784,14 +784,14 @@ sub get_column_type {
 			if ($info->{'TYPE_NAME'} eq 'CHAR' || $info->{'TYPE_NAME'} eq 'VARCHAR'){
 				$info->{'TYPE_NAME'} = 'distinct';
 			}
-			return $info->{'TYPE_NAME'};		
+			return $info->{'TYPE_NAME'};
 		}
 	}
 }
 
 =head2 get_distinct_values($column)
 
-Given a column name, return an arrary ref of hashrefs suitable for use as a tmpl_loop 
+Given a column name, return an arrary ref of hashrefs suitable for use as a tmpl_loop
 with the distinct values of the column
 
 =cut
@@ -805,7 +805,7 @@ sub get_distinct_values {
 	my $sth = $dbh->prepare($query);
 	$sth->execute();
     return $sth->fetchall_arrayref({});
-}	
+}
 
 sub save_dictionary {
     my ( $name, $description, $sql, $area ) = @_;
@@ -1028,6 +1028,7 @@ sub EmailReport {
         message_transport_type => 'email',
     });
     $letter = $letter->unblessed;
+    $letter->{'content-type'} = 'text/html; charset="UTF-8"' if $letter->{'is_html'};
 
     my $report = Koha::Reports->find( $report_id );
     my $sql = $report->savedsql;
