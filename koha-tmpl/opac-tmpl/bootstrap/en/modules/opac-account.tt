@@ -334,6 +334,8 @@ $( document ).ready(function() {
         $(".amount-debt-left-after-payment.sv-SE, .amount-payable.sv-SE").hide();
     }
     else {
+        $("#no-online-payment-info.en-US").hide();
+        $("#no-online-payment-info.sv-SE").show();
         $("#no-online-payment-link.sv-SE").show();
         $("#no-online-payment-link.en-US").hide();
         $(".amount-debt-left-after-payment.en-US, .amount-payable.en-US").hide();
