@@ -87,10 +87,10 @@
                                     <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
                                 </form>
                             </div>
+                            <p id="no-online-payment-info" class="en-US"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
+                            <p id="no-online-payment-info" class="sv-SE"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
                             [% END %]
                         [% END %]
-                        <p id="no-online-payment-info" class="en-US"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
-                        <p id="no-online-payment-info" class="sv-SE"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
                         <p id="no-online-payment-link" class="en-US"><a href="[% UBOnlinePayment.ExternalInfoURLEn() %]">More information about loans and fines</a></p>
                         <p id="no-online-payment-link" class="sv-SE"><a href="[% UBOnlinePayment.ExternalInfoURLSv() %]">More information about loans and fines</a></p>
                     [% END %]
