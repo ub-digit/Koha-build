@@ -4,7 +4,7 @@
 <table>
     <tr>
         [% IF ( CAN_user_reserveforothers_modify_holds_priority ) %]
-            <th>Priority</th>
+            <!--GUB hide priority <th>Priority</th> -->
             <th>&nbsp;</th>
         [% ELSE %]
             <th>Delete?</th>
@@ -28,7 +28,7 @@
     [% FOREACH hold IN holds %]
     [% IF !hold.found && first_priority == 0 %][% first_priority = hold.priority %][% END %]
         <tr>
-            <td>
+            <!-- <td>
                 <input type="hidden" name="reserve_id" value="[% hold.reserve_id | html %]" />
                 <input type="hidden" name="borrowernumber" value="[% hold.borrowernumber | html %]" />
                 <input type="hidden" name="biblionumber" value="[% hold.biblionumber | html %]" />
@@ -73,7 +73,7 @@
 
                     <option value="del">del</option>
                 </select>
-            </td>
+            </td> -->
 
             [% IF ( CAN_user_reserveforothers_modify_holds_priority ) %]
             [% UNLESS hold.found %]
