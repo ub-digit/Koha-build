@@ -82,8 +82,8 @@
                             <div id="online-payment">
                                 <strong><span id="online-payment-amount">Selected fines to pay:</span> <span class="amount-payable sv-SE"></span> SEK <span class="amount-payable en-US"></span></strong>
                                 <p><span id="online-payment-debt-after-payment">(outstanding debt after payment:</span> <span class="amount-debt-left-after-payment sv-SE"></span> SEK <span class="amount-debt-left-after-payment en-US"></span>)</p>
-                                <p id="no-online-payment-info" class="en-US"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
-                                <p id="no-online-payment-info" class="sv-SE"> If you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
+                                <p id="no-online-payment-info" class="en-US">When you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
+                                <p id="no-online-payment-info" class="sv-SE"> When you return the book, the replacement fee will automatically disappear. You will still have to pay the overdue fines.</p>
                                 <form id="onlinePaymentForm" method="post" action="[% UBOnlinePayment.URL() | html %]?language=">
                                     <input type="submit" class="btn btn-default" value="Pay online"></input>
                                     <textarea  id="ub-debug-json" type="hidden" name="payment_data" style="width:80%; min-height:400px; display:none;"></textarea>
