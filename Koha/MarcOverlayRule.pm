@@ -1,4 +1,4 @@
-package Koha::MarcMergeRule;
+package Koha::MarcOverlayRule;
 
 # This file is part of Koha.
 #
@@ -23,7 +23,7 @@ my $cache = Koha::Caches->get_instance();
 
 =head1 NAME
 
-Koha::MarcMergeRule - Koha MarcMergeRule Object class
+Koha::MarcOverlayRule - Koha MarcOverlayRule Object class
 
 =cut
 
@@ -35,7 +35,7 @@ Override C<store> to clear marc merge rules cache.
 
 sub store {
     my $self = shift @_;
-    $cache->clear_from_cache('marc_merge_rules');
+    $cache->clear_from_cache('marc_overlay_rules');
     $self->SUPER::store(@_);
 }
 
@@ -47,12 +47,12 @@ Override C<delete> to clear marc merge rules cache.
 
 sub delete {
     my $self = shift @_;
-    $cache->clear_from_cache('marc_merge_rules');
+    $cache->clear_from_cache('marc_overlay_rules');
     $self->SUPER::delete(@_);
 }
 
 sub _type {
-    return 'MarcMergeRule';
+    return 'MarcOverlayRule';
 }
 
 1;
