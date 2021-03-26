@@ -134,7 +134,7 @@ if ($all) {
 my $using_elastic_search = (C4::Context->preference('SearchEngine') eq 'Elasticsearch');
 my $modify_biblio_marc_options = {
     'defer_search_engine_indexing' => $using_elastic_search,
-    context => {source => 'bulkmarcimport'}
+    overlay_context => {source => 'bulkmarcimport'}
 };
 
 my @search_engine_record_ids;
