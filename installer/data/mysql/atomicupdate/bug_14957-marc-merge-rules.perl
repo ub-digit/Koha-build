@@ -1,7 +1,7 @@
-$DBversion = 'XXX'; # will be replaced by the RM
-if( CheckVersion( $DBversion ) ) {
+$DBversion = 'XXX';    # will be replaced by the RM
+if ( CheckVersion($DBversion) ) {
 
-    unless (TableExists('marc_overlay_rules')) {
+    unless ( TableExists('marc_overlay_rules') ) {
         $dbh->do(q{
             CREATE TABLE IF NOT EXISTS `marc_overlay_rules` (
               `id` int(11) NOT NULL auto_increment,
@@ -35,5 +35,5 @@ if( CheckVersion( $DBversion ) ) {
       );
     });
 
-    NewVersion( $DBversion, 14957, "Add a way to define overlay rules for incoming MARC records)\n";
+    NewVersion( $DBversion, 14957, "Add a way to define overlay rules for incoming MARC records)\n" );
 }
