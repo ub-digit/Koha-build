@@ -1,7 +1,7 @@
 [% USE raw %]
 [% USE Koha %]
 [% INCLUDE 'doc-head-open.inc' %]
-<title>Koha &rsaquo; Administration &rsaquo; MARC overlay rules</title>
+<title>MARC overlay rules &rsaquo; Koha &rsaquo; Administration</title>
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/datatables.css") | $raw %]
 [% INCLUDE 'datatables.inc' %]
