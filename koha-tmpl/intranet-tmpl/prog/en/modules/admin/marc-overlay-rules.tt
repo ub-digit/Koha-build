@@ -12,7 +12,7 @@
     }
 </style>
 
-<script type="text/javascript">
+<script>
 function doSubmit(op, id) {
     $('<input type="hidden"/>')
     .attr('name', 'op')
