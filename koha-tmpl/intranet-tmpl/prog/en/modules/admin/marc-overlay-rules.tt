@@ -6,7 +6,7 @@
 [% Asset.css("css/datatables.css") | $raw %]
 [% INCLUDE 'datatables.inc' %]
 
-<style type="text/css">
+<style>
     .required {
         background-color: #C00;
     }
