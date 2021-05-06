@@ -69,9 +69,7 @@ my ($template, $loggedinuser, $cookie) = get_template_and_user(
         template_name   => "admin/marc-overlay-rules.tt",
         query           => $input,
         type            => "intranet",
-        authnotrequired => 0,
         flagsrequired   => { parameters => 'manage_marc_overlay_rules' },
-        debug           => 1,
     }
 );
 
@@ -155,7 +153,7 @@ else {
     $rules = $get_rules->();
 }
 
-my $categorycodes = Koha::Patron::Categories->search_limited({}, {order_by => ['description']});
+my $categorycodes = Koha::Patron::Categories->search_with_library_limits({}, {order_by => ['description']});
 $template->param( rules => $rules, categorycodes => $categorycodes, messages => $errors );
 
 output_html_with_http_headers $input, $cookie, $template->output;
