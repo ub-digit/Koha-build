@@ -1388,7 +1388,8 @@ legend:hover {
                                                             <!-- Gub koha-1624 disable change of permission settings for non autorized users -->
                                                             [% IF ( patron_attribute.use_dropdown ) %]
                                                             [% UNLESS ( CAN_user_tools_view_system_logs ) %]
-                                                                [% IF ( patron_attribute.code == 'PERM_LIB' || patron_attribute.code == 'PERM_ACQ' || patron_attribute.code == 'PERM_INV' || patron_attribute.code == 'PERM_NWS' || patron_attribute.code == 'PERM_SIP' ) %]
+                                                                [% USE String(patron_attribute.code) %]
+                                                                [% IF ( String.truncate(5) == 'PERM_' ) %]
                                                                     [% gub_disabled = 'disabled=true' %]
                                                                     [% gub_hidden = ' hidden' %]
                                                                     [% gub_style_opacity ='style="opacity:0.6"'%]
