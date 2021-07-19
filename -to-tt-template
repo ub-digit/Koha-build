@@ -1,0 +1,196 @@
+[33mcommit 5a9885de3792dc09bda178a7b8eca9e3eeccaf9c[m[33m ([m[1;36mHEAD -> [m[1;32mgub-dev-pg-reports[m[33m, [m[1;31morigin/gub-dev-pg-reports[m[33m)[m
+Author: Johan <johan.larsson@ub.gu.se>
+Date:   Mon Feb 22 13:24:28 2021 +0100
+
+    adds support for html in email report
+
+[33mcommit 037107546a13403e79c5082e8f67a12917e56bce[m
+Author: Stefan Berndtsson <stefan.berndtsson@ub.gu.se>
+Date:   Wed May 27 18:09:11 2020 +0200
+
+    KOHA-1531 Make reports capable of calling PostgreSQL
+    
+    Add the ability for reports to connect to a PostgreSQL database.
+    The database credentials and setup is configured in the koha-conf.xml
+    file in the config section using the tags:
+    
+    pg_database: Name of database
+    pg_hostname: Hostname/IP of PostgreSQL server
+    pg_port: Port that PostgreSQL is listening on. Usually 5432
+    pg_user: Username to connect with
+    pg_pass: Password to connect with
+    
+    When creating a new report there is a dropdown of report source that
+    can be set to PostgreSQL and will then use the configured connection
+    to do the report instead of calling MySQL.
+    
+    This works for on-screen reports, exporting and JSON svc report view.
+    There may be other cases where it fails, that will need to be fixed
+    as they show up. It also relies on MySQL and PostgreSQL queries
+    being fairly similar in syntax, so implementing for other kinds of
+    sources would probably require a fairly substantial rewrite.
+    
+    The package libdbd-pg-perl needs to be installed on the server for
+    DBI to be able to contact PostgreSQL databases.
+
+[33mcommit 092276f53c0b82c1311afe9425d13d83a528ca12[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/gub-dev-fines-ignore-holidays[m[33m, [m[1;31morigin/gub-bug-24788-remove-autoloaded-column-accessors[m[33m, [m[1;31morigin/gub-bug-24456-incorrect-issues-sort-order[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmaster[m[33m)[m
+Author: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+Date:   Mon Aug 31 14:05:05 2020 +0000
+
+    Bug 19889: DBRev 20.06.00.032
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit d6e72c0de288ade8a2d69f101754d51db6162811[m
+Author: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+Date:   Mon Aug 31 14:44:10 2020 +0200
+
+    Bug 19889: Add select2 class to the new dropdown list
+    
+    This is needed since bug 25727.
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit 2793e4558082e4ff50315b433d50490036014e28[m
+Author: Agustin Moyano <agustinmoyano@theke.io>
+Date:   Tue Aug 25 17:10:28 2020 -0300
+
+    Bug 19889: (follow-up) Fix text in moredetail.tt
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit 0de40dd877defd4190c2ec45676c4f5261fc13f9[m
+Author: Nick Clemens <nick@bywatersolutions.com>
+Date:   Thu Aug 20 10:36:23 2020 +0000
+
+    Bug 19889: (QA follow-up) Check that exclude from local holds priority is set and not a blank string
+    
+    Signed-off-by: Agustin Moyano <agustinmoyano@theke.io>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit fee0b9310e5b58835c7bfabdcee75f956a381a81[m
+Author: Nick Clemens <nick@bywatersolutions.com>
+Date:   Wed Aug 19 12:21:27 2020 +0000
+
+    Bug 19889: (QA follow-up) use em over i and update field if unset
+    
+    em is better for accessibility
+    
+    We should set the field to 0 when it was previously unset
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit c1be2b8817c27c767f9f2ca2939f6b8f3013d7e2[m
+Author: Agustin Moyano <agustinmoyano@theke.io>
+Date:   Thu Aug 13 10:04:32 2020 -0300
+
+    Bug 19889: (follow-up) Fix few minor things
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    JD amended patch: remove unecessary indentation changes
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit 785265aea0ffed9612bd53b25f36642ed03276a4[m
+Author: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+Date:   Fri Aug 7 11:17:59 2020 +0200
+
+    Bug 19889: (follow-up) Add tests
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit 18d42db176d5fd29ddd07b4fc8b93a378087ffc5[m
+Author: Agustin Moyano <agustinmoyano@theke.io>
+Date:   Thu Aug 6 15:54:49 2020 -0300
+
+    Bug 19889: (follow-up) Fix overlapping blue box and message in batch item modification
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit cb9c48a6f6ae52d8ba5ec4475758d0faf529ec80[m
+Author: Kyle M Hall <kyle@bywatersolutions.com>
+Date:   Wed Jul 22 11:21:39 2020 -0400
+
+    Bug 19889: Add feedback when exclusion is updated on moredetail.pl
+    
+    Signed-off-by: Christopher Brannon <cbrannon@cdalibrary.org>
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit bcf9b259c5fcc1a52772efc82d4c8eec24fcf3c9[m
+Author: Agustin Moyano <agustinmoyano@theke.io>
+Date:   Wed Jun 10 16:18:01 2020 -0300
+
+    Bug 19889: Make it possible to exclude items and categories from local holds priority
+    
+    This patch adds the ability to exclude patrons (by category) from local
+    holds, and items, by editing the item itself or by batch item
+    modification tool.
+    
+    To test:
+    1. apply patches
+    2. updatedatabase
+    3. Enable LocalHoldsPriority preference, and leave
+       LocalHoldsPriorityPatronControl in pickup library, and
+    LocalHoldsPriorityItemControl in holding library.
+    4. Search for a biblio with one item.
+    5. Place a hold with a patron (patron1) and set pickup location to a different
+       library of the item's home library
+    6. Place another hold with another patron (patron2) and set pickup location to be
+       the same as the item's home library
+    7. ./misc/cronjobs/holds/build_holds_queue.pl
+    8. Go to circulation -> holds queue
+    9. Search by the item's home library
+    CHECK => only the hold for patron2 (with the pickup location the same as the
+    item's home library) appears in the table
+    10. Go back to the biblio details page and click on "Items" tab
+    CHECK => There is a new section in the item's details between "Statuses"
+    and "History" called "Priority"
+    11. Set exclude to "Yes" and update
+    12. repeat steps 7 to 9
+    SUCCESS => only the hold for patron1 now appears, even the other hold had local
+    hold priority
+    13. Repeat step 10 and 11 but this time set exclude to "No"
+    14. repeat steps 7 to 9
+    CHECK => the hold for patron2 is back
+    15. Edit patron2's category and set exclude from local holds priority to
+        "Yes"
+    16. Repeat steps 7 to 9
+    SUCCESS => the hold for patron1 is back
+    17. Go to tools -> Batch item modification and in barcode list place
+        several (existing) barcodes and press continue
+    CHECK => There is a new section in the bottom called "Priority"
+    18. Set exclude to "Yes" and save
+    SUCCESS => all items in the list now have exclude setted to "Yes"
+    19. Try to checkout the first item to a patron3
+    SUCCESS => Alert message appears saying that patron1 has a hold on that
+    item
+    20. Click on Yes and then checkin that item
+    SUCCESS => There is a modal window saying that a hold was found for
+    patron1
+    21. prove t/db_dependent/HoldsQueue.t t/db_dependent/Holds/LocalHoldsPriority.t
+    22. Sign off
+    
+    Sponsored-by: Cooperative Information Network (CIN)
+    
+    Signed-off-by: Christopher Brannon <cbrannon@cdalibrary.org>
+    
+    Signed-off-by: Christopher Brannon <cbrannon@cdalibrary.org>
+    
+    Signed-off-by: Nick Clemens <nick@bywatersolutions.com>
+    
+    Signed-off-by: Jonathan Druart <jonathan.druart@bugs.koha-community.org>
+
+[33mcommit 93fdca520943874143
