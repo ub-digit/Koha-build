@@ -105,8 +105,8 @@ my $userdebarred;
 my $allowed_despite_restriction = 1;
 if (C4::Context->preference( 'OPACShowDetailedDebarments')) {
     our $restrictionCodeList = [];
-    if ( $borr->{'gonenoaddress'}){push $restrictionCodeList, "ADDRESS_MISSING"};
-    if ( $borr->{'lost'})         {push $restrictionCodeList, "CARD_LOST"};
+    if ( $borr->{'gonenoaddress'}){push @{$restrictionCodeList}, "ADDRESS_MISSING"};
+    if ( $borr->{'lost'})         {push @{$restrictionCodeList}, "CARD_LOST"};
     my $debarments = Koha::Patron::Debarments::GetDebarments({ borrowernumber => $borrowernumber});
     my ($hashref, $key, $cmt);
     my $borrstring = my $commentstring = '';
@@ -117,7 +117,7 @@ if (C4::Context->preference( 'OPACShowDetailedDebarments')) {
             $allowed_despite_restriction = 0;
         }
         $borr->{"${key}comment"}  = $cmt;
-        push $restrictionCodeList, $key;
+        push @{$restrictionCodeList}, $key;
     }
     $borr->{'restrictionCodeList'}    = $restrictionCodeList;
 };
@@ -154,7 +154,7 @@ if (   C4::Context->preference('OpacRenewalAllowed')
     && defined($no_renewal_amt)
     && $amountoutstandingfornewal > $no_renewal_amt )
 {
-if (C4::Context->preference( 'OPACShowDetailedDebarments')) {push our $restrictionCodeList, "FINES_EXCEEDED";}
+if (C4::Context->preference( 'OPACShowDetailedDebarments')) {push @{our $restrictionCodeList}, "FINES_EXCEEDED";}
 
     $borr->{'flagged'} = 1;
     $canrenew = 0;
