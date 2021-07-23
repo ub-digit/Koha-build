@@ -29,6 +29,7 @@ use C4::Output qw( output_html_with_http_headers output_and_exit_if_error );
 use C4::Templates;
 use Koha::Acquisition::Currencies;
 use Koha::Database::Columns;
+use Koha::MarcModificationTemplates;
 use IO::File;
 use YAML::XS;
 use Encode;
@@ -113,6 +114,9 @@ sub _get_chunk {
                     $options{'choices'} = { map { $_->authorised_value => $_->lib } Koha::AuthorisedValues->search( { category => $options{'source'} } )->as_list };
                     $add_blank = 1;
                 }
+            } elsif ( $options{choices} eq 'modification-templates' ) {
+                $options{choices} = { map { $_->template_id => $_->name } Koha::MarcModificationTemplates->search };
+                $add_blank = 1;
             } else {
                 die 'Unrecognized source of preference values: ' . $options{'choices'};
             }
