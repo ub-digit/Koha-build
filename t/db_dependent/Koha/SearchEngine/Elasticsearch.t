@@ -187,7 +187,7 @@ subtest 'get_elasticsearch_mappings() tests' => sub {
 
 subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' => sub {
 
-    plan tests => 81;
+    plan tests => 71;
 
     t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
     t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'base64ISO2709');
@@ -293,6 +293,16 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
             sort => undef,
             marc_type => 'marc21',
             marc_field => '245',
+        },
+        {
+            name => 'title_sort',
+            type => 'string',
+            facet => 0,
+            suggestible => 0,
+            searchable => 0,
+            sort => 1,
+            marc_type => 'marc21',
+            marc_field => '246a',
         },
         {
             name => 'sum_item_price',
@@ -457,6 +467,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
         MARC::Field->new('650', '', '', a => 'Heading', z => 'Geohead', v => 'Formhead'),
         MARC::Field->new('650', '', '', a => 'Heading', x => 'Gensubhead', z => 'Geohead'),
         MARC::Field->new('999', '', '', c => '1234567'),
+        MARC::Field->new('246', '', '', a => '#$[Title!'),
         # '  ' for testing trimming of white space in boolean value callback:
         MARC::Field->new('952', '', '', 0 => '  ', g => '123.30', o => $callno, l => 3),
         MARC::Field->new('952', '', '', 0 => 0, g => '127.20', o => $callno2, l => 2),
@@ -639,6 +650,12 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
       $docs->[0]->{'copydate'},
       ['1962'],
       'First document copydate field should be set correctly'
+    );
+
+    is(
+        $docs->[0]->{title_sort__sort}[0],
+        'Title!',
+        'First document title_sort should have initial non word characters stripped',
     );
 
     # Second record:
