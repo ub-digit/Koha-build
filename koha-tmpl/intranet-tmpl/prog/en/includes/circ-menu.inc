@@ -192,14 +192,14 @@
                     </li>
                 [% END %]
             [% END %]
-            [% IF CAN_user_borrowers_edit_borrowers %]
+            [% IF CAN_user_tools_view_system_logs %]
                 [% IF ( intranetreadinghistory ) %]
                     [% IF ( readingrecordview ) %]<li class="active">[% ELSE %]<li>[% END %]
                         <a href="/cgi-bin/koha/members/readingrec.pl?borrowernumber=[% patron.borrowernumber | uri %]">Circulation history</a>
                     </li>
                 [% END %]
             [% END %]
-            [% IF CAN_user_borrowers_edit_borrowers %]
+            [% IF CAN_user_tools_view_system_logs %]
                 [% IF ( IntranetReadingHistoryHolds ) %]
                     [% IF ( holdshistoryview ) %]<li class="active">[% ELSE %]<li>[% END %]
                         <a href="/cgi-bin/koha/members/holdshistory.pl?borrowernumber=[% patron.borrowernumber | uri %]">Holds history</a>
