@@ -114,7 +114,7 @@ sub _get_chunk {
                     $options{'choices'} = { map { $_->authorised_value => $_->lib } Koha::AuthorisedValues->search( { category => $options{'source'} } )->as_list };
                     $add_blank = 1;
                 }
-            } elsif ( $options{choices} eq 'modification-templates' ) {
+            } elsif ( $options{choices} eq 'marcModTemplates' ) {
                 $options{choices} = { map { $_->template_id => $_->name } Koha::MarcModificationTemplates->search };
                 $add_blank = 1;
             } else {
