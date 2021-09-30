@@ -1019,6 +1019,11 @@ sub _set_found_trigger {
                 }
 
                 my $credit_total = $lost_charge->amountoutstanding + $total_to_refund;
+                # Only refund if it has not already been paid. If charge has been paid, make sure there is
+                # nothing to credit.
+                if ( $lostreturn_policy eq "refund_unpaid" && $lost_charge->amountoutstanding <= 0) {
+                    $credit_total = 0;
+                }
 
                 my $credit;
                 if ( $credit_total > 0 ) {
