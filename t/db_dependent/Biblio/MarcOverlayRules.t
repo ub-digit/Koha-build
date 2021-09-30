@@ -22,7 +22,7 @@ use POSIX qw(floor);
 use MARC::Record;
 
 use C4::Context;
-use C4::Biblio;
+use C4::Biblio qw( AddBiblio ModBiblio DelBiblio GetMarcBiblio );
 use Koha::Database;
 
 use Test::More tests => 23;
