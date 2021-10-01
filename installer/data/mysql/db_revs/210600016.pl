@@ -38,14 +38,14 @@ return {
             |);
         }
 
-        $dbh->do(q|
-            UPDATE letter
-            SET content = REGEXP_REPLACE(content, '<<\\\\s*opac_news\.', '<<additional_contents.')
-        |);
-        $dbh->do(q|
-            UPDATE letter
-            SET content = REGEXP_REPLACE(content, '\\\\[%\\\\s*opac_news\.', '[% additional_contents.')
-        |);
+#        $dbh->do(q|
+#            UPDATE letter
+#            SET content = REGEXP_REPLACE(content, '<<\\\\s*opac_news\.', '<<additional_contents.')
+#        |);
+#        $dbh->do(q|
+#            UPDATE letter
+#            SET content = REGEXP_REPLACE(content, '\\\\[%\\\\s*opac_news\.', '[% additional_contents.')
+#        |);
 
         $dbh->do(q|
             UPDATE systempreferences
