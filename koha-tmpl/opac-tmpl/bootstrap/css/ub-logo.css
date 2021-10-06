@@ -1,52 +1,52 @@
 #wrapper {
-  padding: 0
+  padding: 0;
 }
-​
+
 .navbar .navbar-appname {
   float: left;
   font-size: 22px;
   line-height: 14px;
   color: #fff;
-  padding: 14px 15px 14px 14px
+  padding: 14px 15px 14px 14px;
 }
-​
+
 nav.navbar {
   background: #004b89;
   border: none;
   padding-top: 10px;
   padding-bottom: 10px;
 }
-​
+
 nav #user-menu {
   color: #fff;
 }
-​
+
 #moresearches {
   display: none;
 }
-​
+
 .navbar .divider-vertical {
   border: none;
   border-right: 1px solid #fff
 }
-​
+
 #logo, #logo a {
   border: 0;
   margin: 0;
   width: 144px
 }
-​
+
 .navbar #members a.logout {
   color: inherit
 }
-​
+
 #logo {
   background: url(../images/gub-textlogo-sv.svg) 0 no-repeat;
   float: left!important;
   padding: 0;
   border-right: 1px solid #fff
 }
-​
+
 #logo a {
   cursor: pointer;
   display: block;
@@ -55,7 +55,7 @@ nav #user-menu {
   padding: 40px 0 0;
   text-decoration: none
 }
-​
+
 @media only screen and (max-width:700px) {
   #logo {
     background: url(../images/gub-textlogo-sv.svg) 0 no-repeat;
