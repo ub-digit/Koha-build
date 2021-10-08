@@ -351,7 +351,7 @@
                             </fieldset>
 
                             <fieldset class="action">
-                              <input type="submit" value="Submit changes" class="btn" /> <a class="cancel" href="/cgi-bin/koha/opac-user.pl">Cancel</a>
+                              <input type="submit" value="Submit changes" class="btn btn-default" /> <a class="cancel" href="/cgi-bin/koha/opac-user.pl">Cancel</a>
                             </fieldset>
                         </form>
                         <!-- END - Simplified form  -->
