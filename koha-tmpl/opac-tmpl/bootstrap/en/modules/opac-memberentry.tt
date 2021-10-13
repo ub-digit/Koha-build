@@ -332,7 +332,7 @@
                                             <li>
                                                 <label for="borrower_firstname" class="[% required.firstname | html %]">First name:</label>
 
-                                                <input type="text" id="borrower_firstname" name="borrower_firstname" value="[% borrower.firstname | html %]" class="[% required.firstname | html %]" />
+                                                <input type="text" id="borrower_firstname" name="borrower_firstname" disabled value="[% borrower.firstname | html %]" class="[% required.firstname | html %]" />
                                                 <div class="required_label [% required.firstname | html %]">Required</div>
                                             </li>
                                         [% END %]
