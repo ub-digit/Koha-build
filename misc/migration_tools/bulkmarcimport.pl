@@ -23,6 +23,8 @@ use C4::Biblio qw(
     GetMarcFromKohaField
     ModBiblio
     ModBiblioMarc
+    GetFrameworkCode                                                        
+    GetMarcBiblio
 );
 use C4::Koha;
 use C4::Charset qw( MarcToUTF8Record SetUTF8Flag );
@@ -398,7 +400,7 @@ RECORD: foreach my $record (@{$marc_records}) {
         require C4::Search;
         my $server = ($authorities ? 'authorityserver' : 'biblioserver');
         my $query = build_query($match, $record);
-        $debug && warn $query;
+        Koha::Logger->get->debug("Bulkmarcimport - $query");
         my ($error, $results, $totalhits) = $searcher->simple_search_compat($query, 0, 3, [$server]);
         # changed to warn so able to continue with one broken record
         if (defined $error) {
@@ -407,7 +409,7 @@ RECORD: foreach my $record (@{$marc_records}) {
             printlog({ id => $originalid || $match, op => "match", status => "ERROR" }) if ($logfile);
             next RECORD;
         }
-        $debug && warn "$query $server : $totalhits";
+        Koha::Logger->get->debug("Bulkmarcimport - $query $server : $totalhits");
         # sub SimpleSearch could return undefined, but only on error, so
         # should not really need to safeguard here, but do so anyway
         $results //= [];
