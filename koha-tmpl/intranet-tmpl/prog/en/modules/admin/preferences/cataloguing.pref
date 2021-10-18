@@ -289,8 +289,8 @@ Cataloging:
         -
             - pref: MARCOverlayRules
               choices:
-                  yes: "Use"
-                  no: "Don't use"
+                  1: "Use"
+                  0: "Don't use"
             - MARC overlay rules for incoming records, to decide which action to take for each field.
     Exporting:
         -
