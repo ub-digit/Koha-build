@@ -79,7 +79,7 @@ BEGIN {
     @EXPORT_OK = qw(
         checkauth check_api_auth get_session check_cookie_auth checkpw checkpw_internal checkpw_hash
         get_all_subpermissions get_cataloguing_page_permissions get_user_subpermissions in_iprange
-        get_template_and_user haspermission create_basic_session
+        get_template_and_user haspermission create_basic_session checkattributepw
     );
 
     $cas       = C4::Context->preference('casAuthentication');
@@ -2107,6 +2107,28 @@ sub checkpw_internal {
                 $patron->firstname, $patron->surname, $patron->branchcode, $patron->library->branchname, $patron->flags
             ) unless $no_set_userenv;
             return 1, $patron->cardnumber, $patron->userid, $patron;
+        }
+    }
+    return 0;
+}
+
+sub checkattributepw {
+    my ( $userid, $password, $attribute ) = @_;
+
+    $password = Encode::encode( 'UTF-8', $password )
+      if Encode::is_utf8($password);
+
+    my $dbh = C4::Context->dbh;
+    my $sth =
+      $dbh->prepare(
+        "select ba.attribute,b.cardnumber from borrowers b join borrower_attributes ba on b.borrowernumber = ba.borrowernumber where ba.code = ? and b.userid = ?"
+      );
+    $sth->execute($attribute, $userid);
+    if ( $sth->rows ) {
+        my ( $attribute_value, $cardnumber ) = $sth->fetchrow;
+
+        if ( $password eq $attribute_value ) {
+            return 1, $cardnumber, $userid;
         }
     }
     return 0;
