@@ -64,6 +64,7 @@ my $biblios;
 my $authorities;
 my $keepids;
 my $match;
+my $record_id_match;
 my $isbn_check;
 my $logfile;
 my $insert;
@@ -108,6 +109,7 @@ GetOptions(
     'update' => \$update,
     'all' => \$all,
     'match=s@' => \$match,
+    'record_id_match' => \$record_id_match,
     'i|isbn' => \$isbn_check,
     'x:s' => \$sourcetag,
     'y:s' => \$sourcesubfield,
@@ -449,6 +451,10 @@ RECORD: foreach my $record (@{$marc_records}) {
             $record->insert_fields_ordered($storeidfield);
             $record->delete_field($record->field($tagid));
         }
+    }
+
+    if ($record_id_match && !$matched_record_id && $originalid) {
+        $matched_record_id = $originalid;
     }
 
     foreach my $stringfilter (@$filters) {
