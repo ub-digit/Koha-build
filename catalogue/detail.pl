@@ -219,8 +219,8 @@ if ( $showcomp eq 'both' || $showcomp eq 'staff' ) {
         $template->param( ComponentPartsQuery => $biblio->get_components_query );
     }
 } else { # check if we should show analytics anyway
-    $show_analytics = 1 if $marc_record && @{$biblio->get_marc_components(1)}; # count matters here, results does not
-    $template->param( analytics_error => 1 ) if grep { $_->message eq 'component_search' } @{$biblio->object_messages};
+#    $show_analytics = 1 if $marc_record && @{$biblio->get_marc_components(1)}; # count matters here, results does not
+#    $template->param( analytics_error => 1 ) if grep { $_->message eq 'component_search' } @{$biblio->object_messages};
 }
 
 # XSLT processing of some stuff
