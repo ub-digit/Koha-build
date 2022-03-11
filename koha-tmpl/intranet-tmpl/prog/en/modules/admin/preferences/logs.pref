@@ -120,7 +120,12 @@ Logging:
                   1: Log
                   0: "Don't log"
             - any changes to purchase suggestions (create, modify, delete).
-
+        -
+            - pref: PatronViewLog
+              choices:
+                  1: Log
+                  0: "Don't log"
+            - " when patron personal information is viewed in the staff interface."
     Debugging:
         -
             - "When logging actions, store a stack trace that goes at most"
