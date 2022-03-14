@@ -52,6 +52,7 @@
 [%        CASE 'SUSPEND' %]<span>Suspend</span>
 [%        CASE 'RENEW'  %]<span>Renew</span>
 [%        CASE 'RENEWAL' %]<span>Renew</span>
+[%        CASE 'VIEW' %]<span>View</span>
 [%        CASE 'CHANGE PASS' %]<span>Change password</span>
 [%        CASE 'RESET PASS' %]<span>Reset password</span>
 [%        CASE 'ADDCIRCMESSAGE' %]<span>Add circulation message</span>
