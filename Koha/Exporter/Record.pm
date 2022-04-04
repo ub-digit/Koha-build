@@ -255,28 +255,23 @@ sub export {
         }
         if ( $format eq 'iso2709' ) {
             my $encoding_validator = sub {
-                my ($record_type) = @_;
-                return sub {
-                    my ($record) = @_;
-                    my $errorcount_on_decode = eval { scalar(MARC::File::USMARC->decode($record->as_usmarc)->warnings()) };
-                    if ($errorcount_on_decode || $@) {
-                        my ($id_tag, $id_subfield) = GetMarcFromKohaField('biblio.biblionumber', '');
-                        my $record_id = $record->subfield($id_tag, $id_subfield);
-                        my $msg = "$record_type $record_id could not be USMARC decoded/encoded. " . ($@ // '');
-                        chomp $msg;
-                        Koha::Logger->get->warn($msg);
-                        return 0;
-                    }
-                    return 1;
+                my ($record, $record_type) = @_;
+                my $errorcount_on_decode = eval { scalar(MARC::File::USMARC->decode($record->as_usmarc)->warnings()) };
+                if ($errorcount_on_decode || $@) {
+                    my ($id_tag, $id_subfield) = GetMarcFromKohaField('biblio.biblionumber', '');
+                    my $record_id = $record->subfield($id_tag, $id_subfield);
+                    my $msg = "$record_type $record_id could not be USMARC decoded/encoded. " . ($@ // '');
+                    chomp $msg;
+                    Koha::Logger->get->warn($msg);
+                    return 0;
                 }
+                return 1;
             };
-            my $validator = $encoding_validator->('Record');
-            for my $record (grep { $validator->($_) } @records) {
+            for my $record (grep { $encoding_validator->($_, 'Record') } @records) {
                 print $record->as_usmarc();
             }
             if (@deleted_records) {
-                $validator = $encoding_validator->('Deleted record');
-                for my $deleted_record (grep { $validator->($_) } @deleted_records) {
+                for my $deleted_record (grep { $encoding_validator->($_, 'Deleted record') } @deleted_records) {
                     print $deleted_record->as_usmarc();
                 }
             }
