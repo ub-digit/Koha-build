@@ -31,11 +31,13 @@ sub _get_record_for_export {
         $record = _get_authority_for_export( { %$params, authid => $record_id } );
     } elsif ( $record_type eq 'bibs' ) {
         $record = _get_biblio_for_export( { %$params, biblionumber => $record_id } );
+    } elsif ( $record_type eq 'deleted_bibs' ) {
+        $record = _get_deleted_biblio_for_export( { %$params, biblionumber => $record_id } );
     } else {
-        Koha::Logger->get->warn( "Record_type $record_type not supported." );
+        Koha::Logger->get->warn( "Record type $record_type not supported." );
     }
     if ( !$record ) {
-        Koha::Logger->get->warn( "Record $record_id could not be exported." );
+        Koha::Logger->get->warn( "Record $record_id with record type $record_type could not be exported." );
         return;
     }
 
@@ -117,8 +119,7 @@ sub _get_deleted_biblio_for_export {
     my $biblionumber = $params->{biblionumber};
     # Creating schema is expensive, allow caller to
     # pass it so don't have to recreate for each call
-    my $resultset = $params->{resultset} || Koha::Database
-        ->new()
+    my $resultset = $params->{resultset} || Koha::Database->new()
         ->schema()
         ->resultset('DeletedbiblioMetadata');
     my $marc_flavour = C4::Context->preference('marcflavour');
@@ -218,7 +219,7 @@ sub export {
         Koha::Logger->get->warn( "No record_type given." );
         return;
     }
-    return unless (@{$record_ids} || @{$deleted_record_ids} && $format ne 'csv');
+    return unless @{$record_ids} || @{$deleted_record_ids} && $format ne 'csv';
 
     my $fh;
     if ( $output_filepath ) {
@@ -238,14 +239,16 @@ sub export {
 
         my @deleted_records;
         if (@{$deleted_record_ids}) {
-            my $resultset = Koha::Database
-            ->new()
-            ->schema()
-            ->resultset('DeletedbiblioMetadata');
+            my $resultset = Koha::Database->new()
+                ->schema()
+                ->resultset('DeletedbiblioMetadata');
+
             @deleted_records = map {
-                my $record = _get_deleted_biblio_for_export({
-                    biblionumber => $_,
-                    resultset => $resultset,
+                my $record = _get_record_for_export({
+                    %{$params},
+                    record_type => 'deleted_bibs',
+                    record_id => $_,
+                    resultset => $resultset
                 });
                 $record ? $record : ();
             } @{$deleted_record_ids};
