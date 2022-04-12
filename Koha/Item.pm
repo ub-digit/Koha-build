@@ -101,7 +101,9 @@ sub store {
     # Ensure barcode is either defined or undef
     $self->barcode(undef) if ( defined($self->barcode) && $self->barcode eq '' );
 
-    $self->barcode( C4::Circulation::barcodedecode( $self->barcode ) );
+    if ( !$params->{do_not_decode} ) {
+        $self->barcode( C4::Circulation::barcodedecode( $self->barcode ) );
+    }
 
     my $today  = dt_from_string;
     my $action = 'create';
