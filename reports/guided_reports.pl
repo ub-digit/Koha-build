@@ -23,7 +23,7 @@ use Text::CSV::Encoded;
 use Encode qw( decode );
 use URI::Escape;
 use File::Temp;
-use C4::Reports::Guided qw( delete_report get_report_areas convert_sql update_sql get_saved_reports get_results ValidateSQLParameters format_results get_report_types get_columns get_from_dictionary get_criteria build_query save_report execute_query nb_rows get_report_groups );
+use C4::Reports::Guided qw( delete_report get_report_areas convert_sql update_sql get_saved_reports get_results ValidateSQLParameters format_results get_report_types get_columns get_from_dictionary get_criteria build_query save_report execute_query nb_rows get_report_groups execute_query_pg nb_rows_pg );
 use Koha::Reports;
 use C4::Auth qw( get_template_and_user get_session );
 use C4::Output qw( pagination_bar output_html_with_http_headers );
