@@ -58,6 +58,8 @@ my $config = LoadFile($configfile);
 
 my $extgen_url = $config->{'url'};
 my $extgen_key = $config->{'key'};
+my $contact_address = $config->{'contact'};
+$template->param( contact_address => $contact_address );
 
 my $ipno = $ENV{'REMOTE_ADDR'};
 my $ua   = LWP::UserAgent->new();
@@ -73,8 +75,12 @@ my $request = POST(
 
 my $response = $ua->request($request)->decoded_content;
 my $result = decode_json($response);
+if($result->{response} && $result->{response}->{ok}) {
+  $template->param( success => 1);
+} else {
+  $template->param( errors => 1);
+}
 
-$template->param( success => 1);
 
 print STDERR Dumper(["DEBUG", $result]);
 

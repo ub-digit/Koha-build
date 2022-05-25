@@ -38,15 +38,20 @@
 
                 [% IF errors %]
                     <div class="dialog alert">
-                        [% IF errors.empty_upload %]The file you are attempting to upload has no contents.[% END %]
-                        [% IF errors.no_file %]You did not select a file to upload.[% END %]
+                    <p><br/>
+                        <strong>Något gick fel när lösenord skulle skapas. Kontakta [% contact_address %].</strong><br/><br/>
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% patron.borrowernumber %]" class="btn btn-default">Avbryt</a>
+                        <br/>
+                        </p>                        
                     </div>
                 [% END %]
 
                 [% IF success %]
-                    <div class="dialog alert">
+                    <div class="dialog message">
                     <p><br/>
-                        Lösenord har skapats för [% patron.firstname %] [% patron.surname %] och skrivits ut.<br/><br/>
+                        <strong>Lösenord har skapats för [% patron.firstname %] [% patron.surname %] och skrivits ut.</strong><br/><br/>
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% patron.borrowernumber %]" class="btn btn-default">OK</a>
+                        <br/>
                         </p>
                     </div>
                 [% END %]
