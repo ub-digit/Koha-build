@@ -4,6 +4,7 @@
 [% USE Notices %]
 [% USE AuthorisedValues %]
 [% USE NoticeTemplates %]
+[% USE UBExtgen %]
 [% USE scalar %]
 <div id="toolbar" class="btn-toolbar">
     [% IF CAN_user_borrowers_edit_borrowers %]
@@ -58,6 +59,17 @@
 
     [% IF CAN_user_borrowers_edit_borrowers %]
         <a id="toolbar_addnewmessageLabel" href="#add_message_form" data-bs-toggle="modal" class="btn btn-default"><i class="fa-solid fa-comment"></i> Add message</a>
+    [% END %]
+
+    [% IF patron.borrowernumber && UBExtgen.GenPWAllowed(patron.borrowernumber) %]
+      <a id="ubExtgenLabel" class="btn btn-default"
+        href="/cgi-bin/koha/members/gen_pw.pl?borrowernumber=[% patron.borrowernumber | html %]">
+          <i class="fa fa-key"></i> Sätt lösenord för Publika datorer</a>
+    [% ELSE %]
+        <div id="ubExtgenLabel" class="btn btn-default disabled"
+        title="[% UBExtgen.DeniedReason(patron) %]"
+        href="#">
+          <i class="fa fa-key"></i> Sätt lösenord för Publika datorer</div>
     [% END %]
 
     [% IF Koha.Preference('CurbsidePickup') %]
