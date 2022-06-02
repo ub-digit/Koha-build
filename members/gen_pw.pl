@@ -53,7 +53,7 @@ output_and_exit_if_error( $cgi, $cookie, $template, { module => 'members', logge
 
 $template->param( patron => $patron );
 
-my $configfile = $ENV{'GUB_EXTGEN_CONFIG'} || "/home/apps/koha-repo/config.yaml";
+my $configfile = $ENV{'GUB_EXTGEN_CONFIG'} || "/etc/koha/gub/extgen/config.yaml";
 my $config = LoadFile($configfile);
 
 my $extgen_url = $config->{'url'};
