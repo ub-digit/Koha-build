@@ -868,7 +868,11 @@ elsif ($phase eq 'Run this report'){
             unless ($sth) {
                 die "execute_query failed to return sth for report $report_id: $sql";
             } elsif ( !$errors ) {
-                $total = nb_rows($sql) || 0;
+                if($report->type eq "PG") {
+                    $total = nb_rows_pg($sql) || 0;
+                } else {
+                    $total = nb_rows($sql) || 0;
+                }
                 my $headers = header_cell_loop($sth);
                 $template->param(header_row => $headers);
                 while (my $row = $sth->fetchrow_arrayref()) {
