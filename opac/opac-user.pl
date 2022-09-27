@@ -220,7 +220,7 @@ if ( $pending_checkouts->count ) { # Useless test
         $issue->{rentalfines} = $rental_fines->total_outstanding;
 
         # check if item is renewable
-        my ($status,$renewerror,$info) = CanBookBeRenewed( $borrowernumber, $issue->{'itemnumber'} );
+        my ($status,$renewerror,$info) = CanBookBeRenewed( $patron, $issue->{'itemnumber'} );
         (
             $issue->{'renewcount'},
             $issue->{'renewsallowed'},
@@ -248,6 +248,7 @@ if ( $pending_checkouts->count ) { # Useless test
             $issue->{'auto_too_late'}  = 1 if $renewerror eq 'auto_too_late';
             $issue->{'auto_too_much_oweing'}  = 1 if $renewerror eq 'auto_too_much_oweing';
             $issue->{'item_denied_renewal'}  = 1 if $renewerror eq 'item_denied_renewal';
+            $issue->{'item_issued_to_other_patron'} = 1 if $renewerror eq 'item_issued_to_other_patron';
 
             if ( $renewerror eq 'too_soon' ) {
                 $issue->{'too_soon'}         = 1;

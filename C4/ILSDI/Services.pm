@@ -637,7 +637,7 @@ sub GetServices {
     }
 
     # Renewal management
-    my @renewal = CanBookBeRenewed( $borrowernumber, $itemnumber );
+    my @renewal = CanBookBeRenewed( $patron, $item );
     if ( $renewal[0] ) {
         push @availablefor, 'loan renewal';
     }
@@ -686,7 +686,7 @@ sub RenewLoan {
     return { code => 'RecordNotFound' } unless $item;
 
     # Add renewal if possible
-    my @renewal = CanBookBeRenewed( $borrowernumber, $itemnumber );
+    my @renewal = CanBookBeRenewed( $patron, $item );
     if ( $renewal[0] ) { AddRenewal( $borrowernumber, $itemnumber, undef, undef, undef, undef, 0 ); }
 
     my $issue = $item->checkout;

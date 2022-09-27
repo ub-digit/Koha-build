@@ -279,7 +279,7 @@ if ( $patron && ( $op eq 'renew' ) ) {
     my $item = Koha::Items->find({ barcode => $barcode });
 
     if ( $patron->checkouts->find( { itemnumber => $item->itemnumber } ) ) {
-        my ($status,$renewerror) = CanBookBeRenewed( $patron->borrowernumber, $item->itemnumber );
+        my ($status,$renewerror) = CanBookBeRenewed( $patron, $item );
         if ($status) {
             AddRenewal( $patron->borrowernumber, $item->itemnumber, undef, undef, undef, undef, 1 );
             push @newissueslist, $barcode;
@@ -297,7 +297,7 @@ if ( $patron) {
     while ( my $c = $pending_checkouts->next ) {
         my $checkout = $c->unblessed_all_relateds;
         my ($can_be_renewed, $renew_error) = CanBookBeRenewed(
-            $patron->borrowernumber,
+            $patron,
             $checkout->{itemnumber},
         );
         $checkout->{can_be_renewed} = $can_be_renewed; # In the future this will be $checkout->can_be_renewed
