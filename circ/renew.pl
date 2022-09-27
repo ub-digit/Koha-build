@@ -54,22 +54,21 @@ my ( $soonest_renew_date, $latest_auto_renew_date );
 
 if ($barcode) {
     $barcode = barcodedecode($barcode) if $barcode;
-    $item = $schema->resultset("Item")->single( { barcode => $barcode } );
+    $item = Koha::Items->find({ barcode => $barcode });
 
     if ($item) {
 
-        $issue = $item->issue();
+        $checkout = $item->checkout;
 
-        if ($issue) {
+        if ($checkout) {
 
-            $borrower = $issue->patron();
-            
+            $borrower = $checkout->patron();
+
             if ( ( $borrower->debarred() || q{} ) lt dt_from_string()->ymd() ) {
                 my $can_renew;
                 my $info;
                 ( $can_renew, $error, $info ) =
-                  CanBookBeRenewed( $borrower->borrowernumber(),
-                    $item->itemnumber(), $override_limit );
+                  CanBookBeRenewed( $borrower, $checkout, $override_limit );
 
                 if ( $error && ($error eq 'on_reserve') ) {
                     if ($override_holds) {
@@ -85,9 +84,9 @@ if ($barcode) {
                     $soonest_renew_date = $info->{soonest_renew_date};
                 }
                 if ( $error && ( $error eq 'auto_too_late' ) ) {
-                    $latest_auto_renew_date = C4::Circulation::GetLatestAutoRenewDate(
-                        $borrower->borrowernumber(),
-                        $item->itemnumber(),
+                    $latest_auto_renew_date = GetLatestAutoRenewDate(
+                        $borrower,
+                        $checkout,
                     );
                 }
                 if ($can_renew) {
@@ -124,7 +123,7 @@ if ($barcode) {
 
     $template->param(
         item     => $item,
-        issue    => $issue,
+        issue    => $checkout,
         borrower => $borrower,
         error    => $error,
         soonestrenewdate => $soonest_renew_date,

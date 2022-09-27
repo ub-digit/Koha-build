@@ -22,7 +22,7 @@ use Mojo::JSON;
 
 use C4::Auth qw( haspermission );
 use C4::Context;
-use C4::Circulation qw( AddRenewal );
+use C4::Circulation qw( AddRenewal CanBookBeRenewed );
 use Koha::Checkouts;
 use Koha::Old::Checkouts;
 
@@ -159,8 +159,7 @@ sub renew {
         my $borrowernumber = $checkout->borrowernumber;
         my $itemnumber = $checkout->itemnumber;
 
-        my ($can_renew, $error) = C4::Circulation::CanBookBeRenewed(
-            $borrowernumber, $itemnumber);
+        my ($can_renew, $error) = CanBookBeRenewed($borrowernumber, $checkout);
 
         if (!$can_renew) {
             return $c->render(
@@ -210,8 +209,7 @@ sub allows_renewal {
     }
 
     return try {
-        my ($can_renew, $error) = C4::Circulation::CanBookBeRenewed(
-            $checkout->borrowernumber, $checkout->itemnumber);
+        my ($can_renew, $error) = CanBookBeRenewed($checkout->borrowernumber, $checkout);
 
         my $renewable = Mojo::JSON->false;
         $renewable = Mojo::JSON->true if $can_renew;

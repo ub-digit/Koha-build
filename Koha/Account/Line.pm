@@ -1025,8 +1025,8 @@ sub renew_item {
     my $itemnumber = $self->item->itemnumber;
     my $borrowernumber = $self->patron->borrowernumber;
     my ( $can_renew, $error ) = C4::Circulation::CanBookBeRenewed(
-        $borrowernumber,
-        $itemnumber
+        $self->patron,
+        $self->item->checkout
     );
     if ( $can_renew ) {
         my $due_date = C4::Circulation::AddRenewal(
