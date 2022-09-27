@@ -31,8 +31,8 @@ sub new {
 
 sub do_renew_for  {
     my $self = shift;
-    my $borrower = shift;
-    my ($renewokay,$renewerror) = CanBookBeRenewed($borrower->{borrowernumber},$self->{item}->{itemnumber});
+    my $patron = shift;
+    my ($renewokay,$renewerror) = CanBookBeRenewed($patron, $self->{item}->{itemnumber});
     if ($renewokay) { # ok so far check charges
         my ($fee, undef) = GetIssuingCharges($self->{item}->{itemnumber}, $self->{patron}->{borrowernumber});
         if ($fee > 0) {
@@ -64,7 +64,7 @@ sub do_renew {
     my $self = shift;
     my $patron = Koha::Patrons->find( $self->{patron}->borrowernumber );
     $patron or return; # FIXME we should log that
-    return $self->do_renew_for($patron->unblessed);
+    return $self->do_renew_for($patron);
 }
 
 1;
