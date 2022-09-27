@@ -310,7 +310,7 @@ subtest "CanBookBeRenewed AllowRenewalIfOtherItemsAvailable multiple borrowers a
     );
 
     # Patrons from three different branches
-    my $patron_borrower = $builder->build_object({ class => 'Koha::Patrons' });
+    my $patron = $builder->build_object({ class => 'Koha::Patrons' });
     my $patron_hold_1   = $builder->build_object({ class => 'Koha::Patrons' });
     my $patron_hold_2   = $builder->build_object({ class => 'Koha::Patrons' });
     my $biblio = $builder->build_sample_biblio();
@@ -318,7 +318,7 @@ subtest "CanBookBeRenewed AllowRenewalIfOtherItemsAvailable multiple borrowers a
     # Item at each patron branch
     my $item_1 = $builder->build_sample_item({
         biblionumber => $biblio->biblionumber,
-        homebranch   => $patron_borrower->branchcode
+        homebranch   => $patron->branchcode
     });
     my $item_2 = $builder->build_sample_item({
         biblionumber => $biblio->biblionumber,
@@ -329,7 +329,7 @@ subtest "CanBookBeRenewed AllowRenewalIfOtherItemsAvailable multiple borrowers a
         homebranch   => $patron_hold_1->branchcode
     });
 
-    my $issue = AddIssue( $patron_borrower->unblessed, $item_1->barcode);
+    my $issue = AddIssue( $patron->unblessed, $item_1->barcode);
     my $datedue = dt_from_string( $issue->date_due() );
     is (defined $issue->date_due(), 1, "Item 1 checked out, due date: " . $issue->date_due() );
 
@@ -360,16 +360,15 @@ subtest "CanBookBeRenewed AllowRenewalIfOtherItemsAvailable multiple borrowers a
     );
     t::lib::Mocks::mock_preference('AllowRenewalIfOtherItemsAvailable', 0 );
 
-    my ( $renewokay, $error ) = CanBookBeRenewed($patron_borrower->borrowernumber, $item_1->itemnumber);
+    my ( $renewokay, $error ) = CanBookBeRenewed($patron, $issue);
     is( $renewokay, 0, 'Cannot renew, reserved');
     is( $error, 'on_reserve', 'Cannot renew, reserved (returned error is on_reserve)');
 
     t::lib::Mocks::mock_preference('AllowRenewalIfOtherItemsAvailable', 1 );
 
-    ( $renewokay, $error ) = CanBookBeRenewed($patron_borrower->borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($patron, $issue);
     is( $renewokay, 1, 'Can renew, two items available for two holds');
     is( $error, undef, 'Can renew, each reserve has an item');
-
 
 };
 
@@ -495,16 +494,13 @@ subtest "CanBookBeRenewed tests" => sub {
         dateexpiry => dt_from_string->subtract( months => 1 ),
     );
 
-    my $renewing_borrowernumber = Koha::Patron->new(\%renewing_borrower_data)->store->borrowernumber;
+    my $renewing_borrower_obj = Koha::Patron->new(\%renewing_borrower_data)->store;
+    my $renewing_borrowernumber = $renewing_borrower_obj->borrowernumber;
     my $reserving_borrowernumber = Koha::Patron->new(\%reserving_borrower_data)->store->borrowernumber;
     my $hold_waiting_borrowernumber = Koha::Patron->new(\%hold_waiting_borrower_data)->store->borrowernumber;
-    my $restricted_borrowernumber = Koha::Patron->new(\%restricted_borrower_data)->store->borrowernumber;
-    my $expired_borrowernumber = Koha::Patron->new(\%expired_borrower_data)->store->borrowernumber;
+    my $restricted_borrower_obj = Koha::Patron->new(\%restricted_borrower_data)->store;
 
-    my $renewing_borrower_obj = Koha::Patrons->find( $renewing_borrowernumber );
-    my $renewing_borrower = $renewing_borrower_obj->unblessed;
-    my $restricted_borrower = Koha::Patrons->find( $restricted_borrowernumber )->unblessed;
-    my $expired_borrower = Koha::Patrons->find( $expired_borrowernumber )->unblessed;
+    my $expired_borrower_obj = Koha::Patron->new(\%expired_borrower_data)->store;
 
     my $bibitems       = '';
     my $priority       = '1';
@@ -514,19 +510,17 @@ subtest "CanBookBeRenewed tests" => sub {
     my $checkitem      = undef;
     my $found          = undef;
 
-    my $issue = AddIssue( $renewing_borrower, $item_1->barcode);
-    my $datedue = dt_from_string( $issue->date_due() );
-    is (defined $issue->date_due(), 1, "Item 1 checked out, due date: " . $issue->date_due() );
+    my $issue_1 = AddIssue( $renewing_borrower_obj->unblessed, $item_1->barcode);
+    my $datedue = dt_from_string( $issue_1->date_due() );
+    is (defined $issue_1->date_due(), 1, "Item 1 checked out, due date: " . $issue_1->date_due() );
 
-    my $issue2 = AddIssue( $renewing_borrower, $item_2->barcode);
-    $datedue = dt_from_string( $issue->date_due() );
-    is (defined $issue2, 1, "Item 2 checked out, due date: " . $issue2->date_due());
-
+    my $issue_2 = AddIssue( $renewing_borrower_obj->unblessed, $item_2->barcode);
+    is (defined $issue_2, 1, "Item 2 checked out, due date: " . $issue_2->date_due());
 
     my $borrowing_borrowernumber = Koha::Checkouts->find( { itemnumber => $item_1->itemnumber } )->borrowernumber;
-    is ($borrowing_borrowernumber, $renewing_borrowernumber, "Item checked out to $renewing_borrower->{firstname} $renewing_borrower->{surname}");
+    is ($borrowing_borrowernumber, $renewing_borrowernumber, "Item checked out to ".$renewing_borrower_obj->firstname." ".$renewing_borrower_obj->surname);
 
-    my ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber, 1);
+    my ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1, 1);
     is( $renewokay, 1, 'Can renew, no holds for this title or item');
 
 
@@ -565,9 +559,9 @@ subtest "CanBookBeRenewed tests" => sub {
         }
     );
     t::lib::Mocks::mock_preference('AllowRenewalIfOtherItemsAvailable', 1 );
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 1, 'Bug 11634 - Allow renewal of item with unfilled holds if other available items can fill those holds');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_2->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_2);
     is( $renewokay, 1, 'Bug 11634 - Allow renewal of item with unfilled holds if other available items can fill those holds');
 
 
@@ -585,7 +579,7 @@ subtest "CanBookBeRenewed tests" => sub {
             found            => $found,
         }
     );
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, 'Renewal not possible when single patron\'s holds exceed the number of available items');
     Koha::Holds->find($reserve_id)->delete;
 
@@ -600,7 +594,7 @@ subtest "CanBookBeRenewed tests" => sub {
             reservedate    => '1999-01-01',
         }
     );
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, 'Bug 13919 - Renewal possible with item level hold on item');
     $hold->delete();
 
@@ -616,17 +610,17 @@ subtest "CanBookBeRenewed tests" => sub {
             found          => 'W'
         }
     );
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, 'Bug 11634 - Allow renewal of item with unfilled holds if other available items can fill those holds');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_2->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_2);
     is( $renewokay, 0, 'Bug 11634 - Allow renewal of item with unfilled holds if other available items can fill those holds');
     t::lib::Mocks::mock_preference('AllowRenewalIfOtherItemsAvailable', 0 );
 
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, '(Bug 10663) Cannot renew, reserved');
     is( $error, 'on_reserve', '(Bug 10663) Cannot renew, reserved (returned error is on_reserve)');
 
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_2->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_2);
     is( $renewokay, 0, '(Bug 10663) Cannot renew, reserved');
     is( $error, 'on_reserve', '(Bug 10663) Cannot renew, reserved (returned error is on_reserve)');
 
@@ -655,16 +649,16 @@ subtest "CanBookBeRenewed tests" => sub {
         }
     );
 
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber, 1);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1, 1);
     is( $renewokay, 0, '(Bug 10663) Cannot renew, item reserved');
     is( $error, 'on_reserve', '(Bug 10663) Cannot renew, item reserved (returned error is on_reserve)');
 
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_2->itemnumber, 1);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_2, 1);
     is( $renewokay, 1, 'Can renew item 2, item-level hold is on item 1');
 
     # Items can't fill hold for reasons
-    $item_1->notforloan(1)->store;
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber, 1);
+    $issue_1->item->notforloan(1)->store;
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1, 1);
     is( $renewokay, 1, 'Can renew, item is marked not for loan, hold does not block');
     $item_1->set({notforloan => 0, itype => $itemtype })->store;
 
@@ -679,13 +673,13 @@ subtest "CanBookBeRenewed tests" => sub {
             itype            => $itemtype,
         }
     );
-    my $datedue5 = AddIssue($restricted_borrower, $item_5->barcode);
-    is (defined $datedue5, 1, "Item with date due checked out, due date: $datedue5");
+    my $issue_5 = AddIssue($restricted_borrower_obj->unblessed, $item_5->barcode);
+    is (defined $issue_5, 1, "Item with date due checked out, due date: ". $issue_5->date_due);
 
     t::lib::Mocks::mock_preference('RestrictionBlockRenewing','1');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_2->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_2);
     is( $renewokay, 1, '(Bug 8236), Can renew, user is not restricted');
-    ( $renewokay, $error ) = CanBookBeRenewed($restricted_borrowernumber, $item_5->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($restricted_borrower_obj, $issue_5);
     is( $renewokay, 0, '(Bug 8236), Cannot renew, user is restricted');
     is( $error, 'restriction', "Correct error returned");
 
@@ -708,23 +702,23 @@ subtest "CanBookBeRenewed tests" => sub {
         }
     );
 
-    my $datedue6 = AddIssue( $renewing_borrower, $item_6->barcode);
-    is (defined $datedue6, 1, "Item 2 checked out, due date: ".$datedue6->date_due);
+    my $issue_6 = AddIssue( $renewing_borrower_obj->unblessed, $item_6->barcode);
+    is (defined $issue_6, 1, "Item 2 checked out, due date: ".$issue_6->date_due);
 
     my $now = dt_from_string();
     my $five_weeks = DateTime::Duration->new(weeks => 5);
     my $five_weeks_ago = $now - $five_weeks;
     t::lib::Mocks::mock_preference('finesMode', 'production');
 
-    my $passeddatedue1 = AddIssue($renewing_borrower, $item_7->barcode, $five_weeks_ago);
-    is (defined $passeddatedue1, 1, "Item with passed date due checked out, due date: " . $passeddatedue1->date_due);
+    my $issue_7 = AddIssue($renewing_borrower_obj->unblessed, $item_7->barcode, $five_weeks_ago);
+    is (defined $issue_7, 1, "Item with passed date due checked out, due date: " . $issue_7->date_due);
 
-    my ( $fine ) = CalcFine( $item_7->unblessed, $renewing_borrower->{categorycode}, $branch, $five_weeks_ago, $now );
+    my ( $fine ) = CalcFine( $item_7->unblessed, $renewing_borrower_obj->categorycode, $branch, $five_weeks_ago, $now );
     C4::Overdues::UpdateFine(
         {
-            issue_id       => $passeddatedue1->id(),
+            issue_id       => $issue_7->id(),
             itemnumber     => $item_7->itemnumber,
-            borrowernumber => $renewing_borrower->{borrowernumber},
+            borrowernumber => $renewing_borrower_obj->borrowernumber,
             amount         => $fine,
             due            => Koha::DateUtils::output_pref($five_weeks_ago)
         }
@@ -751,7 +745,7 @@ subtest "CanBookBeRenewed tests" => sub {
     my $old_log_size = Koha::ActionLogs->count( \%params_renewal );
     my $dt = dt_from_string();
     Time::Fake->offset( $dt->epoch );
-    my $datedue1 = AddRenewal( $renewing_borrower->{borrowernumber}, $item_7->itemnumber, $branch );
+    my $datedue1 = AddRenewal( $renewing_borrower_obj->borrowernumber, $item_7->itemnumber, $branch );
     my $new_log_size = Koha::ActionLogs->count( \%params_renewal );
     is ($new_log_size, $old_log_size, 'renew log not added because of the syspref RenewalLog');
     isnt (DateTime->compare($datedue1, $dt), 0, "AddRenewal returned a good duedate");
@@ -760,47 +754,55 @@ subtest "CanBookBeRenewed tests" => sub {
     t::lib::Mocks::mock_preference('RenewalLog', 1);
     $date = output_pref( { dt => dt_from_string(), dateonly => 1, dateformat => 'iso' } );
     $old_log_size = Koha::ActionLogs->count( \%params_renewal );
-    AddRenewal( $renewing_borrower->{borrowernumber}, $item_7->itemnumber, $branch );
+    AddRenewal( $renewing_borrower_obj->borrowernumber, $item_7->itemnumber, $branch );
     $new_log_size = Koha::ActionLogs->count( \%params_renewal );
     is ($new_log_size, $old_log_size + 1, 'renew log successfully added');
 
-    my $fines = Koha::Account::Lines->search( { borrowernumber => $renewing_borrower->{borrowernumber}, itemnumber => $item_7->itemnumber } );
+    my $fines = Koha::Account::Lines->search( { borrowernumber => $renewing_borrower_obj->borrowernumber, itemnumber => $item_7->itemnumber } );
     is( $fines->count, 2, 'AddRenewal left both fines' );
     isnt( $fines->next->status, 'UNRETURNED', 'Fine on renewed item is closed out properly' );
     isnt( $fines->next->status, 'UNRETURNED', 'Fine on renewed item is closed out properly' );
     $fines->delete();
 
     t::lib::Mocks::mock_preference('OverduesBlockRenewing','allow');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_6->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_6);
     is( $renewokay, 1, '(Bug 8236), Can renew, this item is not overdue');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_7->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_7);
     is( $renewokay, 1, '(Bug 8236), Can renew, this item is overdue but not pref does not block');
 
     t::lib::Mocks::mock_preference('OverduesBlockRenewing','block');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_6->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_6);
     is( $renewokay, 0, '(Bug 8236), Cannot renew, this item is not overdue but patron has overdues');
     is( $error, 'overdue', "Correct error returned");
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_7->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_7);
     is( $renewokay, 0, '(Bug 8236), Cannot renew, this item is overdue so patron has overdues');
     is( $error, 'overdue', "Correct error returned");
 
     t::lib::Mocks::mock_preference('OverduesBlockRenewing','blockitem');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_6->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_6);
     is( $renewokay, 1, '(Bug 8236), Can renew, this item is not overdue');
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_7->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_7);
     is( $renewokay, 0, '(Bug 8236), Cannot renew, this item is overdue');
     is( $error, 'overdue', "Correct error returned");
 
 
     my $old_issue_log_size = Koha::ActionLogs->count( \%params_issue );
     my $old_renew_log_size = Koha::ActionLogs->count( \%params_renewal );
-    AddIssue( $renewing_borrower,$item_7->barcode,Koha::DateUtils::output_pref({str=>$datedue6->date_due, dateformat =>'iso'}),0,$date, 0, undef );
+    AddIssue(
+        $renewing_borrower_obj->unblessed,
+        $item_7->barcode,
+        Koha::DateUtils::output_pref({str=>$issue_6->date_due, dateformat =>'iso'}),
+        0,
+        $date,
+        0,
+        undef
+    ); # TODO: Already issued???
     $new_log_size = Koha::ActionLogs->count( \%params_renewal );
     is ($new_log_size, $old_renew_log_size + 1, 'renew log successfully added when renewed via issuing');
     $new_log_size = Koha::ActionLogs->count( \%params_issue );
     is ($new_log_size, $old_issue_log_size, 'renew not logged as issue when renewed via issuing');
 
-    $fines = Koha::Account::Lines->search( { borrowernumber => $renewing_borrower->{borrowernumber}, itemnumber => $item_7->itemnumber } );
+    $fines = Koha::Account::Lines->search( { borrowernumber => $renewing_borrower_obj->borrowernumber, itemnumber => $item_7->itemnumber } );
     $fines->delete();
 
     $hold = Koha::Holds->search({ biblionumber => $biblio->biblionumber, borrowernumber => $reserving_borrowernumber })->next;
@@ -818,14 +820,14 @@ subtest "CanBookBeRenewed tests" => sub {
         }
     );
 
-    $issue = AddIssue( $renewing_borrower, $item_4->barcode, undef, undef, undef, undef, { auto_renew => 1 } );
+    my $issue_4 = AddIssue( $renewing_borrower_obj->unblessed, $item_4->barcode, undef, undef, undef, undef, { auto_renew => 1 } );
     my $info;
     ( $renewokay, $error, $info ) =
-      CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+      CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'Bug 14101: Cannot renew, renewal is automatic and premature' );
     is( $error, 'auto_too_soon',
         'Bug 14101: Cannot renew, renewal is automatic and premature, "No renewal before" = undef (returned code is auto_too_soon)' );
-    is( $info->{soonest_renew_date} , dt_from_string($issue->date_due), "Due date is returned as earliest renewal date when error is 'auto_too_soon'" );
+    is( $info->{soonest_renew_date} , dt_from_string($issue_4->date_due), "Due date is returned as earliest renewal date when error is 'auto_too_soon'" );
     AddReserve(
         {
             branchcode       => $branch,
@@ -841,30 +843,29 @@ subtest "CanBookBeRenewed tests" => sub {
             found            => $found
         }
     );
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'Still should not be able to renew' );
     is( $error, 'on_reserve', 'returned code is on_reserve, reserve checked when not checking for cron' );
-    ( $renewokay, $error, $info ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber, undef, 1 );
+    ( $renewokay, $error, $info ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4, undef, 1 );
     is( $renewokay, 0, 'Still should not be able to renew' );
     is( $error, 'auto_too_soon', 'returned code is auto_too_soon, reserve not checked when checking for cron' );
-    is( $info->{soonest_renew_date}, dt_from_string($issue->date_due), "Due date is returned as earliest renewal date when error is 'auto_too_soon'" );
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber, 1 );
+    is( $info->{soonest_renew_date}, dt_from_string($issue_4->date_due), "Due date is returned as earliest renewal date when error is 'auto_too_soon'" );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4, 1 );
     is( $renewokay, 0, 'Still should not be able to renew' );
     is( $error, 'on_reserve', 'returned code is on_reserve, auto_too_soon limit is overridden' );
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber, 1, 1 );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4, 1, 1 );
     is( $renewokay, 0, 'Still should not be able to renew' );
     is( $error, 'on_reserve', 'returned code is on_reserve, auto_too_soon limit is overridden' );
     $dbh->do('UPDATE circulation_rules SET rule_value = 0 where rule_name = "norenewalbefore"');
     Koha::Cache::Memory::Lite->flush();
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber, 1 );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4, 1 );
     is( $renewokay, 0, 'Still should not be able to renew' );
     is( $error, 'on_reserve', 'returned code is on_reserve, auto_renew only happens if not on reserve' );
     ModReserveCancelAll($item_4->itemnumber, $reserving_borrowernumber);
 
 
-
     $renewing_borrower_obj->autorenew_checkouts(0)->store;
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 1, 'No renewal before is undef, but patron opted out of auto_renewal' );
     $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
@@ -881,26 +882,26 @@ subtest "CanBookBeRenewed tests" => sub {
         }
     );
 
-    ( $renewokay, $error, $info ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error, $info ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, 'Bug 7413: Cannot renew, renewal is premature');
     is( $error, 'too_soon', 'Bug 7413: Cannot renew, renewal is premature (returned code is too_soon)');
-    is( $info->{soonest_renew_date}, dt_from_string($issue->date_due)->subtract( days => 7 ), "Soonest renew date returned when error is 'too_soon'");
+    is( $info->{soonest_renew_date}, dt_from_string($issue_1->date_due)->subtract( days => 7 ), "Soonest renew date returned when error is 'too_soon'");
 
     # Bug 14101
     # Test premature automatic renewal
     ( $renewokay, $error, $info ) =
-      CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+      CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'Bug 14101: Cannot renew, renewal is automatic and premature' );
     is( $error, 'auto_too_soon',
         'Bug 14101: Cannot renew, renewal is automatic and premature (returned code is auto_too_soon)'
     );
-    is( $info->{soonest_renew_date}, dt_from_string($issue->date_due)->subtract( days => 7 ), "Soonest renew date returned when error is 'auto_too_soon'");
+    is( $info->{soonest_renew_date}, dt_from_string($issue_4->date_due)->subtract( days => 7 ), "Soonest renew date returned when error is 'auto_too_soon'");
 
     $renewing_borrower_obj->autorenew_checkouts(0)->store;
-    ( $renewokay, $error, $info ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+    ( $renewokay, $error, $info ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'No renewal before is 7, patron opted out of auto_renewal still cannot renew early' );
     is( $error, 'too_soon', 'Error is too_soon, no auto' );
-    is( $info->{soonest_renew_date}, dt_from_string($issue->date_due)->subtract( days => 7 ), "Soonest renew date returned when error is 'too_soon'");
+    is( $info->{soonest_renew_date}, dt_from_string($issue_4->date_due)->subtract( days => 7 ), "Soonest renew date returned when error is 'too_soon'");
     $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
     # Change policy so that loans can only be renewed exactly on due date (0 days prior to due date)
@@ -908,18 +909,18 @@ subtest "CanBookBeRenewed tests" => sub {
     $dbh->do(q{UPDATE circulation_rules SET rule_value = '0' WHERE rule_name = 'norenewalbefore'});
     Koha::Cache::Memory::Lite->flush();
     ( $renewokay, $error, $info ) =
-      CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+      CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'Bug 14101: Cannot renew, renewal is automatic and premature' );
     is( $error, 'auto_too_soon',
         'Bug 14101: Cannot renew, renewal is automatic and premature, "No renewal before" = 0 (returned code is auto_too_soon)'
     );
-    is( $info->{soonest_renew_date}, dt_from_string($issue->date_due), "Soonest renew date returned when error is 'auto_too_soon'");
+    is( $info->{soonest_renew_date}, dt_from_string($issue_4->date_due), "Soonest renew date returned when error is 'auto_too_soon'");
 
     $renewing_borrower_obj->autorenew_checkouts(0)->store;
-    ( $renewokay, $error, $info ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+    ( $renewokay, $error, $info ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'No renewal before is 0, patron opted out of auto_renewal still cannot renew early' );
     is( $error, 'too_soon', 'Error is too_soon, no auto' );
-    is( $info->{soonest_renew_date}, dt_from_string($issue->date_due), "Soonest renew date returned when error is 'auto_too_soon'");
+    is( $info->{soonest_renew_date}, dt_from_string($issue_4->date_due), "Soonest renew date returned when error is 'auto_too_soon'");
     $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
     # Change policy so that loans can be renewed 99 days prior to the due date
@@ -927,14 +928,14 @@ subtest "CanBookBeRenewed tests" => sub {
     $dbh->do(q{UPDATE circulation_rules SET rule_value = '99' WHERE rule_name = 'norenewalbefore'});
     Koha::Cache::Memory::Lite->flush();
     ( $renewokay, $error ) =
-      CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+      CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 0, 'Bug 14101: Cannot renew, renewal is automatic' );
     is( $error, 'auto_renew',
         'Bug 14101: Cannot renew, renewal is automatic (returned code is auto_renew)'
     );
 
     $renewing_borrower_obj->autorenew_checkouts(0)->store;
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_4 );
     is( $renewokay, 1, 'No renewal before is 99, patron opted out of auto_renewal so can renew' );
     $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
@@ -949,7 +950,7 @@ subtest "CanBookBeRenewed tests" => sub {
 
         my $ten_days_before = dt_from_string->add( days => -10 );
         my $ten_days_ahead  = dt_from_string->add( days => 10 );
-        AddIssue( $renewing_borrower, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
+        my $issue = AddIssue( $renewing_borrower_obj->unblessed, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
 
         Koha::CirculationRules->set_rules(
             {
@@ -963,7 +964,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_late', 'Cannot renew, too late(returned code is auto_too_late)' );
 
@@ -979,7 +980,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_late', 'Cannot auto renew, too late - no_auto_renewal_after is inclusive(returned code is auto_too_late)' );
 
@@ -995,7 +996,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_soon', 'Cannot auto renew, too soon - no_auto_renewal_after is defined(returned code is auto_too_soon)' );
 
@@ -1011,7 +1012,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0,            'Do not renew, renewal is automatic' );
         is( $error,     'auto_renew', 'Cannot renew, renew is automatic' );
 
@@ -1028,7 +1029,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_late', 'Cannot renew, too late(returned code is auto_too_late)' );
 
@@ -1045,7 +1046,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_late', 'Cannot renew, too late(returned code is auto_too_late)' );
 
@@ -1062,7 +1063,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_renew', 'Cannot renew, renew is automatic' );
     };
@@ -1078,7 +1079,7 @@ subtest "CanBookBeRenewed tests" => sub {
 
         my $ten_days_before = dt_from_string->add( days => -10 );
         my $ten_days_ahead = dt_from_string->add( days => 10 );
-        AddIssue( $renewing_borrower, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
+        my $issue = AddIssue( $renewing_borrower_obj->unblessed, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
 
         Koha::CirculationRules->set_rules(
             {
@@ -1106,7 +1107,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         )->status('RETURNED')->store;
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_renew', 'Can auto renew, OPACFineNoRenewals=10, patron has 5' );
 
@@ -1120,7 +1121,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         )->status('RETURNED')->store;
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_renew', 'Can auto renew, OPACFineNoRenewals=10, patron has 10' );
 
@@ -1134,7 +1135,7 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         )->status('RETURNED')->store;
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_much_oweing', 'Cannot auto renew, OPACFineNoRenewals=10, patron has 15' );
 
@@ -1147,13 +1148,13 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         )->store;
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_renew', 'Can auto renew, OPACFineNoRenewals=10, OPACFineNoRenewalsIncludeCredit=1, patron has 15 debt, 5 credit'  );
 
         C4::Context->set_preference('OPACFineNoRenewalsIncludeCredit','0');
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_too_much_oweing', 'Cannot auto renew, OPACFineNoRenewals=10, OPACFineNoRenewalsIncludeCredit=1, patron has 15 debt, 5 credit'  );
 
@@ -1188,37 +1189,33 @@ subtest "CanBookBeRenewed tests" => sub {
         # Patron is expired and BlockExpiredPatronOpacActions=0
         # => auto renew is allowed
         t::lib::Mocks::mock_preference('BlockExpiredPatronOpacActions', 0);
-        my $patron = $expired_borrower;
-        my $checkout = AddIssue( $patron, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
+        my $issue = AddIssue( $expired_borrower_obj->unblessed, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $patron->{borrowernumber}, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $expired_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_renew', 'Can auto renew, patron is expired but BlockExpiredPatronOpacActions=0' );
-        Koha::Checkouts->find( $checkout->issue_id )->delete;
+        Koha::Checkouts->find( $issue->issue_id )->delete;
 
 
         # Patron is expired and BlockExpiredPatronOpacActions=1
         # => auto renew is not allowed
         t::lib::Mocks::mock_preference('BlockExpiredPatronOpacActions', 1);
-        $patron = $expired_borrower;
-        $checkout = AddIssue( $patron, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
+        $issue = AddIssue( $expired_borrower_obj->unblessed, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $patron->{borrowernumber}, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $expired_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_account_expired', 'Can not auto renew, lockExpiredPatronOpacActions=1 and patron is expired' );
-        Koha::Checkouts->find( $checkout->issue_id )->delete;
-
+        $issue->delete;
 
         # Patron is not expired and BlockExpiredPatronOpacActions=1
         # => auto renew is allowed
         t::lib::Mocks::mock_preference('BlockExpiredPatronOpacActions', 1);
-        $patron = $renewing_borrower;
-        $checkout = AddIssue( $patron, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
+        $issue = AddIssue( $renewing_borrower_obj->unblessed, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
         ( $renewokay, $error ) =
-          CanBookBeRenewed( $patron->{borrowernumber}, $item_to_auto_renew->itemnumber );
+          CanBookBeRenewed( $renewing_borrower_obj->unblessed, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is( $error, 'auto_renew', 'Can auto renew, BlockExpiredPatronOpacActions=1 but patron is not expired' );
-        Koha::Checkouts->find( $checkout->issue_id )->delete;
+        $issue->delete;
     };
 
     subtest "GetLatestAutoRenewDate" => sub {
@@ -1232,7 +1229,7 @@ subtest "CanBookBeRenewed tests" => sub {
 
         my $ten_days_before = dt_from_string->add( days => -10 );
         my $ten_days_ahead  = dt_from_string->add( days => 10 );
-        AddIssue( $renewing_borrower, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
+        my $issue = AddIssue( $renewing_borrower_obj->unblessed, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before, undef, { auto_renew => 1 } );
         Koha::CirculationRules->set_rules(
             {
                 categorycode => undef,
@@ -1245,7 +1242,7 @@ subtest "CanBookBeRenewed tests" => sub {
                 }
             }
         );
-        my $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+        my $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrower_obj, $issue );
         is( $latest_auto_renew_date, undef, 'GetLatestAutoRenewDate should return undef if no_auto_renewal_after or no_auto_renewal_after_hard_limit are not defined' );
         my $five_days_before = dt_from_string->add( days => -5 );
         Koha::CirculationRules->set_rules(
@@ -1260,7 +1257,7 @@ subtest "CanBookBeRenewed tests" => sub {
                 }
             }
         );
-        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrower_obj,, $issue );
         is( $latest_auto_renew_date->truncate( to => 'minute' ),
             $five_days_before->truncate( to => 'minute' ),
             'GetLatestAutoRenewDate should return -5 days if no_auto_renewal_after = 5 and date_due is 10 days before'
@@ -1282,7 +1279,7 @@ subtest "CanBookBeRenewed tests" => sub {
                 }
             }
         );
-        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrower_obj, $issue );
         is( $latest_auto_renew_date->truncate( to => 'minute' ),
             $five_days_ahead->truncate( to => 'minute' ),
             'GetLatestAutoRenewDate should return +5 days if no_auto_renewal_after = 15 and date_due is 10 days before'
@@ -1300,7 +1297,7 @@ subtest "CanBookBeRenewed tests" => sub {
                 }
             }
         );
-        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrower_obj, $issue );
         is( $latest_auto_renew_date->truncate( to => 'day' ),
             $two_days_ahead->truncate( to => 'day' ),
             'GetLatestAutoRenewDate should return +2 days if no_auto_renewal_after_hard_limit is defined and not no_auto_renewal_after'
@@ -1317,7 +1314,7 @@ subtest "CanBookBeRenewed tests" => sub {
                 }
             }
         );
-        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrowernumber, $item_to_auto_renew->itemnumber );
+        $latest_auto_renew_date = GetLatestAutoRenewDate( $renewing_borrower_obj, $issue );
         is( $latest_auto_renew_date->truncate( to => 'day' ),
             $two_days_ahead->truncate( to => 'day' ),
             'GetLatestAutoRenewDate should return +2 days if no_auto_renewal_after_hard_limit is < no_auto_renewal_after'
@@ -1339,7 +1336,7 @@ subtest "CanBookBeRenewed tests" => sub {
         }
     );
 
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, 'Cannot renew, 0 renewals allowed');
     is( $error, 'too_many', 'Cannot renew, 0 renewals allowed (returned code is too_many)');
 
@@ -1357,7 +1354,7 @@ subtest "CanBookBeRenewed tests" => sub {
     );
     t::lib::Mocks::mock_preference('UnseenRenewals', 1);
     $dbh->do('UPDATE issues SET unseen_renewals = 2 where borrowernumber = ? AND itemnumber = ?', undef, ($renewing_borrowernumber, $item_1->itemnumber));
-    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
     is( $renewokay, 0, 'Cannot renew, 0 unseen renewals allowed');
     is( $error, 'too_unseen', 'Cannot renew, returned code is too_unseen');
     Koha::CirculationRules->set_rules(
@@ -1379,21 +1376,21 @@ subtest "CanBookBeRenewed tests" => sub {
 
     C4::Overdues::UpdateFine(
         {
-            issue_id       => $issue->id(),
+            issue_id       => $issue_1->id(),
             itemnumber     => $item_1->itemnumber,
-            borrowernumber => $renewing_borrower->{borrowernumber},
+            borrowernumber => $renewing_borrower_obj->borrowernumber,
             amount         => 15.00,
             type           => q{},
             due            => Koha::DateUtils::output_pref($datedue)
         }
     );
 
-    my $line = Koha::Account::Lines->search({ borrowernumber => $renewing_borrower->{borrowernumber} })->next();
+    my $line = Koha::Account::Lines->search({ borrowernumber => $renewing_borrower_obj->borrowernumber })->next();
     is( $line->debit_type_code, 'OVERDUE', 'Account line type is OVERDUE' );
     is( $line->status, 'UNRETURNED', 'Account line status is UNRETURNED' );
     is( $line->amountoutstanding+0, 15, 'Account line amount outstanding is 15.00' );
     is( $line->amount+0, 15, 'Account line amount is 15.00' );
-    is( $line->issue_id, $issue->id, 'Account line issue id matches' );
+    is( $line->issue_id, $issue_1->id, 'Account line issue id matches' );
 
     my $offset = Koha::Account::Offsets->search({ debit_id => $line->id })->next();
     is( $offset->type, 'CREATE', 'Account offset type is CREATE' );
@@ -1415,7 +1412,7 @@ subtest "CanBookBeRenewed tests" => sub {
 
     my $total_due = $dbh->selectrow_array(
         'SELECT SUM( amountoutstanding ) FROM accountlines WHERE borrowernumber = ?',
-        undef, $renewing_borrower->{borrowernumber}
+        undef, $renewing_borrower_obj->borrowernumber
     );
 
     is( $total_due+0, 15, 'Borrower only charged replacement fee with both WhenLostForgiveFine and WhenLostChargeReplacementFee enabled' );
@@ -1424,9 +1421,9 @@ subtest "CanBookBeRenewed tests" => sub {
 
     C4::Overdues::UpdateFine(
         {
-            issue_id       => $issue2->id(),
+            issue_id       => $issue_2->id(),
             itemnumber     => $item_2->itemnumber,
-            borrowernumber => $renewing_borrower->{borrowernumber},
+            borrowernumber => $renewing_borrower_obj->borrowernumber,
             amount         => 15.00,
             type           => q{},
             due            => Koha::DateUtils::output_pref($datedue)
@@ -1441,7 +1438,7 @@ subtest "CanBookBeRenewed tests" => sub {
 
     $total_due = $dbh->selectrow_array(
         'SELECT SUM( amountoutstanding ) FROM accountlines WHERE borrowernumber = ?',
-        undef, $renewing_borrower->{borrowernumber}
+        undef, $renewing_borrower_obj->borrowernumber
     );
 
     ok( $total_due == 15, 'Borrower only charged fine with both WhenLostForgiveFine and WhenLostChargeReplacementFee disabled' );
@@ -1483,7 +1480,7 @@ subtest "CanBookBeRenewed tests" => sub {
     my $recall_item1 = $builder->build_object({ class => 'Koha::Items' }, { value => { biblionumber => $recall_biblio->biblionumber } });
     my $recall_item2 = $builder->build_object({ class => 'Koha::Items' }, { value => { biblionumber => $recall_biblio->biblionumber } });
 
-    AddIssue( $renewing_borrower, $recall_item1->barcode );
+    my $recall_issue = AddIssue( $renewing_borrower_obj->unblessed, $recall_item1->barcode );
 
     # item-level and this item: renewal not allowed
     my $recall = Koha::Recall->new({
@@ -1493,7 +1490,7 @@ subtest "CanBookBeRenewed tests" => sub {
         pickup_library_id => $recall_borrower->branchcode,
         item_level => 1,
     })->store;
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $recall_item1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $recall_issue );
     is( $error, 'recalled', 'Cannot renew item that has been recalled' );
     $recall->set_cancelled;
 
@@ -1505,8 +1502,8 @@ subtest "CanBookBeRenewed tests" => sub {
         pickup_library_id => $recall_borrower->branchcode,
         item_level => 0,
     })->store;
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $recall_item1->itemnumber );
-    is( $error, 'recalled', 'Cannot renew item if biblio is recalled and has no item allocated' );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $recall_issue );
+    is( $error, 'recalled', 'Cannot renew item if biblio is recalled and has no item allocated' ); # TODO: Stale issue problems? Check these tests
     $recall->set_cancelled;
 
     # item-level and not this item: renewal allowed
@@ -1517,7 +1514,7 @@ subtest "CanBookBeRenewed tests" => sub {
         pickup_library_id => $recall_borrower->branchcode,
         item_level => 1,
     })->store;
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $recall_item1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $recall_issue );
     is( $renewokay, 1, 'Can renew item if item-level recall on biblio is not on this item' );
     $recall->set_cancelled;
 
@@ -1530,7 +1527,7 @@ subtest "CanBookBeRenewed tests" => sub {
         item_level => 0,
     })->store;
     $recall->set_waiting({ item => $recall_item1 });
-    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $recall_item1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $recall_issue );
     is( $renewokay, 1, 'Can renew item if biblio-level recall has already been allocated an item' );
     $recall->set_cancelled;
 };
@@ -1572,7 +1569,7 @@ subtest "GetUpcomingDueIssues" => sub {
 
     my $issue = AddIssue( $a_borrower, $item_1->barcode, $yesterday );
     my $datedue = dt_from_string( $issue->date_due() );
-    my $issue2 = AddIssue( $a_borrower, $item_2->barcode, $two_days_ahead );
+    my $issue_2 = AddIssue( $a_borrower, $item_2->barcode, $two_days_ahead );
     my $datedue2 = dt_from_string( $issue->date_due() );
 
     my $upcoming_dues;
@@ -1698,12 +1695,12 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
     );
 
 
-    my $borrowernumber1 = Koha::Patron->new({
+    my $borrower1 = Koha::Patron->new({
         firstname    => 'Kyle',
         surname      => 'Hall',
         categorycode => $patron_category->{categorycode},
         branchcode   => $library2->{branchcode},
-    })->store->borrowernumber;
+    })->store;
     my $borrowernumber2 = Koha::Patron->new({
         firstname    => 'Chelsea',
         surname      => 'Hall',
@@ -1727,12 +1724,9 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         branchcode   => $library2->{branchcode},
     })->store->borrowernumber;
 
-    my $borrower1 = Koha::Patrons->find( $borrowernumber1 )->unblessed;
-    my $borrower2 = Koha::Patrons->find( $borrowernumber2 )->unblessed;
+    my $issue = AddIssue( $borrower1->unblessed, $item_1->barcode );
 
-    my $issue = AddIssue( $borrower1, $item_1->barcode );
-
-    my ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    my ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 1, 'Bug 14337 - Verify the borrower can renew with no hold on the record' );
 
     AddReserve(
@@ -1755,11 +1749,11 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         }
     );
     t::lib::Mocks::mock_preference( 'AllowRenewalIfOtherItemsAvailable', 0 );
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 0, 'Bug 14337 - Verify the borrower cannot renew with a hold on the record if AllowRenewalIfOtherItemsAvailable and onshelfholds are disabled' );
 
     t::lib::Mocks::mock_preference( 'AllowRenewalIfOtherItemsAvailable', 1 );
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 0, 'Bug 14337 - Verify the borrower cannot renew with a hold on the record if AllowRenewalIfOtherItemsAvailable is enabled and onshelfholds is disabled' );
 
     Koha::CirculationRules->set_rules(
@@ -1773,11 +1767,11 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         }
     );
     t::lib::Mocks::mock_preference( 'AllowRenewalIfOtherItemsAvailable', 0 );
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 0, 'Bug 14337 - Verify the borrower cannot renew with a hold on the record if AllowRenewalIfOtherItemsAvailable is disabled and onshelfhold is enabled' );
 
     t::lib::Mocks::mock_preference( 'AllowRenewalIfOtherItemsAvailable', 1 );
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 1, 'Bug 14337 - Verify the borrower can renew with a hold on the record if AllowRenewalIfOtherItemsAvailable and onshelfhold are enabled' );
 
     AddReserve(
@@ -1789,7 +1783,7 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         }
     );
 
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 0, 'Verify the borrower cannot renew with 2 holds on the record if AllowRenewalIfOtherItemsAvailable and onshelfhold are enabled and one other item on record' );
 
     my $item_3= $builder->build_sample_item(
@@ -1800,7 +1794,7 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         }
     );
 
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 1, 'Verify the borrower cannot renew with 2 holds on the record if AllowRenewalIfOtherItemsAvailable and onshelfhold are enabled and two other items on record' );
 
     Koha::CirculationRules->set_rules(
@@ -1814,7 +1808,7 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         }
     );
 
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 0, 'Verify the borrower cannot renew with 2 holds on the record, but only one of those holds can be filled when AllowRenewalIfOtherItemsAvailable and onshelfhold are enabled and two other items on record' );
 
     Koha::CirculationRules->set_rules(
@@ -1831,7 +1825,7 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
     # Setting item not checked out to be not for loan but holdable
     $item_2->notforloan(-1)->store;
 
-    ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+    ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     is( $renewokay, 0, 'Bug 14337 - Verify the borrower can not renew with a hold on the record if AllowRenewalIfOtherItemsAvailable is enabled but the only available item is notforloan' );
 
     my $mock_circ = Test::MockModule->new("C4::Circulation");
@@ -1845,7 +1839,7 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
     # Two items total, one item available, one issued, two holds on record
 
     warnings_are{
-       ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+       ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     } [], "CanItemBeReserved not called when there are more possible holds than available items";
     is( $renewokay, 0, 'Borrower cannot renew when there are more holds than available items' );
 
@@ -1869,7 +1863,7 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
     );
 
     warnings_are{
-       ( $renewokay, $error ) = CanBookBeRenewed( $borrowernumber1, $item_1->itemnumber );
+       ( $renewokay, $error ) = CanBookBeRenewed( $borrower1, $issue );
     } ["Checked","Checked"], "CanItemBeReserved only called once per available item if it returns a negative result for all items for a borrower";
     is( $renewokay, 0, 'Borrower cannot renew when there are more holds than available items' );
 
@@ -1890,17 +1884,15 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
         }
     );
 
-    my $borrowernumber = Koha::Patron->new({
+    my $borrower = Koha::Patron->new({
         firstname =>  'fn',
         surname => 'dn',
         categorycode => $patron_category->{categorycode},
         branchcode => $branch,
-    })->store->borrowernumber;
+    })->store;
 
-    my $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-
-    my $issue = AddIssue( $borrower, $item->barcode, undef, undef, undef, undef, { onsite_checkout => 1 } );
-    my ( $renewed, $error ) = CanBookBeRenewed( $borrowernumber, $item->itemnumber );
+    my $issue = AddIssue( $borrower->unblessed, $item->barcode, undef, undef, undef, undef, { onsite_checkout => 1 } );
+    my ( $renewed, $error ) = CanBookBeRenewed( $borrower, $issue );
     is( $renewed, 0, 'CanBookBeRenewed should not allow to renew on-site checkout' );
     is( $error, 'onsite_checkout', 'A correct error code should be returned by CanBookBeRenewed for on-site checkout' );
 }
@@ -1917,24 +1909,23 @@ subtest "AllowRenewalIfOtherItemsAvailable tests" => sub {
             itype            => $itemtype,
         }
     );
+    my $patron = $builder->build_object( { class => 'Koha::Patrons',  value => { branchcode => $library->{branchcode}, categorycode => $patron_category->{categorycode} } } );
 
-    my $patron = $builder->build({ source => 'Borrower', value => { branchcode => $library->{branchcode}, categorycode => $patron_category->{categorycode} } } );
-
-    my $issue = AddIssue( $patron, $item->barcode );
+    my $issue = AddIssue( $patron->unblessed, $item->barcode );
     UpdateFine(
         {
-            issue_id       => $issue->id(),
+            issue_id       => $issue->id,
             itemnumber     => $item->itemnumber,
-            borrowernumber => $patron->{borrowernumber},
+            borrowernumber => $patron->borrowernumber,
             amount         => 1,
             type           => q{}
         }
     );
     UpdateFine(
         {
-            issue_id       => $issue->id(),
+            issue_id       => $issue->id,
             itemnumber     => $item->itemnumber,
-            borrowernumber => $patron->{borrowernumber},
+            borrowernumber => $patron->borrowernumber,
             amount         => 2,
             type           => q{}
         }
@@ -2350,9 +2341,8 @@ subtest 'MultipleReserves' => sub {
         categorycode => $patron_category->{categorycode},
         branchcode => $branch,
     );
-    my $renewing_borrowernumber = Koha::Patron->new(\%renewing_borrower_data)->store->borrowernumber;
-    my $renewing_borrower = Koha::Patrons->find( $renewing_borrowernumber )->unblessed;
-    my $issue = AddIssue( $renewing_borrower, $item_1->barcode);
+    my $patron = Koha::Patron->new(\%renewing_borrower_data)->store;
+    my $issue = AddIssue( $patron->unblessed, $item_1->barcode);
     my $datedue = dt_from_string( $issue->date_due() );
     is (defined $issue->date_due(), 1, "item 1 checked out");
     my $borrowing_borrowernumber = Koha::Checkouts->find({ itemnumber => $item_1->itemnumber })->borrowernumber;
@@ -2400,7 +2390,7 @@ subtest 'MultipleReserves' => sub {
     );
 
     {
-        my ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber, 1);
+        my ( $renewokay, $error ) = CanBookBeRenewed($patron, $issue, 1);
         is($renewokay, 0, 'Bug 17941 - should cover the case where 2 books are both reserved, so failing');
     }
 
@@ -2414,7 +2404,7 @@ subtest 'MultipleReserves' => sub {
     );
 
     {
-        my ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrowernumber, $item_1->itemnumber, 1);
+        my ( $renewokay, $error ) = CanBookBeRenewed($patron, $issue, 1);
         is($renewokay, 1, 'Bug 17941 - should cover the case where 2 books are reserved, but a third one is available');
     }
 };
@@ -4186,7 +4176,7 @@ subtest 'ItemsDeniedRenewal preference' => sub {
     my $idr_rules;
 
     my ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 1, 'Renewal allowed when no rules' );
     is( $idr_error, undef, 'Renewal allowed when no rules' );
 
@@ -4194,11 +4184,11 @@ subtest 'ItemsDeniedRenewal preference' => sub {
 
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 0, 'Renewal blocked when 1 rules (withdrawn)' );
     is( $idr_error, 'item_denied_renewal', 'Renewal blocked when 1 rule (withdrawn)' );
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $allow_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 1, 'Renewal allowed when 1 rules not matched (withdrawn)' );
     is( $idr_error, undef, 'Renewal allowed when 1 rules not matched (withdrawn)' );
 
@@ -4206,11 +4196,11 @@ subtest 'ItemsDeniedRenewal preference' => sub {
 
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 0, 'Renewal blocked when 2 rules matched (withdrawn, itype)' );
     is( $idr_error, 'item_denied_renewal', 'Renewal blocked when 2 rules matched (withdrawn,itype)' );
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $allow_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 1, 'Renewal allowed when 2 rules not matched (withdrawn, itype)' );
     is( $idr_error, undef, 'Renewal allowed when 2 rules not matched (withdrawn, itype)' );
 
@@ -4218,34 +4208,34 @@ subtest 'ItemsDeniedRenewal preference' => sub {
 
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 0, 'Renewal blocked when 3 rules matched (withdrawn, itype, location)' );
     is( $idr_error, 'item_denied_renewal', 'Renewal blocked when 3 rules matched (withdrawn,itype, location)' );
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $allow_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 1, 'Renewal allowed when 3 rules not matched (withdrawn, itype, location)' );
     is( $idr_error, undef, 'Renewal allowed when 3 rules not matched (withdrawn, itype, location)' );
 
     $idr_rules="itemcallnumber: [NULL]";
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 0, 'Renewal blocked for undef when NULL in pref' );
     $idr_rules="itemcallnumber: ['']";
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 1, 'Renewal not blocked for undef when "" in pref' );
 
     $idr_rules="itemnotes: [NULL]";
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 1, 'Renewal not blocked for "" when NULL in pref' );
     $idr_rules="itemnotes: ['']";
     C4::Context->set_preference('ItemsDeniedRenewal',$idr_rules);
     ( $idr_mayrenew, $idr_error ) =
-    CanBookBeRenewed( $idr_borrower->borrowernumber, $deny_issue->itemnumber );
+    CanBookBeRenewed( $idr_borrower, $deny_issue );
     is( $idr_mayrenew, 0, 'Renewal blocked for empty string when "" in pref' );
 };
 
@@ -5538,7 +5528,7 @@ subtest 'AddIssue records staff who checked out item if appropriate' => sub  {
 
     t::lib::Mocks::mock_preference('RecordStaffUserOnCheckout', 1);
 
-    my $issue2 =
+    $issue =
       AddIssue( $patron->unblessed, $item->barcode, $dt_to, undef, $dt_from );
 
     is( $issue->issuer, $issuer->{borrowernumber}, "Staff who checked out the item recorded when RecordStaffUserOnCheckout turned on" );
@@ -5660,7 +5650,7 @@ subtest "SendCirculationAlert" => sub {
     is($notice->to_address, $patron->smsalertnumber, "Letter has the correct to_address set to smsalertnumber for SMS type notices");
 
     # Checkout an item, mark it returned, generate a notice
-    my $issue_2 = AddIssue( $patron->unblessed, $item->barcode);
+    my $issue_2 = AddIssue( $patron, $item->barcode);
     MarkIssueReturned( $patron->borrowernumber, $item->itemnumber, undef, 0, { skip_record_index => 1} );
     C4::Circulation::SendCirculationAlert({
         type => 'CHECKIN',
@@ -5694,7 +5684,7 @@ subtest "GetSoonestRenewDate tests" => sub {
     # Test 'exact time' setting for syspref NoRenewalBeforePrecision
     t::lib::Mocks::mock_preference( 'NoRenewalBeforePrecision', 'exact_time' );
     is(
-        GetSoonestRenewDate( $patron->id, $item->itemnumber ),
+        GetSoonestRenewDate( $patron, $issue ),
         $datedue->clone->add( days => -7 ),
         'Bug 14395: Renewals permitted 7 days before due date, as expected'
     );
@@ -5703,7 +5693,7 @@ subtest "GetSoonestRenewDate tests" => sub {
     # Test 'date' setting for syspref NoRenewalBeforePrecision
     t::lib::Mocks::mock_preference( 'NoRenewalBeforePrecision', 'date' );
     is(
-        GetSoonestRenewDate( $patron->id, $item->itemnumber ),
+        GetSoonestRenewDate( $patron, $issue ),
         $datedue->clone->add( days => -7 )->truncate( to => 'day' ),
         'Bug 14395: Renewals permitted 7 days before due date, as expected'
     );
@@ -5720,7 +5710,7 @@ subtest "GetSoonestRenewDate tests" => sub {
     );
 
     is(
-        GetSoonestRenewDate( $patron->id, $item->itemnumber ),
+        GetSoonestRenewDate( $patron, $issue ),
         dt_from_string,
         'Checkouts without auto-renewal can be renewed immediately if no norenewalbefore'
     );
@@ -5728,13 +5718,13 @@ subtest "GetSoonestRenewDate tests" => sub {
     t::lib::Mocks::mock_preference( 'NoRenewalBeforePrecision', 'date' );
     $issue->auto_renew(1)->store;
     is(
-        GetSoonestRenewDate( $patron->id, $item->itemnumber ),
+        GetSoonestRenewDate( $patron, $issue ),
         $datedue->clone->truncate( to => 'day' ),
         'Checkouts with auto-renewal can be renewed earliest on due date if no renewalbefore'
     );
     t::lib::Mocks::mock_preference( 'NoRenewalBeforePrecision', 'exact' );
     is(
-        GetSoonestRenewDate( $patron->id, $item->itemnumber ),
+        GetSoonestRenewDate( $patron, $issue ),
         $datedue,
         'Checkouts with auto-renewal can be renewed earliest on due date if no renewalbefore'
     );
