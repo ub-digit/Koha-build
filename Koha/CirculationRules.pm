@@ -24,6 +24,7 @@ use Koha::Exceptions;
 use Koha::CirculationRule;
 use Koha::Caches;
 use Koha::Cache::Memory::Lite;
+use Digest::MD5 qw( md5_hex );
 
 use base qw(Koha::Objects);
 
@@ -230,42 +231,51 @@ Return the effective rule object for the rule associated with the criteria passe
 sub get_effective_rule {
     my ( $self, $params ) = @_;
 
-    $params->{categorycode} //= undef;
-    $params->{branchcode}   //= undef;
-    $params->{itemtype}     //= undef;
-
-    my $rule_name    = $params->{rule_name};
-    my $categorycode = $params->{categorycode};
-    my $itemtype     = $params->{itemtype};
-    my $branchcode   = $params->{branchcode};
-
-    Koha::Exceptions::MissingParameter->throw(
-        "Required parameter 'rule_name' missing")
-      unless $rule_name;
-
-    for my $v ( $branchcode, $categorycode, $itemtype ) {
-        $v = undef if $v and $v eq '*';
+    # Normalize params
+    while (my ($key, $value) = each(%{$params})) {
+        delete $params->{$key} unless defined $value;
     }
 
-    my $order_by = $params->{order_by}
-      // { -desc => [ 'branchcode', 'categorycode', 'itemtype' ] };
+    my $cache = Koha::Caches->get_instance('get_effective_rule');
+    my $cache_key = md5_hex(
+        Data::Dumper->new($params)->Indent(0)->Terse(1)->Deparse(1)->Sortkeys(1)->Dump
+    );
 
-    my $search_params;
-    $search_params->{rule_name} = $rule_name;
+    unless( exists $cache->{$cache_key} ) {
+        my $rule_name    = $params->{rule_name};
+        my $categorycode = $params->{categorycode};
+        my $itemtype     = $params->{itemtype};
+        my $branchcode   = $params->{branchcode};
 
-    $search_params->{categorycode} = defined $categorycode ? [ $categorycode, undef ] : undef;
-    $search_params->{itemtype}     = defined $itemtype     ? [ $itemtype, undef ] : undef;
-    $search_params->{branchcode}   = defined $branchcode   ? [ $branchcode,   undef ] : undef;
+        Koha::Exceptions::MissingParameter->throw(
+            "Required parameter 'rule_name' missing")
+        unless $rule_name;
 
-    my $rule = $self->search(
-        $search_params,
-        {
-            order_by => $order_by,
-            rows => 1,
+        for my $v ( $branchcode, $categorycode, $itemtype ) {
+            $v = undef if $v and $v eq '*';
         }
-    )->single;
 
-    return $rule;
+        my $order_by = $params->{order_by}
+        // { -desc => [ 'branchcode', 'categorycode', 'itemtype' ] };
+
+        my $search_params;
+        $search_params->{rule_name} = $rule_name;
+
+        $search_params->{categorycode} = defined $categorycode ? [ $categorycode, undef ] : undef;
+        $search_params->{itemtype}     = defined $itemtype     ? [ $itemtype, undef ] : undef;
+        $search_params->{branchcode}   = defined $branchcode   ? [ $branchcode,   undef ] : undef;
+
+        $cache->{$cache_key} = $self->search(
+            $search_params,
+            {
+                order_by => $order_by,
+                rows => 1,
+            }
+        )->single;
+
+    }
+
+    return $cache->{$cache_key};
 }
 
 =head3 get_effective_rule_value
