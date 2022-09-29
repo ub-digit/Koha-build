@@ -838,7 +838,7 @@ sub CanBookBeIssued {
         $issuingimpossible{DEBARRED} = 1;
     }
 
-    if ( $patron->is_expired ) {
+    if ( $patron->is_expired({ cache => 1 }) ) {
         $issuingimpossible{EXPIRED} = 1;
     }
 
@@ -924,7 +924,7 @@ sub CanBookBeIssued {
         else {
             $issuingimpossible{USERBLOCKEDWITHENDDATE} = $debarred_date;
         }
-    } elsif ( my $num_overdues = $patron->has_overdues ) {
+    } elsif ( my $num_overdues = $patron->has_overdues({ cache => 1 }) ) {
         ## patron has outstanding overdue loans
         if ( C4::Context->preference("OverduesBlockCirc") eq 'block'){
             $issuingimpossible{USERBLOCKEDOVERDUE} = $num_overdues;
@@ -1734,7 +1734,6 @@ sub AddIssue {
                 if ( $accumulate_charge > 0 ) {
                     AddIssuingCharge( $issue, $accumulate_charge, 'RENT_DAILY' );
                     $charge += $accumulate_charge;
-                    $item_unblessed->{charge} = $charge;
                 }
             }
 
@@ -2553,7 +2552,7 @@ sub MarkIssueReturned {
         my $overdue_restrictions = $patron->restrictions->search({ type => 'OVERDUES' });
         if ( C4::Context->preference('AutoRemoveOverduesRestrictions')
           && $patron->debarred
-          && !$patron->has_overdues
+          && !$patron->has_overdues({ cache => 1 })
           && $overdue_restrictions->count
         ) {
             DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
@@ -2910,7 +2909,7 @@ sub CanBookBeRenewed {
         my $restrictionblockrenewing = C4::Context->preference('RestrictionBlockRenewing');
         $patron         = Koha::Patrons->find($borrowernumber); # FIXME Is this really useful?
         my $restricted  = $patron->is_debarred;
-        my $hasoverdues = $patron->has_overdues;
+        my $hasoverdues = $patron->has_overdues({ cache => 1 });
 
         if ( $restricted and $restrictionblockrenewing ) {
             return ( 0, 'restriction');
@@ -3191,7 +3190,7 @@ sub AddRenewal {
         my $overdue_restrictions = $patron->restrictions->search({ type => 'OVERDUES' });
         if ( $patron
           && $patron->is_debarred
-          && ! $patron->has_overdues
+          && ! $patron->has_overdues({ cache => 1 })
           && $overdue_restrictions->count
         ) {
             DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
@@ -4404,7 +4403,7 @@ sub _CanBookBeAutoRenewed {
         }
     );
 
-    if ( $patron->category->effective_BlockExpiredPatronOpacActions and $patron->is_expired ) {
+    if ( $patron->is_expired({ cache => 1 }) && $patron->category->effective_BlockExpiredPatronOpacActions ) {
         return 'auto_account_expired';
     }
 
