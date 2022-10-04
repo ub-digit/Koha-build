@@ -22,6 +22,7 @@ use Modern::Perl;
 use Koha::Database;
 use Koha::Recall;
 use Koha::DateUtils qw( dt_from_string );
+use Koha::Plugins;
 
 use C4::Stats qw( UpdateStats );
 
@@ -171,6 +172,14 @@ sub add_recall {
             itemtype => $item->effective_itemtype,
             ccode => $item->ccode,
         });
+
+        Koha::Plugins->call(
+            'after_recall_action',
+            {
+                action  => 'add',
+                payload => { recall => $recall }
+            }
+        );
 
         # add action log
         C4::Log::logaction( 'RECALLS', 'CREATE', $recall->id, "Recall requested by borrower #" . $recall->patron_id, $interface ) if ( C4::Context->preference('RecallsLog') );
