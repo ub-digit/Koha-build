@@ -348,6 +348,38 @@ sub background_tasks {
     };
 }
 
+sub after_account_action {
+    my ( $self, $params ) = @_;
+
+    my $action = $params->{action};
+    my $line   = $params->{payload}->{line};
+    my $type   = $params->{payload}->{type};
+
+    Koha::Exception->throw(
+        "after_account_action called with action: $action, type: $type, ref: " . ref($line) );
+}
+
+sub before_index_action {
+    my ( $self, $params ) = @_;
+
+    my $action = $params->{action};
+    my $engine   = $params->{payload}->{engine};
+    my $records   = $params->{payload}->{records};
+
+    Koha::Exception->throw(
+        "before_index_action called with action: $action, engine: $engine, ref: " . ref($records) );
+}
+
+sub after_recall_action {
+    my ( $self, $params ) = @_;
+
+    my $action = $params->{action};
+    my $recall   = $params->{payload}->{recall};
+
+    Koha::Exception->throw(
+        "after_recall_action called with action: $action, ref: " . ref($recall) );
+}
+
 sub _private_sub {
     return "";
 }
