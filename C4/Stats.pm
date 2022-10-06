@@ -20,6 +20,7 @@ package C4::Stats;
 use Modern::Perl;
 
 use Koha::Statistics;
+use C4::Context;
 
 our (@ISA, @EXPORT_OK);
 BEGIN {
@@ -55,6 +56,7 @@ The functions of this module deals with statistics table of Koha database.
 
 sub UpdateStats {
     my $params = shift;
+    return () if (C4::Context->preference('DisableStatistics'));
     Koha::Statistic->new($params)->store;
 }
 
