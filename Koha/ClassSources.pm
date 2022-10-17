@@ -21,7 +21,7 @@ use Koha::Database;
 
 use Koha::ClassSource;
 
-use base qw(Koha::Objects);
+use base qw(Koha::Objects::Cached);
 
 =head1 NAME
 

@@ -2454,10 +2454,6 @@ subtest 'columns_to_str' => sub {
     $cache->clear_from_cache("MarcStructure-0-");
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
-    $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
-    $cache->clear_from_cache("cn_sources:description");
-    $cache->clear_from_cache("AV_descriptions:LOST");
 
     # Creating subfields 'é', 'è' that are not linked with a kohafield
     Koha::MarcSubfieldStructures->search(
@@ -2539,10 +2535,9 @@ subtest 'columns_to_str' => sub {
     $cache->clear_from_cache("MarcStructure-0-");
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
-    $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
-    $cache->clear_from_cache("cn_sources:description");
-    $cache->clear_from_cache("AV_descriptions:LOST");
+
+    Koha::Libraries->_objects_cache_clear();
+    Koha::ItemTypes->_objects_cache_clear();
 
     $schema->storage->txn_rollback;
 };
@@ -2559,10 +2554,6 @@ subtest 'strings_map() tests' => sub {
     $cache->clear_from_cache("MarcStructure-0-");
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
-    $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
-    $cache->clear_from_cache("cn_sources:description");
-    $cache->clear_from_cache("AV_descriptions:LOST");
 
     # Recreating subfields just to be sure tests will be ok
     # 1 => av (LOST)
@@ -2746,9 +2737,9 @@ subtest 'strings_map() tests' => sub {
     $cache->clear_from_cache("MarcStructure-0-");
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
-    $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
-    $cache->clear_from_cache("cn_sources:description");
+
+    Koha::Libraries->_objects_cache_clear();
+    Koha::ItemTypes->_objects_cache_clear();
 
     $schema->storage->txn_rollback;
 };

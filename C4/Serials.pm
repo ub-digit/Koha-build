@@ -75,6 +75,7 @@ use C4::Context;
 use C4::Log                qw( logaction );                  # logaction
 use C4::Serials::Frequency qw( GetSubscriptionFrequency );
 use C4::Serials::Numberpattern;
+use Koha::AdditionalFields;
 use Koha::AdditionalFieldValues;
 use Koha::Biblios;
 use Koha::DateUtils qw( dt_from_string );
@@ -639,13 +640,28 @@ sub SearchSubscriptions {
     if ( $params->{results_limit} && $total_results > $params->{results_limit} ) {
         $results = [ splice( @{$results}, 0, $params->{results_limit} ) ];
     }
+    my @additional_field_ids = map { $_->id  } Koha::AdditionalFields->search( { tablename => 'subscription' } )->as_list;
+    if (@additional_field_ids) {
+        my %subscriptions_by_id = map { $_->{subscriptionid } => $_ } @{$results};
+        my $field_values_rs = Koha::AdditionalFieldValues->search(
+            {
+                field_id => { -in => \@additional_field_ids },
+                record_id => { -in => [ keys %subscriptions_by_id ] }
+            }
+        );
+        while (my $field_value = $field_values_rs->next) {
+            $subscriptions_by_id{$field_value->record_id}->{additional_field_values}->{$field_value->field_id} = $field_value->value;
+        }
+    }
+    else {
+        for my $subscription ( @{$results} ) {
+            $subscription->{additional_field_values} = {};
+        }
+    }
 
-    for my $subscription (@$results) {
-        $subscription->{cannotedit}    = not can_edit_subscription($subscription);
-        $subscription->{cannotdisplay} = not can_show_subscription($subscription);
-
-        my $subscription_object = Koha::Subscriptions->find( $subscription->{subscriptionid} );
-        $subscription->{additional_field_values} = $subscription_object->get_additional_field_values_for_template;
+    for my $subscription ( @{$results} ) {
+        $subscription->{cannotedit} = not can_edit_subscription( $subscription );
+        $subscription->{cannotdisplay} = not can_show_subscription( $subscription );
     }
 
     return wantarray ? @{$results} : { results => $results, total => $total_results };

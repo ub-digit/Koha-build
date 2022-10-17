@@ -21,7 +21,6 @@ use Modern::Perl;
 
 use C4::Context;
 
-use Koha::Caches;
 use Koha::Database;
 use Koha::Desks;
 use Koha::StockRotationStages;
@@ -30,8 +29,6 @@ use Koha::Library::Hours;
 
 use base qw(Koha::Object::Mixin::AdditionalFields Koha::Object::CachedExpiration);
 
-my $cache = Koha::Caches->get_instance();
-
 =head1 NAME
 
 Koha::Library - Koha Library Object class
@@ -39,45 +36,6 @@ Koha::Library - Koha Library Object class
 =head1 API
 
 =head2 Class methods
-
-=head3 store
-
-Library specific store to ensure relevant caches are flushed on change
-
-=cut
-
-sub store {
-    my ($self) = @_;
-
-    my $flush = 0;
-
-    if ( !$self->in_storage ) {
-        $flush = 1;
-    } else {
-        my $self_from_storage = $self->get_from_storage;
-        $flush = 1 if ( $self_from_storage->branchname ne $self->branchname );
-    }
-
-    $self = $self->SUPER::store;
-
-    if ($flush) {
-        $cache->clear_from_cache('libraries:name');
-    }
-
-    return $self;
-}
-
-=head2 delete
-
-Library specific C<delete> to clear relevant caches on delete.
-
-=cut
-
-sub delete {
-    my $self = shift @_;
-    $cache->clear_from_cache('libraries:name');
-    $self->SUPER::delete(@_);
-}
 
 =head3 stockrotationstages
 

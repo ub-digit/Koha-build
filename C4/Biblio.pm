@@ -111,6 +111,7 @@ use Koha::SearchEngine::Indexer;
 use Koha::SimpleMARC;
 use Koha::Libraries;
 use Koha::Util::MARC;
+use Koha::AuthorisedValues;
 
 =head1 NAME
 
@@ -1498,53 +1499,37 @@ sub GetAuthorisedValueDesc {
 
     return q{} unless defined($value);
 
-    my $cache = Koha::Caches->get_instance();
-    my $cache_key;
     if ( !$category ) {
 
         return $value unless defined $tagslib->{$tag}->{$subfield}->{'authorised_value'};
 
         #---- branch
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "branches" ) {
-            $cache_key = "libraries:name";
-            my $libraries = $cache->get_from_cache( $cache_key, { unsafe => 1 } );
-            if ( !$libraries ) {
-                $libraries = {
-                    map { $_->branchcode => $_->branchname } Koha::Libraries->search(
-                        {},
-                        { columns => [ 'branchcode', 'branchname' ] }
-                    )->as_list
-                };
-                $cache->set_in_cache( $cache_key, $libraries );
-            }
+            my $libraries = {
+                map { $_->branchcode => $_->branchname } Koha::Libraries->search(
+                    {},
+                    { columns => [ 'branchcode', 'branchname' ] }
+                )->as_list
+            };
             return $libraries->{$value};
         }
 
         #---- itemtypes
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "itemtypes" ) {
-            my $lang = C4::Languages::getlanguage;
-            $lang //= 'en';
-            $cache_key = 'itemtype:description:' . $lang;
-            my $itypes = $cache->get_from_cache( $cache_key, { unsafe => 1 } );
-            if ( !$itypes ) {
-                $itypes = { map { $_->itemtype => $_->translated_description } Koha::ItemTypes->search()->as_list };
-                $cache->set_in_cache( $cache_key, $itypes );
+            foreach my $item_type ( Koha::ItemTypes->search()->as_list ) {
+                if ( $item_type->itemtype eq $value ) {
+                    return $item_type->translated_description;
+                }
             }
-            return $itypes->{$value};
         }
 
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "cn_source" ) {
-            $cache_key = "cn_sources:description";
-            my $cn_sources = $cache->get_from_cache( $cache_key, { unsafe => 1 } );
-            if ( !$cn_sources ) {
-                $cn_sources = {
-                    map { $_->cn_source => $_->description } Koha::ClassSources->search(
-                        {},
-                        { columns => [ 'cn_source', 'description' ] }
-                    )->as_list
-                };
-                $cache->set_in_cache( $cache_key, $cn_sources );
-            }
+            my $cn_sources = {
+                map { $_->cn_source => $_->description } Koha::ClassSources->search(
+                    {},
+                    { columns => [ 'cn_source', 'description' ] }
+                )->as_list
+            };
             return $cn_sources->{$value};
         }
 
@@ -1552,23 +1537,14 @@ sub GetAuthorisedValueDesc {
         $category = $tagslib->{$tag}->{$subfield}->{'authorised_value'};
     }
 
-    my $dbh = C4::Context->dbh;
-    if ( $category ne "" ) {
-        $cache_key = "AV_descriptions:" . $category;
-        my $av_descriptions = $cache->get_from_cache( $cache_key, { unsafe => 1 } );
-        if ( !$av_descriptions ) {
-            $av_descriptions = {
-                map { $_->authorised_value => { lib => $_->lib, lib_opac => $_->lib_opac } }
-                    Koha::AuthorisedValues->search(
-                    { category => $category },
-                    { columns  => [ 'authorised_value', 'lib_opac', 'lib' ] }
-                    )->as_list
-            };
-            $cache->set_in_cache( $cache_key, $av_descriptions );
-        }
-        return ( $opac && $av_descriptions->{$value}->{'lib_opac'} )
-            ? $av_descriptions->{$value}->{'lib_opac'}
-            : $av_descriptions->{$value}->{'lib'};
+    if ( $category ) {
+        my $description = Koha::AuthorisedValues->get_description_by_category_and_authorised_value(
+            {
+                category         => $category,
+                authorised_value => $value
+            }
+        );
+        return $opac ? $description->{'opac_description'} : $description->{'lib'};
     } else {
         return $value;    # if nothing is found return the original value
     }

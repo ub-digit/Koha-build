@@ -25,12 +25,10 @@ use Koha::Exceptions;
 use Koha::Object;
 use Koha::Object::Limit::Library;
 
-use base qw(Koha::Object Koha::Object::Limit::Library);
+use base qw(Koha::Object::CachedExpiration Koha::Object::Limit::Library);
 
 use constant NUM_PATTERN    => q{^(-[1-9][0-9]*|0|[1-9][0-9]*)$};
 use constant NUM_PATTERN_JS => q{(-[1-9][0-9]*|0|[1-9][0-9]*)};     # ^ and $ removed
-
-my $cache = Koha::Caches->get_instance();
 
 =head1 NAME
 
@@ -50,44 +48,8 @@ AuthorisedValue specific store to ensure relevant caches are flushed on change
 
 sub store {
     my ($self) = @_;
-
-    my $flush = 0;
-
-    if ( !$self->in_storage ) {
-        $flush = 1;
-    } else {
-        my %updated_columns = $self->_result->get_dirty_columns;
-
-        if (   exists $updated_columns{lib}
-            or exists $updated_columns{lib_opac} )
-        {
-            $flush = 1;
-        }
-    }
-
     $self->_check_is_integer_only;
-
-    $self = $self->SUPER::store;
-
-    if ($flush) {
-        my $key = "AV_descriptions:" . $self->category;
-        $cache->clear_from_cache($key);
-    }
-
-    return $self;
-}
-
-=head2 delete
-
-AuthorisedValue specific C<delete> to clear relevant caches on delete.
-
-=cut
-
-sub delete {
-    my $self = shift @_;
-    my $key  = "AV_descriptions:" . $self->category;
-    $cache->clear_from_cache($key);
-    $self->SUPER::delete(@_);
+    return $self->SUPER::store;
 }
 
 =head3 opac_description

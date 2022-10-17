@@ -154,7 +154,7 @@ is_deeply(
 );
 
 subtest 'search_by_*_field + find_by_koha_field + get_description + authorised_values' => sub {
-    plan tests => 7;
+    plan tests => 8;
 
     my $test_cat = Koha::AuthorisedValueCategories->find('TEST');
     $test_cat->delete if $test_cat;
@@ -301,6 +301,7 @@ subtest 'search_by_*_field + find_by_koha_field + get_description + authorised_v
     subtest 'get_descriptions_by_marc_field' => sub {
         plan tests => 4;
 
+        Koha::AuthorisedValues->_objects_cache_clear();
         my $control_descriptions =
             Koha::AuthorisedValues->get_descriptions_by_marc_field( { frameworkcode => '', tagfield => '003', } );
         is_deeply(
@@ -311,18 +312,19 @@ subtest 'search_by_*_field + find_by_koha_field + get_description + authorised_v
             },
         );
 
-        my $control_descriptions_cached =
-            Koha::AuthorisedValues->get_descriptions_by_marc_field( { frameworkcode => '', tagfield => '003', } );
-
+        # Trigger cache
+        Koha::AuthorisedValues->get_descriptions_by_marc_field( { frameworkcode => '', tagfield => '003', } );
+        my $bucket = Koha::AuthorisedValues->_objects_cache_bucket('args');
         is(
-            "$control_descriptions", "$control_descriptions_cached",
-            "Same memory address used proves cached control desc data"
+            scalar( keys %{$control_descriptions} ), ( values %{$bucket} )[0]->count,
+            "Same number of cached descriptions as control descriptions"
         );
 
-        my $descriptions = Koha::AuthorisedValues->get_descriptions_by_marc_field(
+        Koha::AuthorisedValues->_objects_cache_clear();
+        $control_descriptions = Koha::AuthorisedValues->get_descriptions_by_marc_field(
             { frameworkcode => '', tagfield => '952', tagsubfield => 'c' } );
         is_deeply(
-            $descriptions,
+            $control_descriptions,
             {
                 'location_1' => 'location_1',
                 'location_2' => 'location_2',
@@ -330,9 +332,13 @@ subtest 'search_by_*_field + find_by_koha_field + get_description + authorised_v
             },
         );
 
-        my $descriptions_cached = Koha::AuthorisedValues->get_descriptions_by_marc_field(
+        Koha::AuthorisedValues->get_descriptions_by_marc_field(
             { frameworkcode => '', tagfield => '952', tagsubfield => 'c' } );
-        is( "$descriptions", "$descriptions_cached", "Same memory address used proves cached desc data" );
+        $bucket = Koha::AuthorisedValues->_objects_cache_bucket('args');
+        is(
+            scalar( keys %{$control_descriptions} ), ( values %{$bucket} )[0]->count,
+            "Same number of cached descriptions as control descriptions"
+        );
     };
 
     subtest 'authorised_values' => sub {
@@ -362,6 +368,23 @@ subtest 'search_by_*_field + find_by_koha_field + get_description + authorised_v
         is( $authorised_value_category->authorised_values->count, 1, "one authorised value" );
 
         $schema->storage->txn_rollback;
+    };
+
+    subtest 'get_description_by_category_and_authorised_value' => sub {
+        plan tests => 1;
+        my $description = Koha::AuthorisedValues->get_description_by_category_and_authorised_value(
+            {
+                category         => $av_0->category,
+                authorised_value => $av_0->authorised_value,
+            }
+        );
+        is_deeply(
+            $description,
+            {
+                lib              => $av_0->lib,
+                opac_description => $av_0->lib_opac
+            }
+        );
     };
 };
 

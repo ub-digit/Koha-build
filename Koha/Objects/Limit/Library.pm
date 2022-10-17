@@ -57,6 +57,8 @@ sub search_with_library_limits {
     $library_id //= C4::Context->userenv->{branch}
         if defined C4::Context->userenv;
 
+    $attributes->{cache} = 0;
+
     return $self->search( $params, $attributes ) unless $library_id;
 
     my $library_limits       = $self->object_class()->_library_limits;

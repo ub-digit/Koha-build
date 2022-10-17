@@ -53,11 +53,6 @@ subtest 'get_biblio_marcxml() tests' => sub {
     my $cache = Koha::Caches->get_instance;
     $cache->clear_from_cache("MarcCodedFields-");
 
-    # Clear GetAuthorisedValueDesc-generated cache
-    $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
-    $cache->clear_from_cache("cn_sources:description");
-
     my $cgi = Test::MockModule->new('CGI');
     $cgi->mock( 'Vars', sub { ( 'verb', 'Identify' ); } );
     my $yaml = Test::MockModule->new('YAML::XS');

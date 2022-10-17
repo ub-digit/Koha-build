@@ -23,9 +23,8 @@ use Koha::Database;
 
 use Koha::AuthorisedValue;
 use Koha::MarcSubfieldStructures;
-use Koha::Cache::Memory::Lite;
 
-use base qw(Koha::Objects Koha::Objects::Limit::Library);
+use base qw(Koha::Objects::Cached Koha::Objects::Limit::Library);
 
 =head1 NAME
 
@@ -115,7 +114,7 @@ sub find_by_koha_field {
             distinct => 1,
         }
     );
-    return $av->count ? $av->next : undef;
+    return $av->next;
 }
 
 =head2 get_description_by_koha_field
@@ -126,25 +125,12 @@ Missing POD for get_description_by_koha_field.
 
 sub get_description_by_koha_field {
     my ( $self, $params ) = @_;
-    my $frameworkcode    = $params->{frameworkcode} || '';
-    my $kohafield        = $params->{kohafield};
-    my $authorised_value = $params->{authorised_value};
+    $params->{frameworkcode} //= '';
 
-    return {} unless defined $authorised_value;
-
-    my $memory_cache = Koha::Cache::Memory::Lite->get_instance;
-    my $cache_key    = "AV_descriptions:$frameworkcode:$kohafield:$authorised_value";
-    my $cached       = $memory_cache->get_from_cache($cache_key);
-    return $cached if $cached;
+    return {} unless defined $params->{authorised_value};
 
     my $av = $self->find_by_koha_field($params);
-    if ( !defined $av ) {
-        $memory_cache->set_in_cache( $cache_key, {} );
-        return {};
-    }
-    my $descriptions = { lib => $av->lib, opac_description => $av->opac_description };
-    $memory_cache->set_in_cache( $cache_key, $descriptions );
-    return $descriptions;
+    return defined $av ? { lib => $av->lib, opac_description => $av->opac_description } : {};
 }
 
 =head2 get_descriptions_by_koha_field
@@ -155,24 +141,38 @@ Missing POD for get_descriptions_by_koha_field.
 
 sub get_descriptions_by_koha_field {
     my ( $self, $params ) = @_;
-    my $frameworkcode = $params->{frameworkcode} || '';
-    my $kohafield     = $params->{kohafield};
-
-    my $memory_cache = Koha::Cache::Memory::Lite->get_instance;
-    my $cache_key    = "AV_descriptions:$frameworkcode:$kohafield";
-    my $cached       = $memory_cache->get_from_cache($cache_key);
-    return @$cached if $cached;
+    $params->{frameworkcode} //= '';
 
     my @avs          = $self->search_by_koha_field($params)->as_list;
-    my @descriptions = map {
+    my $descriptions = [
+        map {
+            {
+                authorised_value => $_->authorised_value,
+                lib              => $_->lib,
+                opac_description => $_->opac_description
+            }
+        } @avs
+    ];
+    return @{$descriptions};
+}
+
+sub get_description_by_category_and_authorised_value {
+    my ( $self, $params ) = @_;
+    return unless defined $params->{category} and defined $params->{authorised_value};
+
+    my $av = $self->search(
         {
-            authorised_value => $_->authorised_value,
-            lib              => $_->lib,
-            opac_description => $_->opac_description
+            category         => $params->{category},
+            authorised_value => $params->{authorised_value},
         }
-    } @avs;
-    $memory_cache->set_in_cache( $cache_key, \@descriptions );
-    return @descriptions;
+    )->next;
+
+    return $av
+        ? {
+        lib              => $av->lib,
+        opac_description => $av->opac_description
+        }
+        : {};
 }
 
 =head3 get_descriptions_by_marc_field
@@ -183,27 +183,15 @@ sub get_descriptions_by_koha_field {
 
 sub get_descriptions_by_marc_field {
     my ( $self, $params ) = @_;
-    my $frameworkcode = $params->{frameworkcode} || '';
-    my $tagfield      = $params->{tagfield};
-    my $tagsubfield   = $params->{tagsubfield};
+    $params->{frameworkcode} //= '';
 
     return {} unless defined $params->{tagfield};
-
-    my $memory_cache = Koha::Cache::Memory::Lite->get_instance;
-    my $cache_key    = "AV_descriptions_by_MARC:$frameworkcode:$tagfield";
-    if ($tagsubfield) {
-        $cache_key .= ":$tagsubfield";
-    }
-
-    my $cached = $memory_cache->get_from_cache($cache_key);
-    return $cached if $cached;
 
     my $descriptions = {};
     my @avs          = $self->search_by_marc_field($params)->as_list;
     foreach my $av (@avs) {
         $descriptions->{ $av->authorised_value } = $av->lib;
     }
-    $memory_cache->set_in_cache( $cache_key, $descriptions );
     return $descriptions;
 }
 
