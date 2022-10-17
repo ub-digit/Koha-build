@@ -40,6 +40,7 @@ use C4::Context;
 use C4::Log qw( logaction );    # logaction
 use C4::Serials::Frequency qw( GetSubscriptionFrequency );
 use C4::Serials::Numberpattern;
+use Koha::AdditionalFields;
 use Koha::AdditionalFieldValues;
 use Koha::Biblios;
 use Koha::Serial;
@@ -631,15 +632,21 @@ sub SearchSubscriptions {
     if ( $params->{results_limit} && $total_results > $params->{results_limit} ) {
         $results = [ splice( @{$results}, 0, $params->{results_limit} ) ];
     }
+    my %additional_fields_by_id = map { $_->id => $_->name } Koha::AdditionalFields->search( { tablename => 'subscription' } )->as_list;
 
     for my $subscription ( @$results ) {
         $subscription->{cannotedit} = not can_edit_subscription( $subscription );
         $subscription->{cannotdisplay} = not can_show_subscription( $subscription );
+        my @additional_field_values = Koha::AdditionalFieldValues->search(
+            {
+                field_id => { -in => [ keys %additional_fields_by_id ] },
+                record_id => $subscription->{subscriptionid}
+            }
+        )->as_list;
 
-        my $subscription_object = Koha::Subscriptions->find($subscription->{subscriptionid});
-        $subscription->{additional_fields} = { map { $_->field->name => $_->value }
-            $subscription_object->additional_field_values->as_list };
-
+        $subscription->{additional_fields} = {
+            map { $additional_fields_by_id{$_->field_id} => $_->value } @additional_field_values
+        };
     }
 
     return wantarray ? @{$results} : { results => $results, total => $total_results };
