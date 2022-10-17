@@ -169,6 +169,34 @@ sub get_description_by_category_and_authorised_value {
     return $description;
 }
 
+sub get_description_by_category_and_authorised_value {
+    my ( $self, $params ) = @_;
+    return unless defined $params->{category} && defined $params->{authorised_value};
+
+    my $category = $params->{category};
+    my $value = $params->{authorised_value};
+
+    my $memory_cache = Koha::Cache::Memory::Lite->get_instance;
+    my $cache_key = "AV_description_by_category_and_authorised_value:$category:$value";
+    my $description = $memory_cache->get_from_cache($cache_key);
+
+    if (!$description) {
+        my $result = $self->search({
+                category => $category,
+                authorised_value => $value
+            });
+
+        if (my $av = $result->next) {
+            $description = {
+                lib => $av->lib,
+                opac_description => $av->opac_description
+            };
+            $memory_cache->set_in_cache( $cache_key, $description );
+        }
+    }
+    return $description;
+}
+
 sub categories {
     my ( $self ) = @_;
     my $rs = $self->_resultset->search(
