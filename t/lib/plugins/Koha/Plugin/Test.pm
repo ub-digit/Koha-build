@@ -348,6 +348,17 @@ sub background_tasks {
     };
 }
 
+sub before_index_action {
+    my ( $self, $params ) = @_;
+
+    my $action = $params->{action};
+    my $engine   = $params->{payload}->{engine};
+    my $records   = $params->{payload}->{records};
+
+    Koha::Exception->throw(
+        "before_index_action called with action: $action, engine: $engine, ref: " . ref($records) );
+}
+
 sub _private_sub {
     return "";
 }
