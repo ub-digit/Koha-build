@@ -326,6 +326,23 @@ subtest 'search_by_*_field + find_by_koha_field + get_description + authorised_v
 
         $schema->storage->txn_rollback;
     };
+
+    subtest 'get_description_by_category_and_authorised_value' => sub {
+        plan tests => 1;
+        my $description = Koha::AuthorisedValues->get_description_by_category_and_authorised_value(
+            {
+                category => $av_0->category,,
+                authorised_value => $av_0->authorised_value,
+            }
+        );
+        is_deeply(
+            $description,
+            {
+                lib              => $av_0->lib,
+                opac_description => $av_0->lib_opac
+            }
+        );
+    };
 };
 
 $schema->storage->txn_rollback;
