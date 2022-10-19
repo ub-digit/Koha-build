@@ -4,6 +4,7 @@
 [% USE Koha %]
 [% USE KohaDates %]
 [% USE Branches %]
+[% USE ExtendedAttributeProperties %]
 [% PROCESS 'member-main-address-style.inc' %]
 [% PROCESS 'member-alt-address-style.inc' %]
 [% PROCESS 'member-alt-contact-style.inc' %]
@@ -1655,6 +1656,18 @@ legend.collapsed i.fa.fa-caret-down::before {
                                                         <h3 id="[% pa_loo.class | html %]_lgd">[% pa_loo.lib | html %]</h3>
                                                     [% END %]
                                                     [% FOREACH patron_attribute IN pa_loo.items %]
+                                                        [% IF ExtendedAttributeProperties.isEditable(patron_attribute) %]
+                                                            [% editable = 1 %]
+                                                            [% attribute_readonly = '' %]
+                                                            [% attribute_disabled = '' %]
+                                                            [% attribute_style = '' %]
+                                                        [% ELSE %]
+                                                            [% editable = 0 %]
+                                                            [% attribute_readonly = 'readonly="true" style="opacity:0.6"' %]
+                                                            [% attribute_disabled = 'disabled' %]
+                                                            [% attribute_style = 'style="opacity:0.6"' %]
+                                                        [% END %]
+
                                                         <li data-category_code="[% patron_attribute.category_code | html %]" data-pa_code="[% patron_attribute.code | replace('[^a-zA-Z0-9_-]', '') %]">
                                                             [% IF patron_attribute.mandatory %]
                                                                 <label for="[% patron_attribute.form_id | html %]" class="required" required="required">[% patron_attribute.description | html %]: </label>
@@ -1662,19 +1675,23 @@ legend.collapsed i.fa.fa-caret-down::before {
                                                                 <label for="[% patron_attribute.form_id | html %]">[% patron_attribute.description | html %]: </label>
                                                             [% END %]
                                                             [% IF ( patron_attribute.use_dropdown ) %]
-                                                                [% IF patron_attribute.mandatory %]
-                                                                    <select id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" required="required">
-                                                                [% ELSE %]
-                                                                    <select id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]">
+                                                                [% UNLESS ExtendedAttributeProperties.isEditable(patron_attribute) %]
+                                                                    <input type="hidden" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" value="[% patron_attribute.value | html %]" />
                                                                 [% END %]
-                                                                    <option value=""></option>
+
+                                                                [% IF patron_attribute.mandatory %]
+                                                                    <select id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" required="required" [% attribute_style %]>
+                                                                [% ELSE %]
+                                                                    <select id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" [% attribute_style %]>
+                                                                [% END %]
+                                                                    <option value="" [% attribute_disabled %]></option>
                                                                     [% FOREACH auth_val_loo IN patron_attribute.auth_val_loop %]
                                                                         [% IF auth_val_loo.authorised_value == patron_attribute.value %]
-                                                                            <option value="[% auth_val_loo.authorised_value | html %]" selected="selected">
+                                                                            <option value="[% auth_val_loo.authorised_value | html %]" selected="selected" [% attribute_disabled %]>
                                                                                 [% auth_val_loo.lib | html %]
                                                                             </option>
                                                                         [% ELSE %]
-                                                                            <option value="[% auth_val_loo.authorised_value | html %]" >
+                                                                            <option value="[% auth_val_loo.authorised_value | html %]" [% attribute_disabled %]>
                                                                                 [% auth_val_loo.lib | html %]
                                                                             </option>
                                                                         [% END %]
@@ -1683,15 +1700,15 @@ legend.collapsed i.fa.fa-caret-down::before {
                                                             [% ELSE %]
                                                                 [% IF patron_attribute.mandatory %]
                                                                     [% IF patron_attribute.is_date %]
-                                                                        <input type="text" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]"  maxlength="10" size="10" value="[% patron_attribute.value | html %]" required="required" class="flatpickr" />
+                                                                        <input type="text" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %] [% attribute_readonly %]"  maxlength="10" size="10" value="[% patron_attribute.value | html %]" required="required" class="flatpickr" />
                                                                     [% ELSE %]
-                                                                        <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" required="required">[% patron_attribute.value | html %]</textarea>
+                                                                        <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %] [% attribute_readonly %]" required="required">[% patron_attribute.value | html %]</textarea>
                                                                     [% END %]
                                                                 [% ELSE %]
                                                                     [% IF patron_attribute.is_date %]
-                                                                        <input type="text" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]"  maxlength="10" size="10" value="[% patron_attribute.value | html %]" class="flatpickr" />
+                                                                        <input type="text" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]"  maxlength="10" size="10" value="[% patron_attribute.value | html %] [% attribute_readonly %]" class="flatpickr" />
                                                                     [% ELSE %]
-                                                                        <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]">[% patron_attribute.value | html %]</textarea>
+                                                                        <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" [% attribute_readonly %]>[% patron_attribute.value | html %]</textarea>
                                                                     [% END %]
                                                                 [% END %]
                                                             [% END # /IF ( patron_attribute.use_dropdown ) %]
@@ -1898,11 +1915,11 @@ legend.collapsed i.fa.fa-caret-down::before {
             $("#saverecord").css({ 'margin-left': 0 });
 
             [% IF borrower_data.categorycode %]
-                update_category_code( "[% borrower_data.categorycode | html %]" );
+                update_category_code( "[% borrower_data.categorycode | html %]" , "[% ExtendedAttributeProperties.getHiddenAttributes() | html %]");
             [% ELSE %]
                 if ( $("#categorycode_entry").length > 0 ){
                     var category_code = $("#categorycode_entry").find("option:selected").val();
-                    update_category_code( category_code );
+                    update_category_code( category_code, "[% ExtendedAttributeProperties.getHiddenAttributes() | html %]" );
                 }
             [% END %]
 
@@ -2005,7 +2022,7 @@ legend.collapsed i.fa.fa-caret-down::before {
             });
 
             $("#categorycode_entry").on("change", function(){
-                update_category_code(this);
+                update_category_code(this, "[% ExtendedAttributeProperties.getHiddenAttributes() | html %]");
             });
 
             [% IF logged_in_user.borrowernumber == borrowernumber %]
