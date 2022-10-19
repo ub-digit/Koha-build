@@ -67,7 +67,7 @@ function clone_entry(node) {
     return false;
 }
 
-function update_category_code(category_code) {
+function update_category_code(category_code, hidden_attributes) {
     if ( $(category_code).is("select") ) {
         category_code = $("#categorycode_entry").find("option:selected").val();
     }
@@ -75,6 +75,12 @@ function update_category_code(category_code) {
     $(mytables).find("li").hide();
     $(mytables).find(" li[data-category_code='"+category_code+"']").show();
     $(mytables).find(" li[data-category_code='']").show();
+    if (hidden_attributes && hidden_attributes.length > 0) {
+        hidden_attributes_list = hidden_attributes.split(",");
+        for (var i = 0; i < hidden_attributes_list.length; i++) {
+            $(mytables).find(" li[data-pa_code='"+hidden_attributes_list[i]+"']").hide();
+        }
+    }
 
     //Change password length hint
     var hint = $("#password").siblings(".hint").first();
