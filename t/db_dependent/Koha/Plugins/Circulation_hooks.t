@@ -71,6 +71,7 @@ subtest 'after_circ_action() hook tests' => sub {
     my $biblio = $builder->build_sample_biblio();
     my $item_1 = $builder->build_sample_item( { biblionumber => $biblio->biblionumber } );
     my $item_2 = $builder->build_sample_item( { biblionumber => $biblio->biblionumber } );
+    my $item_no_issue = $builder->build_sample_item( { biblionumber => $biblio->biblionumber } );
 
     subtest 'AddIssue' => sub {
         plan tests => 2;
@@ -101,7 +102,7 @@ subtest 'after_circ_action() hook tests' => sub {
     };
 
     subtest 'AddReturn' => sub {
-        plan tests => 2;
+        plan tests => 3;
 
         t::lib::Mocks::mock_preference('BlockReturnOfWithdrawnItems', 1);
         $item_1->set({ withdrawn => 1 })->store;
@@ -113,11 +114,13 @@ subtest 'after_circ_action() hook tests' => sub {
         t::lib::Mocks::mock_preference('BlockReturnOfWithdrawnItems', 0);
         $item_1->set({ withdrawn => 0 })->store;
 
-        warning_like {
-            AddReturn( $item_1->barcode, $patron->branchcode );
-        }
+        warning_like { AddReturn( $item_1->barcode, $patron->branchcode ); }
         qr/after_circ_action called with action: checkin, ref: Koha::Old::Checkout/,
-          'AddReturn calls the after_circ_action hook';
+        'AddReturn calls the after_circ_action hook';
+
+        warning_like { AddReturn( $item_no_issue->barcode, $patron->branchcode ); }
+        qr/after_circ_action called with action: checkin_no_issue, ref: Koha::Item/,
+        'AddReturn calls the after_circ_action hook';
     };
 
     Koha::Plugins->RemovePlugins;
