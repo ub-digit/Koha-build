@@ -217,19 +217,24 @@ sub after_circ_action {
     my ( $self, $params ) = @_;
 
     my $action   = $params->{action};
-    my $checkout = $params->{payload}->{checkout};
     my $payload  = $params->{payload};
 
-    my $type = $payload->{type};
-
     if ( $action eq 'renewal' ) {
+        my $checkout = $payload->{checkout};
         Koha::Exception->throw("after_circ_action called with action: $action, ref: " . ref($checkout));
     }
     elsif ( $action eq 'checkout') {
+        my $checkout = $payload->{checkout};
+        my $type = $payload->{type};
         Koha::Exception->throw("after_circ_action called with action: $action, ref: " . ref($checkout) . " type: $type");
     }
     elsif ( $action eq 'checkin' ) {
+        my $checkout = $payload->{checkout};
         Koha::Exception->throw("after_circ_action called with action: $action, ref: " . ref($checkout));
+    }
+    elsif ( $action eq 'checkin_no_issue' ) {
+        my $checkin = $payload->{checkin};
+        Koha::Exception->throw("after_circ_action called with action: $action, ref: " . ref($checkin));
     }
 }
 
