@@ -106,12 +106,6 @@
                     [% END %]
                 [% END %]
 
-                [% IF CAN_user_borrowers_edit_borrowers %]
-                    <li>
-                        <a class="dropdown-item" id="sendwelcome" href="/cgi-bin/koha/members/notices.pl?borrowernumber=[% patron.borrowernumber | uri %]&op=send_welcome">Send welcome notice</a>
-                    </li>
-                [% END %]
-
                 [% IF CAN_user_borrowers_edit_borrowers && patron.category.effective_reset_password %]
                     <li><a class="dropdown-item" id="resetpassword" href="/cgi-bin/koha/members/notices.pl?borrowernumber=[% patron.borrowernumber | uri %]&op=send_password_reset">Send password reset</a></li>
                 [% END %]
