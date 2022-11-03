@@ -1030,7 +1030,7 @@ sub article_request_type {
       :                                      undef;
     my $borrowertype = $borrower->categorycode;
     my $itemtype = $self->effective_itemtype();
-    my $rule = Koha::CirculationRules->get_effective_rule(
+    return Koha::CirculationRules->get_effective_rule_value(
         {
             rule_name    => 'article_requests',
             categorycode => $borrowertype,
@@ -1038,9 +1038,6 @@ sub article_request_type {
             branchcode   => $branchcode
         }
     );
-
-    return q{} unless $rule;
-    return $rule->rule_value || q{}
 }
 
 =head3 current_holds
