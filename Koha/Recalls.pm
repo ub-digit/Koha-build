@@ -135,18 +135,15 @@ sub add_recall {
 
         # get checkout and adjust due date based on circulation rules
         my $checkout = $recall->checkout;
-        my $recall_due_date_interval = Koha::CirculationRules->get_effective_rule({
+        my $due_interval = Koha::CirculationRules->get_effective_rule_value({
             categorycode => $checkout->patron->categorycode,
             itemtype => $checkout->item->effective_itemtype,
             branchcode => $branchcode,
             rule_name => 'recall_due_date_interval',
-        });
-        my $due_interval = 5;
-        $due_interval = $recall_due_date_interval->rule_value
-            if defined $recall_due_date_interval && $recall_due_date_interval->rule_value;
-        my $timestamp         = dt_from_string( $recall->timestamp );
+        }) // 5;
+        my $timestamp = dt_from_string( $recall->timestamp );
         my $checkout_due_date = dt_from_string( $checkout->date_due );
-        my $recall_due_date   = $timestamp->set(
+        my $recall_due_date = $timestamp->set(
             {
                 hour   => $checkout_due_date->hour, minute => $checkout_due_date->minute,
                 second => $checkout_due_date->second
