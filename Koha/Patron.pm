@@ -1302,15 +1302,13 @@ sub can_request_article {
 
     $library_id //= C4::Context->userenv ? C4::Context->userenv->{'branch'} : undef;
 
-    my $rule = Koha::CirculationRules->get_effective_rule(
+    my $limit = Koha::CirculationRules->get_effective_rule_value(
         {
             branchcode   => $library_id,
             categorycode => $self->categorycode,
             rule_name    => 'open_article_requests_limit'
         }
     );
-
-    my $limit = ($rule) ? $rule->rule_value : undef;
 
     return 1 unless defined $limit;
 
@@ -1343,7 +1341,7 @@ sub article_request_fee {
 
     $library_id //= C4::Context->userenv ? C4::Context->userenv->{'branch'} : undef;
 
-    my $rule = Koha::CirculationRules->get_effective_rule(
+    my $value = Koha::CirculationRules->get_effective_rule_value(
         {
             branchcode   => $library_id,
             categorycode => $self->categorycode,
@@ -1351,9 +1349,7 @@ sub article_request_fee {
         }
     );
 
-    my $fee = ($rule) ? $rule->rule_value + 0 : 0;
-
-    return $fee;
+    return $value ? $value + 0 : 0;
 }
 
 =head3 add_article_request_fee_if_needed
