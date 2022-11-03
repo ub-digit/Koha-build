@@ -758,6 +758,9 @@ subtest 'get_onshelfholds_policy() tests' => sub {
         }
     );
 
+    my $memory_cache = Koha::Cache::Memory::Lite->get_instance;
+    $memory_cache->flush();
+
     is(
         $circ_rules->get_onshelfholds_policy( { item => $item } ), 1,
         'If rule_value is set on a matching rule, return it'
@@ -765,6 +768,7 @@ subtest 'get_onshelfholds_policy() tests' => sub {
 
     # Delete the rule (i.e. get_effective_rule returns undef)
     $circ_rules->delete;
+    $memory_cache->flush();
     is( $circ_rules->get_onshelfholds_policy( { item => $item } ), 0, 'If no matching rule, fallback to 0' );
 
     $schema->storage->txn_rollback;
@@ -1132,6 +1136,8 @@ subtest 'get_lostreturn_policy() tests' => sub {
             rule_name    => 'processingreturn'
         }
     )->next->delete;
+    $memory_cache->flush();
+
     is_deeply(
         Koha::CirculationRules->get_lostreturn_policy($params),
         { lostreturn => 'refund', processingreturn => 'refund' },
