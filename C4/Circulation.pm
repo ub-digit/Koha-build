@@ -423,16 +423,17 @@ sub TooMany {
     my $branch = _GetCircControlBranch($item, $patron);
     my $type = $item->effective_itemtype;
 
-    my ($type_object, $parent_type, $parent_maxissueqty_rule);
-    $type_object = Koha::ItemTypes->find( $type );
-    $parent_type = $type_object->parent_type if $type_object;
+    my $type_object = Koha::ItemTypes->find( $type );
+    my $parent_type = $type_object->parent_type if $type_object;
     my $child_types = Koha::ItemTypes->search({ parent_type => $type });
     # Find any children if we are a parent_type;
 
     # given branch, patron category, and item type, determine
     # applicable issuing rule
 
-    $parent_maxissueqty_rule = Koha::CirculationRules->get_effective_rule(
+    # If the parent rule is for default type we discount it
+    my $parent_maxissueqty;
+    $parent_maxissueqty = Koha::CirculationRules->get_effective_rule_value(
         {
             categorycode => $cat_borrower,
             itemtype     => $parent_type,
@@ -440,10 +441,8 @@ sub TooMany {
             rule_name    => 'maxissueqty',
         }
     ) if $parent_type;
-    # If the parent rule is for default type we discount it
-    $parent_maxissueqty_rule = undef if $parent_maxissueqty_rule && !defined $parent_maxissueqty_rule->itemtype;
 
-    my $maxissueqty_rule = Koha::CirculationRules->get_effective_rule(
+    my $maxissueqty = Koha::CirculationRules->get_effective_rule_value(
         {
             categorycode => $cat_borrower,
             itemtype     => $type,
@@ -452,7 +451,7 @@ sub TooMany {
         }
     );
 
-    my $maxonsiteissueqty_rule = Koha::CirculationRules->get_effective_rule(
+    my $maxonsiteissueqty = Koha::CirculationRules->get_effective_rule_value(
         {
             categorycode => $cat_borrower,
             itemtype     => $type,
@@ -464,19 +463,18 @@ sub TooMany {
     # if a rule is found and has a loan limit set, count
     # how many loans the patron already has that meet that
     # rule
-    if (defined($maxissueqty_rule) and $maxissueqty_rule->rule_value ne "") {
+    if (defined $maxissueqty and $maxissueqty ne "") {
 
         my $checkouts;
-        if ( $maxissueqty_rule->branchcode ) {
+        if ( $branch ) {
             if ( C4::Context->preference('CircControl') eq 'PickupLibrary' ) {
                 $checkouts = $patron->checkouts->search(
-                    { 'me.branchcode' => $maxissueqty_rule->branchcode } );
+                    { 'me.branchcode' => $branch } );
             } elsif (C4::Context->preference('CircControl') eq 'PatronLibrary') {
                 $checkouts = $patron->checkouts; # if branch is the patron's home branch, then count all loans by patron
             } else {
                 my $branch_type = C4::Context->preference('HomeOrHoldingBranch') || 'homebranch';
-                $checkouts = $patron->checkouts->search(
-                    { "item.$branch_type" => $maxissueqty_rule->branchcode } );
+                $checkouts = $patron->checkouts->search( { "item.$branch_type" => $branch } );
             }
         } else {
             $checkouts = $patron->checkouts; # if rule is not branch specific then count all loans by patron
@@ -484,23 +482,22 @@ sub TooMany {
         $checkouts = $checkouts->search(undef, { prefetch => 'item' });
 
         my $sum_checkouts;
-        my $rule_itemtype = $maxissueqty_rule->itemtype;
 
         my @types;
-        unless ( $rule_itemtype ) {
+        unless ( $type ) {
             # matching rule has the default item type, so count only
             # those existing loans that don't fall under a more
             # specific rule
             @types = Koha::CirculationRules->search(
                 {
-                    branchcode => $maxissueqty_rule->branchcode,
-                    categorycode => [ $maxissueqty_rule->categorycode, $cat_borrower ],
+                    branchcode => $branch,
+                    categorycode => $cat_borrower,
                     itemtype  => { '!=' => undef },
                     rule_name => 'maxissueqty'
                 }
             )->get_column('itemtype');
         } else {
-            if ( $parent_maxissueqty_rule ) {
+            if ( $parent_maxissueqty ) {
                 # if we have a parent item type then we count loans of the
                 # specific item type or its siblings or parent
                 my $children = Koha::ItemTypes->search({ parent_type => $parent_type });
@@ -519,7 +516,7 @@ sub TooMany {
         while ( my $c = $checkouts->next ) {
             my $itemtype = $c->item->effective_itemtype;
 
-            unless ( $rule_itemtype ) {
+            unless ( $type ) {
                 next if grep {$_ eq $itemtype} @types;
             } else {
                 next unless grep {$_ eq $itemtype} @types;
@@ -538,22 +535,22 @@ sub TooMany {
             checkout_count               => $checkout_count,
             onsite_checkout_count        => $onsite_checkout_count,
             onsite_checkout              => $onsite_checkout,
-            max_checkouts_allowed        => $maxissueqty_rule ? $maxissueqty_rule->rule_value : undef,
-            max_onsite_checkouts_allowed => $maxonsiteissueqty_rule ? $maxonsiteissueqty_rule->rule_value : undef,
+            max_checkouts_allowed        => $maxissueqty,,
+            max_onsite_checkouts_allowed => $maxonsiteissueqty,
             switch_onsite_checkout       => $switch_onsite_checkout,
             circulation_rule             => $maxissueqty_rule,
             onsite_circulation_rule      => $maxonsiteissueqty_rule,
         };
         # If parent rules exists
-        if ( defined($parent_maxissueqty_rule) and defined($parent_maxissueqty_rule->rule_value) ){
-            $checkout_rules->{max_checkouts_allowed} = $parent_maxissueqty_rule ? $parent_maxissueqty_rule->rule_value : undef;
+        if ( defined $parent_maxissueqty ){
+            $checkout_rules->{max_checkouts_allowed} = $parent_maxissueqty;
             my $qty_over = _check_max_qty($checkout_rules);
             return $qty_over if defined $qty_over;
 
             # If the parent rule is less than or equal to the child, we only need check the parent
-            if( $maxissueqty_rule->rule_value < $parent_maxissueqty_rule->rule_value && defined($maxissueqty_rule->itemtype) ) {
+            if( $maxissueqty < $parent_maxissueqty && defined($type) ) {
                 $checkout_rules->{checkout_count} = $checkout_count_type;
-                $checkout_rules->{max_checkouts_allowed} = $maxissueqty_rule ? $maxissueqty_rule->rule_value : undef;
+                $checkout_rules->{max_checkouts_allowed} = $maxissueqty;
                 my $qty_over = _check_max_qty($checkout_rules);
                 return $qty_over if defined $qty_over;
             }
@@ -598,7 +595,7 @@ sub TooMany {
         return $qty_over if defined $qty_over;
     }
 
-    if ( not defined( $maxissueqty_rule ) and not defined($branch_borrower_circ_rule->{patron_maxissueqty}) ) {
+    unless ( defined $maxissueqty || defined $branch_borrower_circ_rule->{patron_maxissueqty} ) {
         return { reason => 'NO_RULE_DEFINED', max_allowed => 0 };
     }
 
@@ -1979,28 +1976,14 @@ wildcards.
 
 sub GetBranchBorrowerCircRule {
     my ( $branchcode, $categorycode ) = @_;
-
-    # Initialize default values
-    my $rules = {
-        patron_maxissueqty       => undef,
-        patron_maxonsiteissueqty => undef,
-    };
-
-    # Search for rules!
-    foreach my $rule_name (qw( patron_maxissueqty patron_maxonsiteissueqty )) {
-        my $rule = Koha::CirculationRules->get_effective_rule(
-            {
-                categorycode => $categorycode,
-                itemtype     => undef,
-                branchcode   => $branchcode,
-                rule_name    => $rule_name,
-            }
-        );
-
-        $rules->{$rule_name} = $rule->rule_value if defined $rule;
-    }
-
-    return $rules;
+    return Koha::CirculationRules->get_effective_rules(
+        {
+            categorycode => $categorycode,
+            itemtype     => undef,
+            branchcode   => $branchcode,
+            rules => ['patron_maxissueqty', 'patron_maxonsiteissueqty']
+        }
+    );
 }
 
 =head2 GetBranchItemRule
