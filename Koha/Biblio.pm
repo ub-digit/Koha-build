@@ -560,16 +560,13 @@ $borrower must be a Koha::Patron object
 sub article_request_type {
     my ( $self, $borrower ) = @_;
 
-    return q{} unless $borrower;
+    return unless $borrower;
 
-    my $rule = $self->article_request_type_for_items( $borrower );
-    return $rule if $rule;
+    my $type = $self->article_request_type_for_items( $borrower );
+    return $type if $type;
 
     # If the record has no items that are requestable, go by the record itemtype
-    $rule = $self->article_request_type_for_bib($borrower);
-    return $rule if $rule;
-
-    return q{};
+    return $self->article_request_type_for_bib($borrower);
 }
 
 =head3 article_request_type_for_bib
@@ -583,21 +580,18 @@ Returns the article request type 'yes', 'no', 'item_only', 'bib_only', for the g
 sub article_request_type_for_bib {
     my ( $self, $borrower ) = @_;
 
-    return q{} unless $borrower;
+    return unless $borrower;
 
     my $borrowertype = $borrower->categorycode;
     my $itemtype     = $self->itemtype();
 
-    my $rule = Koha::CirculationRules->get_effective_rule(
+    return Koha::CirculationRules->get_effective_rule_value(
         {
             rule_name    => 'article_requests',
             categorycode => $borrowertype,
             itemtype     => $itemtype,
         }
     );
-
-    return q{} unless $rule;
-    return $rule->rule_value || q{}
 }
 
 =head3 article_request_type_for_items
@@ -2122,9 +2116,9 @@ sub can_be_recalled {
                 'on_shelf_recalls',
             ],
         });
-        push( @recalls_allowed, $rule->{recalls_allowed} ) if $rule;
-        push( @recalls_per_record, $rule->{recalls_per_record} ) if $rule;
-        push( @on_shelf_recalls, $rule->{on_shelf_recalls} ) if $rule;
+        push( @recalls_allowed, $rule->{recalls_allowed} ) if $rule->{recalls_allowed};
+        push( @recalls_per_record, $rule->{recalls_per_record} ) if $rule->{recalls_per_record};
+        push( @on_shelf_recalls, $rule->{on_shelf_recalls} ) if $rule->{on_shelf_recalls};
     }
     my $recalls_allowed = (sort {$b <=> $a} @recalls_allowed)[0]; # take highest
     my $recalls_per_record = (sort {$b <=> $a} @recalls_per_record)[0]; # take highest
