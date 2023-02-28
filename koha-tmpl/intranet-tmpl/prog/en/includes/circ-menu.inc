@@ -1,6 +1,7 @@
 [% USE Koha %]
 [% USE KohaDates %]
 [% USE ViewLog %]
+[% USE UBPickupCode %]
 [% PROCESS 'member-display-address-style.inc' %]
 [% IF ( patron.borrowernumber ) %]
 [% CALL ViewLog.log_patron_view(patron.borrowernumber) %]
@@ -123,6 +124,7 @@
     [% END %]
     <li class="patroncategory">Category: <span class="patroncategory_description">[% patron.category.description | html %]</span> <span class="patroncategory_code">([% patron.categorycode | html %])</span></li>
     <li class="patronlibrary">Home library: [% Branches.GetName( patron.branchcode ) | html %]</li>
+    <li class="patron-pickupcode">Kod för avhämtning: [% UBPickupCode.PickupCode(patron) | html %]</li>
     <li class="patronborrowernumber">Borrowernumber: [% patron.borrowernumber | html %]</li>
     <li><span class="patronupdatedon">Updated on [% patron.updated_on | $KohaDates with_hours => 1 %]</span></li>
     [% IF patron.account_locked %]
