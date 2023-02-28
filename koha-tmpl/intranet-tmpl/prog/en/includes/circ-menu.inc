@@ -1,5 +1,6 @@
 [% USE Koha %]
 [% USE KohaDates %]
+[% USE UBPickupCode %]
 [% PROCESS 'member-display-address-style.inc' %]
 [% IF ( patron.borrowernumber ) %]
     [% SET patron_is_staff = patron.has_permission({ 'catalogue' => 1 }) %]
@@ -138,6 +139,9 @@
                     </li>
                     <li class="patronlibrary">
                         Home library: [% Branches.GetName( patron.branchcode ) | html %]
+                    </li>
+                    <li class="patron-pickupcode">
+                        Kod för avhämtning: [% UBPickupCode.PickupCode(patron) | html %]
                     </li>
                     <li class="patronborrowernumber">
                         Borrowernumber: [% patron.borrowernumber | html %]
