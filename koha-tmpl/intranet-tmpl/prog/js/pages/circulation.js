@@ -35,29 +35,6 @@ $(document).ready(function() {
         return false;
     });
 
-    var circ_settings = $(".circ-settings");
-    var circ_settings_icon = $(".circ-settings-icon");
-
-    // If any checkboxes in the circ settings are selected, show the settings by default
-    if ( $(".circ-settings input:checked,#duedatespec[value!='']").length ) {
-        circ_settings.show();
-        circ_settings_icon.removeClass("fa-caret-right").addClass("fa-caret-down");
-    } else {
-        circ_settings.hide();
-        circ_settings_icon.removeClass("fa-caret-down").addClass("fa-caret-right");
-    }
-
-    $("#show-circ-settings a").on("click",function(){
-        if( circ_settings.is(":hidden")){
-            circ_settings.show();
-            circ_settings_icon.removeClass("fa-caret-right").addClass("fa-caret-down");
-        } else {
-            $("#barcode").focus();
-            circ_settings.hide();
-            circ_settings_icon.removeClass("fa-caret-down").addClass("fa-caret-right");
-        }
-    });
-
     $(".circ_setting").on("click",function(){
         $("#barcode").focus();
     });
