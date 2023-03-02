@@ -279,7 +279,7 @@
                                             <div class="form-group">
                                                 When replacing records use this framework:
                                                 <select name="overlay_framework" id="overlay_frameworks">
-                                                    <option value="_USE_ORIG_">Keep original framework</option>
+                                                    <option value="_USE_ORIG">Keep original framework</option>
                                                     <option value="">Default</option>
                                                     [% FOREACH framework IN frameworks %]
                                                         <option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
