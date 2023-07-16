@@ -2639,7 +2639,7 @@ sub MarkIssueReturned {
 
 C<$patron> patron object
 
-C<$item> patron object
+C<$item> item object
 
 C<$datedue> date due DateTime object
 
