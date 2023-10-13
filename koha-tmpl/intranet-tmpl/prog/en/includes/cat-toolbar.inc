@@ -198,6 +198,12 @@
 <div class="btn-group"><button id="placbooking" class="btn btn-default" data-toggle="modal" data-target="#placeBookingModal" data-biblionumber="[% biblionumber | html %]"><i class="fa fa-calendar"></i> Place booking</button></div>
 [% END %]
 
+[% IF ( CAN_user_reserveforothers ) %]
+    [% IF biblio.subscriptions.count %]
+        <div class="btn-group"><a id="placehold_subscription" class="btn btn-default" href="/cgi-bin/koha/reserve/request_subscription.pl?biblionumber=[% biblionumber | html %]"><i class="fa-solid fa-bookmark"></i> Reservera prenumeration</a></div>
+    [% END %]
+[% END %]
+
 [% IF Koha.Preference('ArticleRequests') %]
     <div class="btn-group"><a id="placehold" class="btn btn-default" href="/cgi-bin/koha/circ/request-article.pl?biblionumber=[% biblionumber | html %]"><i class="fa-solid fa-file-lines"></i> Request article</a></div>
 [% END %]
