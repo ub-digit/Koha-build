@@ -893,7 +893,7 @@ Override Patron::dateexpiry to invalidate Patron::is_expired cache.
 sub dateexpiry {
     my $self = shift @_;
     if (@_) {
-        $self->_instance_cache_clear('is_expired');
+        $self->_method_cache_clear('is_expired');
     }
     return $self->SUPER::dateexpiry(@_);
 }
@@ -908,7 +908,7 @@ sub set {
     my $self = shift @_;
     my ($properties) = @_;
     if (exists $properties->{dateexpiry}) {
-        $self->_instance_cache_clear('is_expired');
+        $self->_method_cache_clear('is_expired');
     }
     return $self->SUPER::set(@_);
 }
@@ -925,9 +925,9 @@ Returns 1 if the patron is expired or 0;
 sub is_expired {
     my ($self, $params) = @_;
     $params //= {};
-    return $self->_accessor_cache('is_expired') if $params->{cache};
+    return $self->_method_cache('is_expired') if $params->{cache};
 
-    $self->_instance_cache_clear('is_expired');
+    $self->_method_cache_clear('is_expired');
     return $self->dateexpiry &&
         $self->dateexpiry !~ '^9999' &&
         dt_from_string( $self->dateexpiry ) < dt_from_string->truncate( to => 'day' ) ? 1 : 0;
@@ -1185,9 +1185,9 @@ sub has_overdues {
     my ($self, $params) = @_;
     $params //= {};
 
-    return $self->_accessor_cache('has_overdues') if $params->{cache};
+    return $self->_method_cache('has_overdues', $params) if $params->{cache};
 
-    $self->_instance_cache_clear('has_overdues');
+    $self->_method_cache_clear('has_overdues', $params);
     my $date = dt_from_string();
     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
     return $self->_result->issues->search({ date_due => { '<' => $dtf->format_datetime($date) } })->count;
