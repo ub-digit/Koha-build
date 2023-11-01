@@ -113,7 +113,7 @@
             </li>
         </ul>
 
-        [% IF ( CAN_user_circulate_overdues_report ) %]
+        [% IF !Koha.Preference('HideCircReports') and ( CAN_user_circulate_overdues_report ) %]
         <h5>Overdues</h5>
         <ul>
             <li>
