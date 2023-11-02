@@ -88,7 +88,7 @@
     [% END %]
         [% SET standard = Koha.Preference('DefaultPatronSearchFields') || 'firstname|middle_name|surname|othernames|cardnumber|userid' %]
         [%# Above is needed for adding fields from the DefaultPatronSearchFields preference to the dropdowns %]
-        [% default_fields = [ 'standard', 'surname', 'cardnumber', 'all_emails', 'borrowernumber', 'userid', 'all_phones', 'full_address', 'sort1', 'sort2' ] %]
+        [% default_fields = [ 'standard', 'surname', 'cardnumber', 'all_emails', 'userid', 'all_phones', 'full_address', 'sort1', 'sort2' ] %]
         [% search_options = default_fields.merge(standard.split('\|')).unique %]
         [% FOREACH s_o IN search_options %]
             [% display_name = PROCESS patron_fields name=s_o %]
