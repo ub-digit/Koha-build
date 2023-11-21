@@ -1585,8 +1585,19 @@ legend:hover {
                                                                 </select>
                                                             [% ELSE %]
                                                                 [% IF patron_attribute.mandatory %]
-                                                                <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" required="required" [% attribute_readonly %]>[% patron_attribute.value | html %]</textarea>
+                                                                [% IF ExtendedAttributeProperties.isSecret(item) %]
+                                                                <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" required="required" [% attribute_readonly %]>****</textarea>
                                                                 [% ELSE %]
+                                                                <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" required="required" [% attribute_readonly %]>[% patron_attribute.value | html %]</textarea>
+                                                                [% END %]
+
+                                                                [% ELSE %]
+                                                                [% IF ExtendedAttributeProperties.isSecret(item) %]
+                                                                <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" [% attribute_readonly %]>****</textarea>
+                                                                [% ELSE %]
+                                                                <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" [% attribute_readonly %]>[% patron_attribute.value | html %]</textarea>
+                                                                [% END %]
+
                                                                 <textarea rows="2" cols="30" id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" [% attribute_readonly %]>[% patron_attribute.value | html %]</textarea>
                                                                 [% END %]
                                                             [% END # /IF ( patron_attribute.use_dropdown ) %]
