@@ -1569,7 +1569,7 @@ legend:hover {
                                                         <h3 id="[% pa_loo.class | html %]_lgd">[% pa_loo.lib | html %]</h3>
                                                     [% END %]
                                                     [% FOREACH patron_attribute IN pa_loo.items %]
-                                                        [% IF ExtendedAttributeProperties.isVisible(patron_attribute) %]
+                                                        [% IF ExtendedAttributeProperties.isVisible(patron_attribute) && !ExtendedAttributeProperties.hasSecretValue(patron_attribute) %]
                                                             [% attribute_hidden = '' %]
                                                         [% ELSE %]
                                                             [% attribute_hidden = 'class="hidden"' %]
