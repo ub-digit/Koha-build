@@ -246,6 +246,11 @@ Patrons:
            class: integer
          - "characters (no limitation if empty)."
      -
+         - "Prepend the country code"
+         - pref: SMSSendDefaultCountryCode
+         - class: integer
+         - "for SMS::Driver recipient phone numbers. The country code shound not include a leading \"+\"."
+     -
          - "Define a username/login"
          - pref: SMSSendUsername
          - "and a password"
