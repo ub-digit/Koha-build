@@ -230,6 +230,11 @@ Patrons:
          - "<br>If you would prefer to send SMS via E-mail, set SMSSendDriver to: Email"
          - "<br><strong>NOTE:</strong> Many mobile providers have deprecated support for this feature and it is not recommended for use unless you have a dedicated SMS to Email gateway."
      -
+         - "Prepend the country code"
+         - pref: SMSSendDefaultCountryCode
+         - class: integer
+         - "for SMS::Driver recipient phone numbers. The country code shound not include a leading \"+\"."
+     -
          - "Define a username/login"
          - pref: SMSSendUsername
          - "and a password"

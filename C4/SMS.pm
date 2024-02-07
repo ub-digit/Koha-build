@@ -116,9 +116,22 @@ sub send_sms {
             %args,
         );
 
+        my $default_country_code = C4::Context->preference("SMSSendDefaultCountryCode");
+        my $destination = $params->{destination};
+
+        # Default country code set and is local phone number
+        if ($default_country_code && $destination =~ /^[^+]/) {
+            # Ensure country code has leading '+'
+            $default_country_code =~ s/^[^+]/+$&/;
+            # Strip leading zeroes
+            $destination =~ s/^0+//;
+            # Prepend default country code
+            $destination = $default_country_code . $destination;
+        }
+
         # Send a message
         $sent = $sender->send_sms(
-            to   => $params->{destination},
+            to   => $destination,
             text => $params->{message},
         );
     };
