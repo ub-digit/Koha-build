@@ -53,7 +53,7 @@ The different values available are:
 =cut
 
 use Modern::Perl;
-use JSON qw( decode_json );
+use JSON qw( decode_json encode_json );
 use Try::Tiny;
 use Pod::Usage;
 use Getopt::Long;
@@ -134,6 +134,13 @@ while (1) {
         unless( $job ) {
             Koha::Logger->get( { interface => 'worker' } )
                 ->warn( sprintf "Job %s not found, or has wrong status", $args->{job_id} );
+            # FIXME if job not found in db, requeue as new to retry later
+            $args->{retries} = exists $args->{retries} ? $args->{retries} + 1 : 1;
+            if ( $args->{retries} < 100 ) {
+                $conn->send( { destination => $frame->destination , body => encode_json($args) } );
+            } else {
+                warn "too many attempts, job id: " . $args->{job_id} ;
+            }
             next;
         }
 
