@@ -791,8 +791,8 @@
     [% Asset.css("css/humanmsg.css") | $raw %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
     [% INCLUDE 'select2.inc' %]
-    [% INCLUDE 'str/job_progess.inc' %]
-    [% Asset.js("js/job_progess.js") | $raw %]
+    [% INCLUDE 'str/job_progress.inc' %]
+    [% Asset.js("js/job_progress.js") | $raw %]
     <script>
         [% IF export_job_id %]
             updateProgress([% export_job_id | html %], function() {
