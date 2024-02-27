@@ -950,3 +950,12 @@ OPAC:
                   1: "Don't allow"
                   0: Allow
             - patrons to login by means other than Shibboleth.
+        -
+            - 'Alert message in JSON format for the My Loans application'
+            - '<br />Note: The JSON MUST(!) have two properties that are strings. "en" and "sv" for each language of the message. The string can be HTML.'
+            - '<br />Example:'
+            - '<pre>{<br>  "en": "This is an alert message in English",<br>  "sv": "Detta är ett varningsmeddelande på svenska"<br>}</pre>'
+            - pref: MyLoansAlertMessage
+              type: textarea
+              syntax: application/json
+              class: code
