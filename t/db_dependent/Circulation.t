@@ -734,6 +734,9 @@ subtest "CanBookBeRenewed tests" => sub {
     is( $renewokay, 1, '(Bug 8236), Can renew, this item is overdue but not pref does not block');
 
     t::lib::Mocks::mock_preference('OverduesBlockRenewing','block');
+    # Clear cache after changing preference affecting has_overdues evaluation
+    $renewing_borrower_obj->_method_cache_clear('has_overdues');
+
     ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_6);
     is( $renewokay, 0, '(Bug 8236), Cannot renew, this item is not overdue but patron has overdues');
     is( $error, 'overdue', "Correct error returned");
@@ -742,6 +745,9 @@ subtest "CanBookBeRenewed tests" => sub {
     is( $error, 'overdue', "Correct error returned");
 
     t::lib::Mocks::mock_preference('OverduesBlockRenewing','blockitem');
+    # Clear cache after changing preference affecting has_overdues evaluation
+    $renewing_borrower_obj->_method_cache_clear('has_overdues');
+
     ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_6);
     is( $renewokay, 1, '(Bug 8236), Can renew, this item is not overdue');
     ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_7);
