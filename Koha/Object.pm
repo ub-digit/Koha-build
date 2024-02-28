@@ -177,16 +177,18 @@ my $value = Koha::Object->_method_cache($method_name, @args);
 sub _method_cache {
     my ($self, $method_name, @args) = @_;
 
+    # Don't include in cache key. Must also be unset in
+    # possible uncached call to $method_name below
+    if (@args) {
+        delete $args[0]->{cache};
+    }
+
     my $cache_key = $self->_method_cache_key($method_name, @args);
     my $value = $self->_instance_cache_get($cache_key);
 
     return $value if defined $value;
 
-    if (@args) {
-        delete $args[0]->{cache};
-    }
     $value = $self->$method_name(@args);
-
     $self->_instance_cache_set($cache_key, $value);
 
     return $value;
