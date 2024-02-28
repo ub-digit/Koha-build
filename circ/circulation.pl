@@ -400,11 +400,11 @@ if (@$barcodes) {
 
     # Cleanup error from NOT_FOR_LOAN in case of extended inhouse loans
     if($ub_extended_inhouse) {
-        if($error->{NOT_FOR_LOAN}) {
-            delete $error->{NOT_FOR_LOAN};
+        if($issuingimpossible->{NOT_FOR_LOAN}) {
+            delete $issuingimpossible->{NOT_FOR_LOAN};
         }
-        if($error->{item_notforloan}) {
-            delete $error->{item_notforloan};
+        if($issuingimpossible->{item_notforloan}) {
+            delete $issuingimpossible->{item_notforloan};
         }
     }
 
