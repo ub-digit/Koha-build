@@ -168,6 +168,11 @@
                                     <li><label for="op_modify_all">Modify all: </label><input type="radio" name="op" value="modify_all" id="op_modify_all" /></li>
                                 </ol>
                             </fieldset>
+                            <fieldset class="brief" id="modify_all_hint" style="display: none;">
+                                <div class="hint">
+                                    This will perform the modifications directly, without a confirmation step.
+                                </div>
+                            </fieldset>
                             <fieldset class="action">
                                 <input type="hidden" name="op" value="cud-list" />
                                 <input type="submit" class="btn btn-primary" value="Continue" />
@@ -327,6 +332,16 @@
             $("input[type='radio']").click(function() {
                 update_tab_display();
             });
+
+            let $modify_all_hint = $('#modify_all_hint');
+            $("input[type=radio][name=op]").change(function() {
+                if (this.value === "modify_all") {
+                    $modify_all_hint.show();
+                }
+                else {
+                    $modify_all_hint.hide();
+                }
+            }).filter(':checked').trigger('change');
 
             $("#selectall").click(function(e){
                 e.preventDefault();
