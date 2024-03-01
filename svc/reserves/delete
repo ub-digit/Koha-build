@@ -6,7 +6,7 @@ use warnings;
 use CGI qw ( -utf8 );
 use XML::Simple;
 use C4::Auth qw/check_api_auth/;
-
+use C4::Letters qw( GetPreparedLetter EnqueueLetter );
 use C4::Reserves;
 
 my $query = new CGI;
@@ -32,6 +32,39 @@ if (!$reserve || !$patron || $reserve->borrowernumber() != $patron->borrowernumb
 
 if($reserve_id) {
   $reserve->cancel;
+}
+
+if($reserve->is_waiting()) {
+  # Create a Letter from HOLD_WAITING_CANCEL template
+  # and send to email address of the library where the reservation is waiting.
+  my $pickup_library = $reserve->branch();
+  my $pickup_library_email = $pickup_library->branchemail();
+  my $letter = C4::Letters::GetPreparedLetter(
+    module                 => 'reserves',
+    letter_code            => 'HOLD_WAITING_CANCEL',
+    message_transport_type => 'email',
+    branchcode             => $reserve->borrower->branchcode,
+    lang                   => $reserve->borrower->lang,
+    tables => {
+        branches    => $reserve->borrower->branchcode,
+        borrowers   => $reserve->borrowernumber,
+        items       => $reserve->itemnumber,
+        biblio      => $reserve->biblionumber,
+        biblioitems => $reserve->biblionumber,
+        reserves    => $reserve->unblessed,
+    }
+  );
+
+  if ($letter) {
+      C4::Letters::EnqueueLetter(
+          {
+              letter => $letter,
+              to_address => $pickup_library_email,
+              from_address => $pickup_library_email,
+              message_transport_type => 'email',
+          }
+      );
+  }
 }
 
 print $query->header(-type => 'text/xml',-charset => 'utf-8', -status => '200');
