@@ -16,7 +16,7 @@
             <th id="patron" data-colname="patron">Patron</th>
             <th id="notes" data-colname="notes">Notes</th>
             <th id="date" data-colname="date">Date</th>
-            <!-- GUB hide expiration date header -->
+            <th style="display: none" id="expiration" data-colname="expiration">Expiration</th>
             <th id="pickup_library" data-colname="pickup_library">Pickup library</th>
             <th id="details" data-colname="details">Details</th>
             [% IF ( CAN_user_reserveforothers_modify_holds_priority ) %]
