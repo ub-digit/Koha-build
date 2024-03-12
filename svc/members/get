@@ -36,10 +36,9 @@ unless ($borrower) {
 }
 
 my $flags = C4::Members::patronflags($borrower->unblessed);
-my $borrowernumber = $borrower->unblessed->{'borrowernumber'};
 my $attributes = $borrower->extended_attributes;
 my $debarments = $borrower->restrictions;
-my $issues = C4::Members::GetAllIssues($borrowernumber);
+my $issues = $borrower->checkouts;
 my @reserves = $borrower->holds->unblessed;
 
 print $query->header(-type => 'text/xml',-charset => 'utf-8');
@@ -49,7 +48,7 @@ flags => $flags,
 debarments => $debarments->unblessed,
 borrower => $borrower->unblessed,
 attributes => $attributes->unblessed,
-issues => $issues,
+issues => $issues->unblessed,
 reserves => \@reserves }, NoAttr => 1, RootName => 'response', XMLDecl => 1, SuppressEmpty => 1);
 
 exit 0;
