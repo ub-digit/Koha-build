@@ -9938,6 +9938,10 @@ span.flatpickr-weekday {
   border-width: 1px;
   padding: 3px 3px 3px 20px;
 }
+.flatpickr-input.flatpickr-mobile {
+  height: 2rem;
+  width: 11rem;
+}
 .flatpickr-input:focus {
   border-radius: 0;
 }
@@ -10508,7 +10512,8 @@ table.dataTable.dtr-column tbody tr.parent th.dtr-control::before {
 .table .nosort,
 .table .nosort.sorting_asc,
 .table .nosort.sorting_desc,
-.table .nosort.sorting {
+.table .nosort.sorting,
+.table .sorting_disabled {
   background: #E2E8E8 none;
   padding-right: 19px;
 }
@@ -10622,6 +10627,16 @@ button.remove:hover i.fa {
 
 .modal form {
   margin: 0;
+}
+
+#backtotop {
+  bottom: 40px;
+  display: inline-block;
+  font-size: 120%;
+  position: fixed;
+  right: 40px;
+  text-align: center;
+  z-index: 1000;
 }
 
 #logo {
@@ -11004,16 +11019,6 @@ th[scope=row] {
   display: inline;
 }
 
-#backtotop {
-  bottom: 40px;
-  display: inline-block;
-  font-size: 120%;
-  position: fixed;
-  right: 40px;
-  text-align: center;
-  z-index: 1000;
-}
-
 #booleansearch {
   width: 80%;
 }
@@ -11062,6 +11067,13 @@ th[scope=row] {
   font-size: 125%;
 }
 
+#auth {
+  margin-bottom: 1rem;
+}
+#auth p {
+  margin: 0.5rem 0;
+}
+
 #basketcount {
   display: inline;
   margin: 0;
@@ -11084,6 +11096,14 @@ th[scope=row] {
   margin: 0.2rem 0.2rem 0.2rem 0;
 }
 
+#members {
+  -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
+          flex-grow: 1;
+  -webkit-box-pack: end;
+      -ms-flex-pack: end;
+          justify-content: flex-end;
+}
 #members p {
   color: #727272;
 }
@@ -11343,6 +11363,11 @@ th[scope=row] {
 .breadcrumb a {
   color: #006394;
 }
+.breadcrumb a.title {
+  display: inline-block;
+  font-size: unset;
+  font-weight: unset;
+}
 
 .breadcrumb-item + .breadcrumb-item::before {
   background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' %3E%3Cpath fill-rule='evenodd' d='M7.37 0l5.35 7.3c.2.2.2.51 0 .7l-5.38 8h-4.2l5.64-8.35L3.13.01z'/%3E%3C/svg%3E") 50% 50% no-repeat;
@@ -11495,16 +11520,25 @@ th[scope=row] {
   padding: 3px 4px;
 }
 
-div.required_label {
+.required_label {
   display: none;
 }
-div.required_label.required {
+.required_label.required {
   color: #C00;
   display: block;
   font-size: 95%;
   margin-left: 10rem;
   margin-top: 3px;
 }
+
+.attr-control {
+  margin-left: 9.5rem;
+}
+.attr-control .required {
+  display: inline-block;
+  margin-left: 0;
+}
+
 div.rows {
   clear: left;
   float: left;
@@ -12592,6 +12626,9 @@ nav .pagination {
 #loginModal input[type=submit]:hover {
   background: #77B50F none;
 }
+#loginModal p {
+  margin: 0.5rem 0;
+}
 #loginModal .closebtn {
   color: #C00;
   opacity: 1;
@@ -12606,10 +12643,8 @@ nav .pagination {
   padding: 1em 2em;
 }
 
-.nologininstructions,
-.forgotpassword,
-.patronregistration {
-  padding-top: 1em;
+#nologininstructions {
+  margin: 0.5rem 0;
 }
 
 .registration-label {
@@ -13509,46 +13544,6 @@ nav .pagination {
   #usersuggestions .item-thumbnail {
     margin: 0.5em 0 0 0.5em;
   }
-  .tabs-container .table-bordered,
-  #opac-user-views .table-bordered,
-  #opac-user-readingrec .table-bordered,
-  #topissues .table-bordered,
-  #usertags .table-bordered,
-  #usersuggestions .table-bordered {
-    border: 0;
-  }
-  .tabs-container .table,
-  #opac-user-views .table,
-  #opac-user-readingrec .table,
-  #topissues .table,
-  #usertags .table,
-  #usersuggestions .table {
-    width: 100%;
-  }
-  .tabs-container .table th,
-  .tabs-container .table thead,
-  #opac-user-views .table th,
-  #opac-user-views .table thead,
-  #opac-user-readingrec .table th,
-  #opac-user-readingrec .table thead,
-  #topissues .table th,
-  #topissues .table thead,
-  #usertags .table th,
-  #usertags .table thead,
-  #usersuggestions .table th,
-  #usersuggestions .table thead {
-    display: none;
-  }
-  .tabs-container .table td,
-  #opac-user-views .table td,
-  #opac-user-readingrec .table td,
-  #topissues .table td,
-  #usertags .table td,
-  #usersuggestions .table td {
-    border: 0;
-    display: block;
-    padding: 0.4em 0.3em;
-  }
   .tabs-container .table p,
   #opac-user-views .table p,
   #opac-user-readingrec .table p,
@@ -13556,30 +13551,6 @@ nav .pagination {
   #usertags .table p,
   #usersuggestions .table p {
     margin-bottom: 2px;
-  }
-  .tabs-container tr,
-  #opac-user-views tr,
-  #opac-user-readingrec tr,
-  #topissues tr,
-  #usertags tr,
-  #usersuggestions tr {
-    display: block;
-  }
-  .tabs-container tr td:first-child,
-  #opac-user-views tr td:first-child,
-  #opac-user-readingrec tr td:first-child,
-  #topissues tr td:first-child,
-  #usertags tr td:first-child,
-  #usersuggestions tr td:first-child {
-    border-top: 0;
-  }
-  .tabs-container tr td:last-child,
-  #opac-user-views tr td:last-child,
-  #opac-user-readingrec tr td:last-child,
-  #topissues tr td:last-child,
-  #usertags tr td:last-child,
-  #usersuggestions tr td:last-child {
-    border-bottom: 0;
   }
   .cart-actions {
     display: -webkit-box;
@@ -13692,6 +13663,7 @@ nav .pagination {
 @media only screen and (max-width: 800px) {
   /* Screens below 800 pixels wide */
   .cartlabel,
+  .cookieconsentlabel,
   .listslabel,
   .langlabel,
   .userlabel {
@@ -13816,6 +13788,7 @@ nav .pagination {
 }
 @media only screen and (max-width: 1100px) {
   .cartlabel,
+  .cookieconsentlabel,
   .listslabel,
   .langlabel,
   .userlabel {
