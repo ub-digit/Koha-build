@@ -2,8 +2,6 @@ package Koha::Objects::Mixin::AdditionalFields;
 
 use Modern::Perl;
 
-use base qw(Koha::Objects::Mixin::ExtendedAttributes);
-
 =head1 NAME
 
 Koha::Objects::Mixin::AdditionalFields
