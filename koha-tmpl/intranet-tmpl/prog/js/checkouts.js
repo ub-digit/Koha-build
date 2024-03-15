@@ -33,6 +33,7 @@ function LoadIssuesTable() {
     $('#issues-table').show();
     $('#issues-table-actions').show();
     var msg_loading = __('Loading... you may continue scanning.');
+    var ymd = flatpickr.formatDate(new Date(), "Y-m-d");
     issuesTable = KohaTable("issues-table", {
         "language":  {
             "emptyTable":  msg_loading,
