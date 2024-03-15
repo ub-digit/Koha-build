@@ -68,7 +68,7 @@ use Koha::Subscription::Routinglists;
 use Koha::Token;
 use Koha::Virtualshelves;
 
-use base qw(Koha::Object);
+use base qw(Koha::Object::CachedExpiration);
 
 use constant ADMINISTRATIVE_LOCKOUT => -1;
 
@@ -730,7 +730,9 @@ sub merge_with {
 
             next if $patron_id eq $anonymous_patron;
 
-            my $patron = Koha::Patrons->find( $patron_id );
+            # Don't use cache as this could risk deleting a patron object
+            #  which has a reference outside of this class
+            my $patron = Koha::Patrons->find( $patron_id, { cache => 0 } );
 
             next unless $patron;
 
@@ -2015,8 +2017,10 @@ sub libraries_where_can_see_things {
     my $subpermission = $params->{subpermission};
     my $group_feature = $params->{group_feature};
 
-    return @{ $self->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} }
-        if exists( $self->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} );
+    $self->{'_cache'} //= {};
+
+    return @{ $self->{'_cache'}->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} }
+        if exists( $self->{'_cache'}->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} );
 
     my $userenv = C4::Context->userenv;
 
@@ -2056,8 +2060,8 @@ sub libraries_where_can_see_things {
     @restricted_branchcodes = uniq(@restricted_branchcodes);
     @restricted_branchcodes = sort(@restricted_branchcodes);
 
-    $self->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} = \@restricted_branchcodes;
-    return @{ $self->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} };
+    $self->{'_cache'}->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} = \@restricted_branchcodes;
+    return @{ $self->{'_cache'}->{"_restricted_branchcodes:$permission:$subpermission:$group_feature"} };
 }
 
 =head3 has_permission
