@@ -20,7 +20,7 @@ use Modern::Perl;
 
 use Koha::Database;
 
-use base qw(Koha::Object);
+use base qw(Koha::Object::CachedExpiration);
 
 =head1 NAME
 

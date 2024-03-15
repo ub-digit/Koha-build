@@ -23,7 +23,7 @@ use C4::Languages;
 use Koha::Database;
 use Koha::ItemType;
 
-use base qw(Koha::Objects Koha::Objects::Limit::Library);
+use base qw(Koha::Objects::Cached Koha::Objects::Limit::Library);
 
 =head1 NAME
 
