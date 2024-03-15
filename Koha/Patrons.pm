@@ -30,7 +30,7 @@ use Koha::Exceptions::Patron;
 use Koha::Exceptions::SysPref;
 use Koha::Patron::Categories;
 
-use base qw(Koha::Objects::Mixin::ExtendedAttributes Koha::Objects);
+use base qw(Koha::Objects::Cached);
 
 =head1 NAME
 
