@@ -22,7 +22,7 @@ use Koha::Database;
 
 use Koha::Acquisition::Currency;
 
-use base qw(Koha::Objects);
+use base qw(Koha::Objects::Cached);
 
 =head1 NAME
 
@@ -40,7 +40,7 @@ Koha::Acquisition::Currencies - Koha Acquisition Currency Object set class
 
 sub get_active {
     my ( $self ) = @_;
-    return $self->SUPER::search( { active => 1 } )->next;
+    return $self->search( { active => 1 } )->next;
 }
 
 =head3 _type
