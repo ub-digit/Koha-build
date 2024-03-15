@@ -28,7 +28,7 @@ use Koha::StockRotationStages;
 use Koha::SMTP::Servers;
 use Koha::Library::Hours;
 
-use base qw(Koha::Object::Mixin::AdditionalFields Koha::Object);
+use base qw(Koha::Object::Mixin::AdditionalFields Koha::Object::CachedExpiration);
 
 my $cache = Koha::Caches->get_instance();
 
