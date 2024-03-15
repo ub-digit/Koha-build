@@ -1017,6 +1017,9 @@ sub AUTOLOAD {
         my $accessor = sub {
             my $self = shift;
             if (@_) {
+                if ($self->isa("Koha::Object::CachedExpiration")) {
+                    $self->_objects_cache_expire();
+                }
                 $self->_result()->set_column( $method, @_ );
                 return $self;
             } else {
