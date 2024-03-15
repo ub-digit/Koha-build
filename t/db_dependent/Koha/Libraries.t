@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 use C4::Biblio;
 use C4::Context;
@@ -32,6 +32,7 @@ use Koha::Library;
 use Koha::Libraries;
 use Koha::Database;
 use Koha::CirculationRules;
+use Koha::Cache::Memory::Lite;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
@@ -413,3 +414,203 @@ subtest 'outgoing_transfers' => sub {
 
     $schema->storage->txn_rollback;
 };
+
+subtest 'cache tests' => sub {
+    plan tests => 24;
+
+    $schema->storage->txn_begin;
+
+    my $library1 = $builder->build_object(
+        {
+            class => 'Koha::Libraries',
+            value  => {
+                branchname => 'My library'
+            }
+        }
+    );
+    my $library2 = $builder->build_object(
+        {
+            class => 'Koha::Libraries',
+            value  => {
+                branchname => 'My other library'
+            }
+        }
+    );
+
+    # Since build_object calls find internally
+    # we first have to flush the cache since these
+    # objects are now already cached
+    Koha::Cache::Memory::Lite->get_instance()->flush();
+
+    my $ids_bucket = Koha::Libraries->_objects_cache_bucket('ids');
+    ok(!%{$ids_bucket}, 'Find cache has been cleared after flushing memory cache');
+
+    my $cached_library = Koha::Libraries->find($library1->branchcode);
+    Koha::Libraries->find($library2->branchcode);
+
+    my $cached_library_ids_bucket = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library1->branchcode),
+        'ids'
+    );
+    is (ref($cached_library_ids_bucket), 'Koha::Library', 'Library should be cached after previously have been fetched');
+    is ($cached_library_ids_bucket->branchcode, $library1->branchcode, 'The cashed library should be the expected library');
+
+    # Set property of library by-passing the cache expiration logic
+    # so we can veriy library is not only present in cache by also
+    # properly retrieved in find
+    $cached_library->_result->set_column('branchname', 'My library in cache');
+    $cached_library = Koha::Libraries->find($library1->branchcode);
+    is (
+        $cached_library->branchname,
+        'My library in cache',
+        'The cashed library returned by find should be the cached library'
+    );
+
+    $library1->branchname('My expired library');
+    $cached_library_ids_bucket = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library1->branchcode),
+        'ids'
+    );
+    is (
+        $cached_library_ids_bucket,
+        undef,
+        'Cache has been expired after changing library property'
+    );
+
+    $cached_library = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library2->branchcode),
+        'ids'
+    );
+    is (
+        ref($cached_library),
+        'Koha::Library', 'Cache should still contain other cached libraries'
+    );
+
+    my $stored_library = Koha::Libraries->find($library1->branchcode);
+    is (
+        $stored_library->branchname,
+        'My library',
+        'Library is fetched from database after cache has been expired'
+    );
+
+    $cached_library = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library1->branchcode),
+        'ids'
+    );
+    is (
+        ref($cached_library),
+        'Koha::Library',
+        'Library should be cached after previously have been fetched'
+    );
+
+    $library1->store();
+    $cached_library = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library1->branchcode),
+        'ids'
+    );
+    is ($cached_library, undef, 'Cache has been expired after saving library to database');
+
+    Koha::Libraries->find($library1->branchcode, { key => 'primary' });
+    $cached_library = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library1->branchcode, { key => 'primary' }),
+        'args'
+    );
+    is (
+        ref($cached_library),
+        'Koha::Library',
+        'The args cache bucket should be used if find is called with the attrs argument'
+    );
+    my $cached_value;
+
+    for my $method ('find', 'search') {
+
+        Koha::Libraries->$method({ branchcode => $library1->branchcode });
+        Koha::Libraries->$method({ branchcode => $library2->branchcode });
+
+        $cached_value = Koha::Libraries->_objects_cache_get(
+            Koha::Libraries->_objects_cache_cache_key($method, { branchcode => $library1->branchcode }),
+            'args'
+        );
+        $cached_library = $method eq 'search' ? $cached_value->next : $cached_value;
+        is (
+            ref($cached_library),
+            'Koha::Library',
+            'Library should be cached after previously have been fetched, and use the args cache bucket ' . ($method eq 'find' ? 'if find was called with column conditions' : 'if search was called')
+        );
+
+        $cached_library->_result->set_column('branchname', 'My library in cache');
+        $cached_value = Koha::Libraries->$method({ branchcode => $library1->branchcode });
+        $cached_library = $method eq 'search' ? $cached_value->next : $cached_value;
+        is (
+            $cached_library->branchname,
+            'My library in cache',
+            "The cashed library returned by $method should be the cached library, using the args cache bucket"
+        );
+
+        $cached_library->branchname('My expired library');
+        $cached_value = Koha::Libraries->_objects_cache_get(
+            Koha::Libraries->_objects_cache_cache_key($method, { branchcode => $library1->branchcode }),
+            'args'
+        );
+        is (
+            $cached_value,
+            undef,
+            'Cache has been expired after changing branchname, using the args cache bucket'
+        );
+
+        $cached_value = Koha::Libraries->_objects_cache_get(
+            Koha::Libraries->_objects_cache_cache_key($method, { branchcode => $library2->branchcode }),
+            'args'
+        );
+        is (
+            $cached_value,
+            undef,
+            'The whole args cache bucket has been emptied after triggering cache expiration'
+        );
+    }
+
+    Koha::Libraries->find($library2->branchcode);
+
+    my $libraries = Koha::Libraries->search({ branchcode => $library1->branchcode });
+    $libraries->next;
+    is($libraries->next, undef, 'Cached libraries search result iterator has been exhausted');
+
+    $libraries = Koha::Libraries->search({ branchcode => $library1->branchcode });
+    is(ref($libraries->next), 'Koha::Library', 'Cached libraries search result iterator has been reset');
+
+
+    my $cached_libraries = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('search', { 'branchcode' => $library1->branchcode }),
+        'args'
+    );
+    is (
+        ref($cached_libraries),
+        'Koha::Libraries',
+        'Libraries should be cached after previously have been fetched'
+    );
+
+    $library1->delete();
+    $cached_libraries = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('search', { 'branchcode' => $library1->branchcode }),
+        'args'
+    );
+    is ($cached_libraries, undef, 'Search cache has been expired after deleting library');
+
+    $cached_library = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library2->branchcode),
+        'ids'
+    );
+    is (
+        ref($cached_library),
+        'Koha::Library',
+        'Library should be cached after previously have been fetched'
+    );
+    $library2->delete();
+    $cached_library = Koha::Libraries->_objects_cache_get(
+        Koha::Libraries->_objects_cache_cache_key('find', $library2->branchcode),
+        'ids'
+    );
+    is ($cached_library, undef, 'Find cache has been expired after deleting library');
+
+    $schema->storage->txn_rollback;
+}
