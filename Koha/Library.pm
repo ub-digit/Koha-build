@@ -27,7 +27,7 @@ use Koha::Database;
 use Koha::StockRotationStages;
 use Koha::SMTP::Servers;
 
-use base qw(Koha::Object);
+use base qw(Koha::Object::CachedFindExpiration);
 
 my $cache = Koha::Caches->get_instance();
 

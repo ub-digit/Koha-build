@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 use C4::Biblio;
 use C4::Context;
@@ -413,3 +413,103 @@ subtest 'outgoing_transfers' => sub {
 
     $schema->storage->txn_rollback;
 };
+
+subtest 'find cache tests' => sub {
+    plan tests => 12;
+
+    $schema->storage->txn_begin;
+
+    my $library1 = $builder->build_object(
+        {
+            class => 'Koha::Libraries',
+            value  => {
+                branchname => 'My library'
+            }
+        }
+    );
+    my $library2 = $builder->build_object(
+        {
+            class => 'Koha::Libraries',
+            value  => {
+                branchname => 'My other library'
+            }
+        }
+    );
+
+    Koha::Libraries->find($library1->branchcode);
+    Koha::Libraries->find($library2->branchcode);
+
+    my $cached_library = Koha::Libraries->_find_cache_ids_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library1->branchcode)
+    );
+    is (ref($cached_library), 'Koha::Library', 'Library should be cached');
+    is ($cached_library->branchcode, $library1->branchcode, 'The cashed library should be the expected library');
+
+    $library1->branchname("New branchname");
+    $cached_library = Koha::Libraries->_find_cache_ids_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library1->branchcode)
+    );
+    is ($cached_library, undef, 'Cache has been expired after changing library property');
+
+    $cached_library = Koha::Libraries->_find_cache_ids_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library2->branchcode)
+    );
+    is (ref($cached_library), 'Koha::Library', 'Cache should still contain other cached libraries');
+
+    my $stored_library = Koha::Libraries->find($library1->branchcode);
+    is ($stored_library->branchname, 'My library', 'Library is fetched from database after cache has been expired');
+
+    $cached_library = Koha::Libraries->_find_cache_ids_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library1->branchcode)
+    );
+    is (ref($cached_library), 'Koha::Library', 'Library should be cached');
+
+    $library1->store();
+    $cached_library = Koha::Libraries->_find_cache_ids_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library1->branchcode)
+    );
+    is ($cached_library, undef, 'Cache has been expired after saving library to database');
+
+    Koha::Libraries->find({ branchcode => $library1->branchcode });
+    Koha::Libraries->find({ branchcode => $library2->branchcode });
+
+    $cached_library = Koha::Libraries->_find_cache_args_cache_get(
+        Koha::Libraries->_find_cache_cache_key({ branchcode => $library1->branchcode })
+    );
+    is (
+        ref($cached_library),
+        'Koha::Library',
+        'Library should be cached, and use the args cache bucket if find was called with column conditions'
+    );
+
+    $library1->branchname('Some other branchname');
+    $cached_library = Koha::Libraries->_find_cache_args_cache_get(
+        Koha::Libraries->_find_cache_cache_key({ branchcode => $library1->branchcode })
+    );
+    is ($cached_library, undef, 'Cache has been expired after changing branchname, using the args cache bucket');
+
+    $cached_library = Koha::Libraries->_find_cache_args_cache_get(
+        Koha::Libraries->_find_cache_cache_key({ branchcode => $library2->branchcode })
+    );
+    is ($cached_library, undef, 'The whole args cache bucket has been emptied after triggering cache expiration');
+
+    Koha::Libraries->find($library1->branchcode, { key => 'primary' });
+    $cached_library = Koha::Libraries->_find_cache_args_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library1->branchcode, { key => 'primary' })
+    );
+    is (
+        ref($cached_library),
+        'Koha::Library',
+        'The args cache bucket should be used if find is called with the attrs argument'
+    );
+
+    $library1->delete();
+    $cached_library = Koha::Libraries->_find_cache_args_cache_get(
+        Koha::Libraries->_find_cache_cache_key($library1->branchcode, { key => 'primary' })
+    );
+    is ($cached_library, undef, 'Cache has been expired after deleting library');
+
+    $schema->storage->txn_rollback;
+}
+
+
