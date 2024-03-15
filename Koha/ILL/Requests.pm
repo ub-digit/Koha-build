@@ -23,7 +23,7 @@ use Koha::Database;
 use Koha::ILL::Request;
 use Koha::ILL::Request::Config;
 
-use base qw(Koha::Objects::Mixin::ExtendedAttributes Koha::Objects);
+use base qw(Koha::Objects);
 
 =head1 NAME
 
