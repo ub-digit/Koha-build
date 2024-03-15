@@ -24,7 +24,7 @@ use Koha::Database;
 use Koha::CirculationRules;
 use Koha::Localizations;
 
-use base qw(Koha::Object Koha::Object::Limit::Library);
+use base qw(Koha::Object::CachedExpiration Koha::Object::Limit::Library);
 
 my $cache = Koha::Caches->get_instance();
 
