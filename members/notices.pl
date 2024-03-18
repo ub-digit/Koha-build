@@ -28,6 +28,7 @@ use C4::Letters qw( GetPreparedLetter EnqueueLetter );
 use Koha::Patrons;
 use Koha::Patron::Categories;
 use Koha::Patron::Password::Recovery qw( SendPasswordRecoveryEmail ValidateBorrowernumber );
+use Koha::DateUtils qw( dt_from_string );
 
 my $input=CGI->new;
 
@@ -133,7 +134,7 @@ if ( $op eq 'send_password_reset' ) {
 }
 
 # Getting the messages
-my $queued_messages = Koha::Notice::Messages->search({borrowernumber => $borrowernumber});
+my $queued_messages = Koha::Notice::Messages->search({borrowernumber => $borrowernumber, time_queued => { '>' => dt_from_string()->subtract( months => 3 ) }});
 
 $template->param(
     patron             => $patron,
