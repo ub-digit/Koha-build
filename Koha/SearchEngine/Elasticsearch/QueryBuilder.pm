@@ -135,6 +135,8 @@ our %index_field_convert = (
     'hi' => 'host-item-number',
     'itu' => 'index-term-uncontrolled',
     'itg' => 'index-term-genre',
+    'pubns' => 'public-note-serial',
+    'bcc' => 'biblio-ccode',
 );
 my $field_name_pattern = '[\w\-]+';
 my $multi_field_pattern = "(?:\\.$field_name_pattern)*";
