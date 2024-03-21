@@ -346,31 +346,37 @@ Patrons:
          - pref: HiddenExtendedAttributes
            class: multi
          - (separate multiple choices with |)
+         - <br/><i class="fa fa-exclamation-triangle"></i> Superlibrarians will bypass this setting.
      -
          - "The following attributes will not appear on the patron page for adminstrators:"
          - pref: HiddenExtendedAttributesAdmin
            class: multi
          - (separate multiple choices with |)
+         - <br/><i class="fa fa-exclamation-triangle"></i> Superlibrarians will bypass this setting.
      -
          - "The following attributes will not be editable on the edit patron page:"
          - pref: NonEditableExtendedAttributes
            class: multi
          - (separate multiple choices with |)
+         - <br/><i class="fa fa-exclamation-triangle"></i> Superlibrarians will bypass this setting.
      -
          - "The following attributes will not be editable on the edit patron page for adminstrators:"
          - pref: NonEditableExtendedAttributesAdmin
            class: multi
          - (separate multiple choices with |)
+         - <br/><i class="fa fa-exclamation-triangle"></i> Superlibrarians will bypass this setting.
      -
          - "The value for each of the following attributes will be shown as secret:"
          - pref: SecretExtendedAttributes
            class: multi
          - (separate multiple choices with |)
+         - <br/><i class="fa fa-exclamation-triangle"></i> Superlibrarians will bypass this setting.
      -
          - "The value for each of the following attributes will be shown as secret for adminstrators:"
          - pref: SecretExtendedAttributesAdmin
            class: multi
          - (separate multiple choices with |)
+         - <br/><i class="fa fa-exclamation-triangle"></i> Superlibrarians will bypass this setting.
     Patron relationships:
      -
          - "Guarantors can be the following of those they guarantee:"
