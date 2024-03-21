@@ -297,6 +297,7 @@
             });
 
             getProfiles();
+            getProfiles(1);
             $('#profile').change(function(){
                 if(this.value=='') {
                     $("#mod_profile, #del_profile").prop("disabled",true);
