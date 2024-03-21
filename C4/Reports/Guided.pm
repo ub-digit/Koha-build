@@ -147,6 +147,18 @@ sub get_report_groups {
     my $groups = GetAuthorisedValues('REPORT_GROUP');
     my $subgroups = GetAuthorisedValues('REPORT_SUBGROUP');
 
+    # GUB - Remove the group PRIV if C4::Context->userenv->{flags} is not 1
+    if ( C4::Context->userenv->{flags} != 1 ) {
+        my $i = 0;
+        foreach my $group (@$groups) {
+            if ( $group->{authorised_value} eq 'PRIV' ) {
+                splice( @$groups, $i, 1 );
+                last;
+            }
+            $i++;
+        }
+    }
+
     my %groups_with_subgroups = map { $_->{authorised_value} => {
                         name => $_->{lib},
                         groups => {}
@@ -792,6 +804,11 @@ sub get_saved_reports {
         if ($filter->{subgroup}) {
             push @cond, "report_subgroup = ?";
             push @args, $filter->{subgroup};
+        }
+        # GUB - Explicitly exclude reports with report_group "Private" (PRIV) unless flags 1 (superlibrarian)
+        if ( C4::Context->userenv->{flags} != 1 ) {
+            push @cond, "report_group != ?";
+            push @args, "PRIV";
         }
     }
     $query .= " WHERE ".join( " AND ", map "($_)", @cond ) if @cond;
