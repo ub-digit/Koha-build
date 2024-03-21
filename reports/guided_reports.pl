@@ -179,6 +179,10 @@ elsif ( $phase eq 'Show SQL'){
 
     my $id = $input->param('reports');
     my $report = Koha::Reports->find($id);
+    # GUB - Check if the user has the right to edit the report, if the report_group is PRIV, flags must be 1
+    if ( $report->report_group eq 'PRIV' && C4::Context->userenv->{flags} != 1 ) {
+        $report = undef;
+    }
     $template->param(
         'id'      => $id,
         'reportname' => $report->report_name,
@@ -194,6 +198,10 @@ elsif ( $phase eq 'Show SQL'){
 elsif ( $phase eq 'Edit SQL'){
     my $id = $input->param('reports');
     my $report = Koha::Reports->find($id);
+    # GUB - Check if the user has the right to edit the report, if the report_group is PRIV, flags must be 1
+    if ( $report->report_group eq 'PRIV' && C4::Context->userenv->{flags} != 1 ) {
+        $report = undef;
+    }
     my $group = $report->report_group;
     my $subgroup  = $report->report_subgroup;
     my $tables = get_tables();
@@ -690,7 +698,12 @@ elsif ($phase eq 'Run this report'){
     );
 
     my ( $sql, $original_sql, $type, $name, $notes );
-    if (my $report = Koha::Reports->find($report_id)) {
+    my $report = Koha::Reports->find($report_id);
+    # GUB - Check if the user has the right to edit the report, if the report_group is PRIV, flags must be 1
+    if ( $report->report_group eq 'PRIV' && C4::Context->userenv->{flags} != 1 ) {
+        $report = undef;
+    }
+    if ($report) {
         $sql   = $original_sql = $report->savedsql;
         $name  = $report->report_name;
         $notes = $report->notes;
@@ -923,6 +936,10 @@ elsif ($phase eq 'Export'){
 	# export results to tab separated text or CSV
     my $report_id      = $input->param('report_id');
     my $report         = Koha::Reports->find($report_id);
+    # GUB - Check if the user has the right to edit the report, if the report_group is PRIV, flags must be 1
+    if ( $report->report_group eq 'PRIV' && C4::Context->userenv->{flags} != 1 ) {
+        $report = undef;
+    }
     my $sql            = $report->savedsql;
     my @param_names    = $input->multi_param('param_name');
     my @sql_params     = $input->multi_param('sql_params');
@@ -1042,6 +1059,10 @@ elsif ( $phase eq 'Create report from SQL' || $phase eq 'Create report from exis
     }
     elsif ( my $report_id = $input->param('report_id') ) {
         my $report = Koha::Reports->find($report_id);
+        # GUB - Check if the user has the right to edit the report, if the report_group is PRIV, flags must be 1
+        if ( $report->report_group eq 'PRIV' && C4::Context->userenv->{flags} != 1 ) {
+            $report = undef;
+        }
         $group      = $report->report_group;
         $subgroup   = $report->report_subgroup;
         $sql        = $report->savedsql // '';
