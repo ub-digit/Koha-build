@@ -10,6 +10,8 @@ use Data::Dumper;
 sub isVisible {
     my ($self, $attribute) = @_;
 
+    if (getLoggedInUser()->is_superlibrarian) {return 1;}
+
     if (blessed($attribute)) {
         $attribute = $attribute->unblessed;
     }
@@ -24,6 +26,8 @@ sub isVisible {
 sub isEditable {
     my ($self, $attribute) = @_;
 
+    if (getLoggedInUser()->is_superlibrarian) {return 1;}
+
     if (getLoggedInUser()->has_permission({tools => 'view_system_logs'})) {
         if (isInList($attribute->{'code'}, 'NonEditableExtendedAttributesAdmin')) {return 0;}
     }
@@ -33,6 +37,8 @@ sub isEditable {
 
 sub hasSecretValue {
     my ($self, $attribute) = @_;
+
+    if (getLoggedInUser()->is_superlibrarian) {return 0;}
 
     if (blessed($attribute)) {
         $attribute = $attribute->unblessed;
