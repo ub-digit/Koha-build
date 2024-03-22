@@ -141,6 +141,9 @@ sub issues {
 	    $issue->{'renewed'} = $renewed{ $issue->{'itemnumber'} };
 
 	    if ($renewerror) {
+		if (($renewerror eq 'too_soon') && ($issue->{'auto_renew'})) {
+		    $renewerror = 'auto_too_soon';
+		}
 		$issue->{'too_many'}       = 1 if $renewerror eq 'too_many';
 		$issue->{'on_reserve'}     = 1 if $renewerror eq 'on_reserve';
 		$issue->{'norenew_overdue'} = 1 if $renewerror eq 'overdue';
