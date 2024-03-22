@@ -53,6 +53,10 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
+# GUB - Check if the user has the right to edit the report, if the report_group is PRIV, flags must be 1
+if ( $report_rec->report_group eq 'PRIV' && C4::Context->userenv->{flags} != 1 ) {
+    die "There is no such report.\n";
+}
 my $cache = Koha::Caches->get_instance();
 my $cache_active = $cache->is_cache_active;
 my ($cache_key, $json_text);
