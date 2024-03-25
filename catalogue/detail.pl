@@ -199,7 +199,7 @@ my $itemtypes = { map { $_->itemtype => $_ } @{ Koha::ItemTypes->search_with_loc
 my $patron = Koha::Patrons->find( $borrowernumber );
 my $include_lost_items = !$patron->category->hidelostitems || $showallitems;
 my $items_params = {
-    ( $invalid_marc_record ? () : ( host_items => 1 ) ),
+    ( $invalid_marc_record ? () : ( host_items => 0 ) ),
 };
 my $all_items = $biblio->items($items_params);
 my $items_to_display = $all_items->search({ $include_lost_items ? () : ( itemlost => 0 ) });
