@@ -194,7 +194,7 @@ my $params;
 my $patron = Koha::Patrons->find( $borrowernumber );
 $params->{ itemlost } = 0 if $patron->category->hidelostitems && !$showallitems;
 my $items_params = {
-    ( $invalid_marc_record ? () : ( host_items => 1 ) ),
+    ( $invalid_marc_record ? () : ( host_items => 0 ) ),
 };
 my $items = $biblio->items($items_params)->search_ordered( $params, { prefetch => ['issue','current_branchtransfers'] } );
 
