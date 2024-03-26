@@ -23,6 +23,11 @@ unless ($status eq "ok") {
 
 my $personalnumber = $query->param('personalnumber');
 
+if($personalnumber eq "") {
+  print $query->header(-type => 'text/xml', -status => '400 Bad Request');
+  print XMLout({ status => 'error', message => 'Missing parameter personalnumber' }, NoAttr => 1, RootName => 'response', XMLDecl => 1);
+  exit 0;
+}
 
 my $dbh = C4::Context->dbh();
 my $sql = "SELECT DISTINCT borrowernumber
