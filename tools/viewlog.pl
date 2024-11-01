@@ -140,6 +140,9 @@ if ($do_it) {
         $search_params{object} = $object if $object;
     }
 
+    # Always exclude combination of action VIEW and module MEMBERS from the search query
+    $search_params{-and} = { -not => [ { action => 'VIEW', module => 'MEMBERS' } ] };
+
     #Set limit to 10000 records to avoid timeout or memory issues
     my @logs = Koha::ActionLogs->search(\%search_params, {rows => 10000 })->as_list;
 
