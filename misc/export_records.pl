@@ -107,14 +107,14 @@ $record_type   ||= 'bibs';
 # Retrocompatibility for the format parameter
 $output_format = 'iso2709' if $output_format eq 'marc';
 
-if ($include_deleted || $deleted_only) {
-    if ($record_type ne 'bibs') {
+if ( $include_deleted || $deleted_only ) {
+    if ( $record_type ne 'bibs' ) {
         pod2usage(q|Option "--include_deleted" or "--deleted_only" can only be used with "--record-type=bibs"|);
     }
-    if ($output_format eq 'csv') {
+    if ( $output_format eq 'csv' ) {
         pod2usage(q|Option "--include_deleted" or "--deleted_only" cannot be used with "--format=csv"|);
     }
-    if (!$timestamp) {
+    if ( !$timestamp ) {
         pod2usage(q|Option "--include_deleted" or "--deleted_only" must be combined with "--date"|);
     }
 }
@@ -205,9 +205,10 @@ if ( $record_type eq 'bibs' ) {
         }
     } elsif ($timestamp) {
         unless ($deleted_only) {
-            if (!$dont_export_items) {
+            if ( !$dont_export_items ) {
                 push @record_ids, $_->{biblionumber} for @{
-                    $dbh->selectall_arrayref(q| (
+                    $dbh->selectall_arrayref(
+                        q| (
                         SELECT biblio_metadata.biblionumber
                         FROM biblio_metadata
                           LEFT JOIN items USING(biblionumber)
@@ -219,25 +220,30 @@ if ( $record_type eq 'bibs' ) {
                           LEFT JOIN deleteditems USING(biblionumber)
                         WHERE biblio_metadata.timestamp >= ?
                           OR deleteditems.timestamp >= ?
-                    ) |, { Slice => {} }, ( $timestamp ) x 4 );
+                    ) |, { Slice => {} }, ($timestamp) x 4
+                    );
                 };
             } else {
                 push @record_ids, $_->{biblionumber} for @{
-                    $dbh->selectall_arrayref(q| (
+                    $dbh->selectall_arrayref(
+                        q| (
                         SELECT biblio_metadata.biblionumber
                         FROM biblio_metadata
                         WHERE biblio_metadata.timestamp >= ?
-                    ) |, { Slice => {} }, $timestamp );
+                    ) |, { Slice => {} }, $timestamp
+                    );
                 };
             }
         }
-        if ($include_deleted || $deleted_only) {
+        if ( $include_deleted || $deleted_only ) {
             push @deleted_record_ids, $_->{biblionumber} for @{
-                $dbh->selectall_arrayref(q|
+                $dbh->selectall_arrayref(
+                    q|
                     SELECT `biblionumber`
                     FROM `deletedbiblio`
                     WHERE `timestamp` >= ?
-                |, { Slice => {} }, $timestamp);
+                |, { Slice => {} }, $timestamp
+                );
             };
         }
     } else {
