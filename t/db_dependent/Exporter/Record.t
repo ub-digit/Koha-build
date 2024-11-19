@@ -79,10 +79,10 @@ if ($marcflavour eq 'UNIMARC') {
 my $deleted_biblio = MARC::Record->new();
 $deleted_biblio->leader('00136nam a22000617a 4500');
 $deleted_biblio->append_fields(
-    MARC::Field->new('100', ' ', ' ', a => 'Chopra, Deepak'),
-    MARC::Field->new('245', ' ', ' ', a => 'The seven spiritual laws of success'),
+    MARC::Field->new( '100', ' ', ' ', a => 'Chopra, Deepak'),
+    MARC::Field->new( $title_field_tag, ' ', ' ', a => 'The seven spiritual laws of success'),
 );
-my ($deleted_biblionumber) = AddBiblio($deleted_biblio, '');
+my ($deleted_biblionumber) = AddBiblio( $deleted_biblio, '' );
 DelBiblio($deleted_biblionumber);
 
 my $bad_biblio = Koha::Biblio->new()->store();
@@ -164,9 +164,10 @@ subtest 'export xml' => sub {
     my $generated_xml_file = '/tmp/test_export.xml';
     warning_like {
         Koha::Exporter::Record::export(
-            {   record_type        => 'bibs',
+            {
+                record_type        => 'bibs',
                 record_ids         => [ $biblionumber_1, $bad_biblionumber, $biblionumber_2 ],
-                deleted_record_ids => [ $deleted_biblionumber ],
+                deleted_record_ids => [$deleted_biblionumber],
                 format             => 'xml',
                 output_filepath    => $generated_xml_file,
             }
@@ -195,18 +196,20 @@ subtest 'export xml' => sub {
 
     # Leader has the expected value (and record status "d", length may have
     # changed)
-    ok( $deleted_record->leader =~ '\d{5}dam a22000617a 4500', 'Deleted record has the expected leader value' );
+    ok( $deleted_record->leader =~ '\d{5}dam a22000\d{2}7a 4500', 'Deleted record has the expected leader value' );
 };
 
 subtest 'export iso2709' => sub {
     plan tests => 4;
     my $generated_mrc_file = '/tmp/test_export.mrc';
+
     # Get all item infos
     warning_like {
         Koha::Exporter::Record::export(
-            {   record_type        => 'bibs',
+            {
+                record_type        => 'bibs',
                 record_ids         => [ $biblionumber_1, $bad_biblionumber, $biblionumber_2 ],
-                deleted_record_ids => [ $deleted_biblionumber ],
+                deleted_record_ids => [$deleted_biblionumber],
                 format             => 'iso2709',
                 output_filepath    => $generated_mrc_file,
             }
@@ -228,7 +231,7 @@ subtest 'export iso2709' => sub {
     my $deleted_record = $records[2];
     # Leader has the expected value (and record status "d", length may have
     # changed)
-    ok( $deleted_record->leader =~ '\d{5}dam a22000617a 4500', 'Deleted record has the expected leader value' );
+    ok( $deleted_record->leader =~ '\d{5}dam a22000\d{2}7a 4500', 'Deleted record has the expected leader value' );
 };
 
 subtest 'export without record_type' => sub {
