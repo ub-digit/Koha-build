@@ -25,7 +25,7 @@ use Koha::Exceptions;
 use Koha::Object;
 use Koha::Object::Limit::Library;
 
-use base qw(Koha::Object Koha::Object::Limit::Library);
+use base qw(Koha::Object::CachedExpiration Koha::Object::Limit::Library);
 
 use constant NUM_PATTERN    => q{^(-[1-9][0-9]*|0|[1-9][0-9]*)$};
 use constant NUM_PATTERN_JS => q{(-[1-9][0-9]*|0|[1-9][0-9]*)};     # ^ and $ removed
