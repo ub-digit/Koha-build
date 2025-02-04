@@ -638,23 +638,22 @@ sub SearchSubscriptions {
     if ( $params->{results_limit} && $total_results > $params->{results_limit} ) {
         $results = [ splice( @{$results}, 0, $params->{results_limit} ) ];
     }
-    my %additional_fields_by_id = map { $_->id => $_->name } Koha::AdditionalFields->search( { tablename => 'subscription' } )->as_list;
-    if (%additional_fields_by_id) {
+    my @additional_field_ids = map { $_->id  } Koha::AdditionalFields->search( { tablename => 'subscription' } )->as_list;
+    if (@additional_field_ids) {
         my %subscriptions_by_id = map { $_->{subscriptionid } => $_ } @{$results};
         my $field_values_rs = Koha::AdditionalFieldValues->search(
             {
-                field_id => { -in => [ keys %additional_fields_by_id ] },
+                field_id => { -in => \@additional_field_ids },
                 record_id => { -in => [ keys %subscriptions_by_id ] }
             }
         );
         while (my $field_value = $field_values_rs->next) {
-            my $field_name = $additional_fields_by_id{$field_value->field_id};
-            $subscriptions_by_id{$field_value->record_id}->{additional_fields}->{$field_name} = $field_value->value;
+            $subscriptions_by_id{$field_value->record_id}->{additional_field_values}->{$field_value->field_id} = $field_value->value;
         }
     }
     else {
         for my $subscription ( @{$results} ) {
-            $subscription->{additional_fields} = {};
+            $subscription->{additional_field_values} = {};
         }
     }
 
