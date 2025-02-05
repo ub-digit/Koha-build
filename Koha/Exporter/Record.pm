@@ -78,6 +78,7 @@ sub _get_record_for_export {
     my $record_type        = $params->{record_type};
     my $record_id          = $params->{record_id};
     my $conditions         = $params->{record_conditions};
+    my $set_deleted_conditions = $params->{set_deleted_record_conditions};
     my $dont_export_fields = $params->{dont_export_fields};
     my $clean              = $params->{clean};
 
@@ -115,8 +116,16 @@ sub _get_record_for_export {
             }
         }
     }
-
     return if $conditions && !_record_match_conditions($record, $conditions);
+
+    if (
+        $record_type ne 'deleted_bibs' &&
+        $set_deleted_conditions &&
+        _record_match_conditions($record, $set_deleted_conditions)
+    ) {
+        _record_set_deleted($record)
+    }
+
     C4::Biblio::RemoveAllNsb($record) if $clean;
     return $record;
 }
@@ -144,9 +153,14 @@ sub _get_deleted_biblio_for_export {
         Koha::Logger->get->warn("Failed to load MARCXML for deleted biblio with biblionumber \"$biblionumber\": $@");
         return;
     }
+    _record_set_deleted($record);
+    return $record;
+}
 
-    # Set deleted flag (record status, position 05)
+sub _record_set_deleted {
+    my ($record) = @_;
     my $leader = $record->leader;
+    # Set deleted flag (record status, position 05)
     substr $leader, 5, 1, 'd';
     $record->leader($leader);
     return $record;
