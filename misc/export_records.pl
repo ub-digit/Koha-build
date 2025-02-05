@@ -59,6 +59,7 @@ my (
     $start_accession,
     $end_accession,
     $marc_conditions,
+    $set_deleted_marc_conditions,
     $embed_see_from_headings,
     $report_id,
     @report_params,
@@ -91,6 +92,7 @@ GetOptions(
     'start_accession=s'       => \$start_accession,
     'end_accession=s'         => \$end_accession,
     'marc_conditions=s'       => \$marc_conditions,
+    'set_deleted_marc_conditions=s' => \$set_deleted_marc_conditions,
     'embed_see_from_headings' => \$embed_see_from_headings,
     'report_id=s'             => \$report_id,
     'report_param=s'          => \@report_params,
@@ -180,6 +182,10 @@ sub _parse_marc_conditions {
 my @marc_conditions;
 if ($marc_conditions) {
     @marc_conditions = _parse_marc_conditions($marc_conditions);
+}
+my @set_deleted_marc_conditions;
+if ($set_deleted_marc_conditions) {
+    @set_deleted_marc_conditions = _parse_marc_conditions($set_deleted_marc_conditions);
 }
 
 my $dbh = C4::Context->dbh;
@@ -373,6 +379,7 @@ if ($deleted_barcodes) {
             record_type             => $record_type,
             record_ids              => \@record_ids,
             record_conditions       => @marc_conditions ? \@marc_conditions : undef,
+            set_deleted_record_conditions => @set_deleted_marc_conditions ? \@set_deleted_marc_conditions : undef,
             deleted_record_ids      => \@deleted_record_ids,
             format                  => $output_format,
             csv_profile_id          => $csv_profile_id,
@@ -518,6 +525,12 @@ Print a brief help message.
                                 <marc_target> exists regardless of target value, and
                                 "exists(<marc_target>)" will include marc records where
                                 no <marc_target> exists.
+
+=item B<--set_deleted_marc_conditions>
+
+ --set_deleted_marc_conditions=CONDITIONS Set record deleted flag for biblios with MARC
+                                data matching CONDITIONS.Only include biblios with MARC data matching CONDITIONS.
+                                See --marc_conditions for more information about the CONDITIONS format.
 
 =item B<--embed_see_from_headings>
 
