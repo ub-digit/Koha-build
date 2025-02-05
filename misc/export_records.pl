@@ -34,6 +34,7 @@ use Koha::CsvProfiles;
 use Koha::Exporter::Record;
 use Koha::DateUtils qw( dt_from_string output_pref );
 use Koha::Reports;
+use Carp;
 
 my (
     $output_format,
@@ -160,18 +161,25 @@ if ($report_id) {
 $start_accession = dt_from_string($start_accession) if $start_accession;
 $end_accession   = dt_from_string($end_accession)   if $end_accession;
 
-# Parse marc conditions
-my @marc_conditions;
-if ($marc_conditions) {
+sub _parse_marc_conditions {
+    my ($marc_conditions) = @_;
+    my @marc_conditions;
     foreach my $condition ( split( /,\s*/, $marc_conditions ) ) {
         if ( $condition =~ /^(\d{3})([\w\d]?)(=|(?:!=)|>|<)([^,]+)$/ ) {
             push @marc_conditions, [ $1, $2, $3, $4 ];
         } elsif ( $condition =~ /^(exists|not_exists)\((\d{3})([\w\d]?)\)$/ ) {
             push @marc_conditions, [ $2, $3, $1 eq 'exists' ? '?' : '!?' ];
         } else {
-            die("Invalid condititon: $condition");
+            croak "Invalid condititon: $condition";
         }
     }
+    return @marc_conditions;
+}
+
+# Parse marc conditions
+my @marc_conditions;
+if ($marc_conditions) {
+    @marc_conditions = _parse_marc_conditions($marc_conditions);
 }
 
 my $dbh = C4::Context->dbh;
