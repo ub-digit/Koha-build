@@ -319,7 +319,7 @@ subtest '_get_biblio_for_export' => sub {
 };
 
 subtest '_get_record_for_export MARC field conditions' => sub {
-    plan tests => 11;
+    plan tests => 13;
 
     my $biblio = $builder->build_sample_biblio(
         {
@@ -444,6 +444,36 @@ subtest '_get_record_for_export MARC field conditions' => sub {
         }
     );
     is( $record, undef, "Record condition \"not_exists(035a)\" should not match" );
+
+    ## Deleted conditions
+
+    $record = Koha::Exporter::Record::_get_record_for_export(
+        {
+            record_id => $biblionumber,
+            set_deleted_record_conditions => [['080', 'a', '=', '12345']],
+            record_type => 'bibs',
+        }
+    );
+    is(
+        substr($record->leader, 5, 1),
+        'd',
+        "Record deleted condition \"080a=12345\" should match and deleted flag should be set"
+    );
+
+    $record = Koha::Exporter::Record::_get_record_for_export(
+        {
+            record_id => $biblionumber,
+            set_deleted_record_conditions => [['080', 'a', '!=', '12345']],
+            record_type => 'bibs',
+        }
+    );
+    # Position 5, record status, should be 'n' but Koha record created by
+    # Koha (build_sample_biblio) for some reaso has it set it to ' '
+    isnt(
+        substr($record->leader, 5, 1),
+        'd',
+        "Record deleted condition \"080a!=12345\" should not match and deleted flag should not be set"
+    );
 };
 
 $schema->storage->txn_rollback;
