@@ -14,9 +14,30 @@ my $query = new CGI;
 binmode STDOUT, ':encoding(UTF-8)';
 
 my $cardnumber= $query->url_param('cardnumber');
-my $personalnumber = $query->url_param('personalnumber');
+# In order to prevent the need for updating the IPAC software,
+# we keep the name "personalnumber" for the pincode
+my $pincode = $query->url_param('personalnumber');
+if (!$pincode) {
+    $pincode = $query->url_param('pincode');
+}
+# Now check if pincode is actually a personalnumber.
+# In the transition period, we will accept both.
+# Which one it is is determined by the length of the string.
+# Anything 10 characters or more is considered a personalnumber.
+# Anything less is considered a pincode.
+my $is_personalnumber = 0;
+if (length($pincode) >= 10) {
+    $is_personalnumber = 1;
+}
+# If it is 12, truncate it to 10
+if (length($pincode) == 12) {
+    $pincode = substr($pincode, 2);
+}
 my $api_key = $query->url_param('api_key');
 my $server_api_key = $ENV{'HTTP_X_KOHA_IPAC_API_KEY'};
+
+# For local debugging only. Should never contain a useful key in production.
+# my $server_api_key = "verygood";
 
 my $response_hash = {
     cardnumber => $cardnumber,
@@ -35,16 +56,11 @@ if (!$api_key || $api_key ne $server_api_key) {
 }
 
 # Missing cardnumber or personalnumber (INVALID_CREDENTIALS)
-if (!$cardnumber || !$personalnumber) {
+if (!$cardnumber || !$pincode) {
     $response_hash->{status} = "INVALID_CREDENTIALS";
     print $query->header(-type => 'text/xml', -status => '403');
     print XMLout($response_hash, NoAttr => 1, RootName => 'response', XMLDecl => 1);
     exit 0;
-}
-
-# Truncate incoming personalnumber to 10 characters, we know it exists at this point
-if(length($personalnumber) == 12) {
-    $personalnumber = substr($personalnumber, 2);
 }
 
 my $patrons = Koha::Patrons->search({cardnumber => $cardnumber});
@@ -62,7 +78,7 @@ my $borrowernumber = $borrower->unblessed->{'borrowernumber'};
 my $dateexpiry = $borrower->unblessed->{'dateexpiry'};
 my $lang = $borrower->unblessed->{'lang'};
 my $today = `date +"%Y-%m-%d"`;
-
+my $borrower_pin = $borrower->get_extended_attribute("PIN");
 my $pnr12obj = $borrower->get_extended_attribute("PNR12");
 my $pnr10obj = $borrower->get_extended_attribute("PNR");
 my $pnr12 = "";
@@ -75,15 +91,19 @@ if ($pnr10obj) {
 }
 my $pnr12_valid = 0;
 my $pnr10_valid = 0;
-
-if($pnr12 && $personalnumber eq substr($pnr12, 2)) {
+if($pnr12 && $pincode eq substr($pnr12, 2)) {
     $pnr12_valid = 1;
-} elsif($pnr10 && $personalnumber eq $pnr10) {
+} elsif($pnr10 && $pincode eq $pnr10) {
     $pnr10_valid = 1;
 }
 
+my $pin_valid = 0;
+if($borrower_pin && $pincode eq $borrower_pin->attribute) {
+    $pin_valid = 1;
+}
+
 # Personalnumber not matching borrower (INVALID_CREDENTIALS)
-if (!$pnr12_valid && !$pnr10_valid) {
+if (!$pin_valid && !$pnr12_valid && !$pnr10_valid) {
     $response_hash->{status} = "INVALID_CREDENTIALS";
     print $query->header(-type => 'text/xml', -status => '403');
     print XMLout($response_hash, NoAttr => 1, RootName => 'response', XMLDecl => 1);
