@@ -419,7 +419,11 @@ my @gst_values = map {
 my $quantity = $input->param('rr_quantity_to_order') ?
       $input->param('rr_quantity_to_order') :
       $data->{'quantity'};
-$quantity //= 0;
+if ($basketobj->effective_create_items eq "ordering") {
+    $quantity //= 0;
+} else {
+    $quantity //= 1;
+}
 
 # Get additional fields
 my $record;
