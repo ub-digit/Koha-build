@@ -38,8 +38,14 @@ unless ($borrower) {
 my $flags = C4::Members::patronflags($borrower->unblessed);
 my $attributes = $borrower->extended_attributes;
 my $debarments = $borrower->restrictions;
-my $issues = $borrower->checkouts;
+my $issues = $borrower->checkouts->unblessed;
 my @reserves = $borrower->holds->unblessed;
+
+# Add biblionumber to each issue
+foreach my $issue (@$issues) {
+  my $item = Koha::Items->find($issue->{itemnumber});
+  $issue->{biblionumber} = $item->biblionumber;
+}
 
 print $query->header(-type => 'text/xml',-charset => 'utf-8');
 
@@ -48,7 +54,7 @@ flags => $flags,
 debarments => $debarments->unblessed,
 borrower => $borrower->unblessed,
 attributes => $attributes->unblessed,
-issues => $issues->unblessed,
+issues => $issues,
 reserves => \@reserves }, NoAttr => 1, RootName => 'response', XMLDecl => 1, SuppressEmpty => 1);
 
 exit 0;
