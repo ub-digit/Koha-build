@@ -126,7 +126,8 @@ builder {
             enable 'Log4perl', category => 'plack-intranet';
             enable 'LogWarn';
         }
-        enable "+Koha::Middleware::CSRF";
+        # Disable CSRF protection for the svc scripts
+        #enable "+Koha::Middleware::CSRF";
         $intranet_svc;
     };
     mount '/api/v1/app.pl' => builder {
