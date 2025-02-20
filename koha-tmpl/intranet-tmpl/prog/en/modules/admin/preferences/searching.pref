@@ -175,7 +175,7 @@ Searching:
                   1: Enable
                   0: "Don't enable"
             - exporting search results (Elasticsearch only).
-            - "<p><strong>NOTE:</strong> Records exceeding the ISO2709 record size will show as separate MARC XML downloads regardless of the selected export format.</p>"
+            - "<p><strong>NOTE:</strong> Records exceeding the ISO2709 record size will show as separate MARCXML downloads regardless of the selected export format.</p>"
         -
             - pref: ElasticsearchSearchResultExportCustomFormats
               type: textarea
