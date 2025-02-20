@@ -324,7 +324,7 @@
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="/cgi-bin/koha/catalogue/search.pl?count=[% results_per_page | uri %]&export=1&export_format=ISO2709[% PROCESS sort_search_query %]">MARC (UTF-8)</a></li>
-                                        <li><a class="dropdown-item" href="/cgi-bin/koha/catalogue/search.pl?count=[% results_per_page | uri %]&export=1&export_format=MARCXML[% PROCESS sort_search_query %]">MARC XML</a></li>
+                                        <li><a class="dropdown-item" href="/cgi-bin/koha/catalogue/search.pl?count=[% results_per_page | uri %]&export=1&export_format=MARCXML[% PROCESS sort_search_query %]">MARCXML</a></li>
                                         [% FOREACH id IN custom_export_formats.keys %]
                                             <li><a class="dropdown-item" href="/cgi-bin/koha/catalogue/search.pl?count=[% results_per_page | uri %]&export=1&export_format=[% id | uri %][% PROCESS sort_search_query %]">[% custom_export_formats.$id.name | html %]</a></li>
                                         [% END %]
