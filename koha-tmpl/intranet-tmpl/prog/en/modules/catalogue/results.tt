@@ -809,7 +809,7 @@
     [% Asset.js("js/job_progress.js") | $raw %]
     <script>
         [% IF export_job_id %]
-            updateProgress([% export_job_id | html %], function() {
+            var job_finish_callback = function() {
                 $.getJSON('/api/v1/jobs/[% export_job_id | html %]', function(job) {
                     if (job.data.report.errors.length) {
                         humanMsg.displayMsg(
@@ -830,7 +830,8 @@
                             .appendTo("#job_callback");
                     }
                 });
-            });
+            };
+            updateProgress([% export_job_id | html %], { finish_callback: job_finish_callback });
         [% END %]
 
         var PREF_AmazonCoverImages = parseInt( "[% Koha.Preference('AmazonCoverImages') | html %]", 10);
