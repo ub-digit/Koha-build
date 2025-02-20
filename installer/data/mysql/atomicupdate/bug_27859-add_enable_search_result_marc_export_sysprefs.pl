@@ -7,7 +7,7 @@ return {
         my ($args) = @_;
         my ($dbh, $out) = @$args{qw(dbh out)};
 
-        $dbh->do(q{ INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type) VALUES ('EnableElasticsearchSearchResultExport', 1, NULL, 'Enable search result export', 'YesNo') });
+        $dbh->do(q{ INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type) VALUES ('EnableElasticsearchSearchResultExport', 0, NULL, 'Enable search result export', 'YesNo') });
         say $out "Added new system preference 'EnableElasticsearchSearchResultExport'";
 
         $dbh->do(q{ INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type) VALUES ('ElasticsearchSearchResultExportCustomFormats', '', NULL, 'Search result export custom formats', 'textarea') });
