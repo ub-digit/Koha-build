@@ -113,6 +113,7 @@ sub process {
         my $upload_dir = Koha::UploadedFile->permanent_directory;
 
         while (my ($format, $data) = each %{$encoded_results}) {
+            $data = encode('UTF-8', $data);
             my $hash = md5_hex($data);
             my $category = "search_marc_export";
             my $time = strftime "%Y%m%d_%H%M", localtime time;
@@ -131,7 +132,7 @@ sub process {
 
             if ($fh) {
                 $fh->binmode;
-                print $fh encode('UTF-8', $data);
+                print $fh $data;
                 $fh->close;
 
                 my $size = -s $filepath;
@@ -159,7 +160,7 @@ sub process {
         errors => \@errors,
         query_string => $query_string,
     };
-    $data->{report}   = $report;
+    $data->{report} = $report;
     if (@errors) {
         $self->set({ progress => 0, status => 'failed' })->store;
     }
