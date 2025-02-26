@@ -43,6 +43,7 @@ add(\%newdata, $query, 'B_address');
 add(\%newdata, $query, 'B_address2');
 add(\%newdata, $query, 'B_zipcode');
 add(\%newdata, $query, 'B_city');
+add(\%newdata, $query, 'lang');
 
 $borrower->set(\%newdata)->store;
 
