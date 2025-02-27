@@ -179,7 +179,7 @@
                 <fieldset class="rows">
                     <legend>Reservationsdetaljer</legend>
                     <form action="placerequest_subscription.pl" method="post" name="form" id="hold-request-form">
-
+                        [% INCLUDE 'csrf-token.inc' %]
                         <input type="hidden" name="borrowernumber" value="[% patron.borrowernumber | html %]" />
                         [% FOREACH biblionumber IN biblionumbers %]
                             <input type="hidden" name="biblionumber" value="[% biblionumber | html %]"/>
