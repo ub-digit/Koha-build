@@ -66,14 +66,14 @@
                                                 </td>
                                                 <td>
                                                     [% IF column.is_hidden %]
-                                                        [% IF column.cannot_be_modified %]
+                                                        [% IF 0 && column.cannot_be_modified %]
                                                             <input type="checkbox" name="[% value | html %]_hidden" value="1" checked="checked" disabled="disabled" />
                                                             <input type="hidden" name="[% value | html %]_hidden" value="1" />
                                                         [% ELSE %]
                                                             <input type="checkbox" name="[% value | html %]_hidden" value="1" checked="checked" />
                                                         [% END %]
                                                     [% ELSE %]
-                                                        [% IF column.cannot_be_modified %]
+                                                        [% IF 0 && column.cannot_be_modified %]
                                                             <input type="checkbox" name="[% value | html %]_hidden" value="1" disabled="disabled" />
                                                             <input type="hidden" name="[% value | html %]_hidden" value="0" />
                                                         [% ELSE %]
@@ -83,14 +83,14 @@
                                                 </td>
                                                 <td>
                                                     [% IF column.cannot_be_toggled %]
-                                                        [% IF column.cannot_be_modified %]
+                                                        [% IF 0 && column.cannot_be_modified %]
                                                             <input type="checkbox" name="[% value | html %]_cannot_be_toggled" value="1" checked="checked" disabled="disabled" />
                                                             <input type="hidden" name="[% value | html %]_cannot_be_toggled" value="1" />
                                                         [% ELSE %]
                                                             <input type="checkbox" name="[% value | html %]_cannot_be_toggled" value="1" checked="checked" />
                                                         [% END %]
                                                     [% ELSE %]
-                                                        [% IF column.cannot_be_modified %]
+                                                        [% IF 0 && column.cannot_be_modified %]
                                                             <input type="checkbox" name="[% value | html %]_cannot_be_toggled" value="1" disabled="disabled" />
                                                             <input type="hidden" name="[% value | html %]_cannot_be_toggled" value="0" />
                                                         [% ELSE %]
