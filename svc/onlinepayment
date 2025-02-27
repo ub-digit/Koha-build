@@ -9,6 +9,11 @@ use Koha::Account::Lines;
 my $query = new CGI;
 binmode STDOUT, ':encoding(UTF-8)';
 
+# GUB: Tillfällig fix för att betalportalen använder gamla parameternamn.
+$query->param('login_userid' => $query->param('userid'));
+$query->param('login_password' => $query->param('password'));
+# /GUB
+
 my ($status, $cookie, $sessionID) = check_api_auth($query, {editcatalogue => 'edit_catalogue'});
 unless ($status eq "ok") {
   print $query->header(-type => 'text/json', -status => '403 Forbidden');
