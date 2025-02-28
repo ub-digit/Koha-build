@@ -52,9 +52,9 @@ sub store {
 
 sub _objects_cache_expire {
     my ($self) = @_;
-    if ($self->_result->in_storage) {
-        my @primary_keys = $self->_result->id;
-        my $ids_cache_key = $self->_objects_cache_cache_key('find', @primary_keys);
+    if ( $self->_result->in_storage ) {
+        my @primary_keys  = $self->_result->id;
+        my $ids_cache_key = $self->_objects_cache_cache_key( 'find', @primary_keys );
         $self->_objects_cache_clear($ids_cache_key);
     }
 }

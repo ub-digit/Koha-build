@@ -143,7 +143,7 @@ sub search {
         }
     ) if defined $attributes;
 
-    my $rs = $self->_resultset()->search( $params, $attributes );
+    my $rs    = $self->_resultset()->search( $params, $attributes );
     my $class = ref($self) ? ref($self) : $self;
 
     return $class->_new_from_dbic($rs);

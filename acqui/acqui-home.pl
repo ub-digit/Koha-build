@@ -88,7 +88,7 @@ foreach my $budget ( @{$budget_arr} ) {
     next unless ( CanUserUseBudget( $loggedinpatron, $budget, $userflags ) );
 
     if ( $budget->{budget_owner_id} ) {
-        $budget->{budget_owner} = Koha::Patrons->find($budget->{budget_owner_id});
+        $budget->{budget_owner} = Koha::Patrons->find( $budget->{budget_owner_id} );
     }
 
     if ( !defined $budget->{budget_amount} ) {
