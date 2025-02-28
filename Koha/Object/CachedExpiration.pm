@@ -2,7 +2,6 @@ package Koha::Object::CachedExpiration;
 
 use parent qw( Koha::Object Koha::Objects::Cached::Base );
 use Modern::Perl;
-use Data::Dumper;
 
 =head1 NAME
 
