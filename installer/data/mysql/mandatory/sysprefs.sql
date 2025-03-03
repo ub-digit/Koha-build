@@ -816,6 +816,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('UNIMARCAuthorityField100','afrey50      ba0',NULL,'Define the contents of UNIMARC authority control field 100 position 08-35','Textarea'),
 ('UNIMARCAuthorsFacetsSeparator',', ',NULL,'UNIMARC authors facets separator','short'),
 ('UNIMARCField100Language','fre',NULL,'UNIMARC field 100 default language','short'),
+('UniqueExtendedAttributesQuickSearch', '0', NULL, 'Enable first running a search against all unique attributes when using the patron search bar, if a patron is found redirect to that patron without performing a full search. This can significantly improve performance if unique attributes are commonly searached for and the number of patrons is sufficiently large.', 'YesNo'),
 ('UniqueItemFields','barcode','','Pipe-separated list of fields that should be unique (used in acquisition module for item creation). Fields must be valid SQL column names of items table','Free'),
 ('UnseenRenewals','0','','Allow renewals to be recorded as "unseen" by the library, and count against the patrons unseen renewals limit.','YesNo'),
 ('UnsubscribeReflectionDelay','',NULL,'Delay for locking unsubscribers', 'Integer'),
