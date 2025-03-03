@@ -75,7 +75,7 @@ my $errorstring = q{};
 my $patron_error = "";
 my $renewed     = q{};
 
-if ($borrower->category->effective_BlockExpiredPatronOpacActions
+if ($borrower->category->effective_BlockExpiredPatronOpacActions_contains('renew')
     && $borrower->is_expired ) {
     $patron_error = 'card_expired';
 
