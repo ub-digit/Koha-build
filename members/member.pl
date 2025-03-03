@@ -52,15 +52,43 @@ if ( $quicksearch and $searchmember && !$circsearch ) {
         my $userenv = C4::Context->userenv;
         $branchcode = $userenv->{'branch'};
     }
+    my $maybe_redirect = sub {
+        my ($patron) = @_;
+        if (
+            $patron
+            and (  ( $branchcode and $patron->branchcode eq $branchcode )
+                or ( not $branchcode ) )
+            )
+        {
+            print $input->redirect( "/cgi-bin/koha/members/moremember.pl?borrowernumber=" . $patron->borrowernumber );
+            exit;
+        }
+    };
+
     my $patron = Koha::Patrons->find( { cardnumber => $searchmember } );
-    if (
-        $patron
-        and (  ( $branchcode and $patron->branchcode eq $branchcode )
-            or ( not $branchcode ) )
-      )
-    {
-        print $input->redirect( "/cgi-bin/koha/members/moremember.pl?borrowernumber=" . $patron->borrowernumber );
-        exit;
+    $maybe_redirect->($patron) if ($patron);
+
+
+    if ( C4::Context->preference('UniqueExtendedAttributesQuickSearch') ) {
+        # Search all unique patron attributes
+        my @unique_types = Koha::Patron::Attribute::Types->search( { 'unique_id' => 1, 'staff_searchable' => 1, 'searched_by_default' => 1 } )->as_list;
+        my @attribute_conditions;
+        for my $type (@unique_types) {
+            push @attribute_conditions, [
+                {
+                    "extended_attributes.code"      => $type->code,
+                    "extended_attributes.attribute" => $searchmember
+                }
+            ];
+        }
+
+        if (@attribute_conditions) {
+            my @patrons = Koha::Patrons->search( \@attribute_conditions, { prefetch => ['extended_attributes'] } )->as_list;
+
+            # The only case where could be more than one is when multiple unique attribute has the same value for different patrons
+            # which should be unlikely. If that is the case we should perform a full search.
+            $maybe_redirect->( $patrons[0] ) if ( @patrons == 1 );
+        }
     }
 }
 
