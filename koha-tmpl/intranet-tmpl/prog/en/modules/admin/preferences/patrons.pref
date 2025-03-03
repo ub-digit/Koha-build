@@ -87,6 +87,13 @@ Patrons:
                0: "Don't"
          - enable the ability to upload and attach arbitrary files to a borrower record.
      -
+         - pref: UniqueExtendedAttributesQuickSearch
+           choices:
+               1: Enable
+               0: "Don't enable"
+         - to first run a search against all unique attributes when using the patron search bar, if a patron is found redirect to that patron without performing a full search.
+         - This can significantly improve performance if unique attributes are commonly searached for and the number of patrons is sufficiently large.
+     -
          - pref: useDischarge
            choices:
                1: Allow
