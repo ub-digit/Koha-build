@@ -32,6 +32,7 @@ my $borrower = $patrons->next;
 my %newdata;
 $newdata{'borrowernumber'} = $borrower->borrowernumber;
 
+add(\%newdata, $query, 'firstname');
 add(\%newdata, $query, 'phone');
 add(\%newdata, $query, 'smsalertnumber');
 add(\%newdata, $query, 'email');
