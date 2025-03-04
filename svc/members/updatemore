@@ -85,6 +85,8 @@ if (can_update_pin($borrower)) {
     update_pin($borrower, $query);
 }
 
+update_survey_acceptance($borrower, $query);
+
 print $query->header(-type => 'application/json',-charset => 'utf-8');
 print to_json({ status => "ok" });
 
@@ -124,6 +126,29 @@ sub update_pin {
     } else {
         if ($pin) {
             $borrower->add_extended_attribute({code => "PIN", attribute => $pin});
+        }
+    }
+}
+
+# ANUN patron attribute used to store survey acceptance
+# It is a YES_NO attribute, so "0" means "No, I do not accept survey requests"
+# and "1" means "Yes, I accept survey requests"
+# The input has the values "yes" and "no", so we need to convert them to "1" and "0"
+sub update_survey_acceptance {
+    my ($borrower, $query) = @_;
+    my $survey_acceptance = $query->param('survey_acceptance');
+    if ($survey_acceptance) {
+        # Convert "yes" to "1" and "no" to "0"
+        $survey_acceptance = $survey_acceptance eq "yes" ? "1" : "0";
+        my $existing_survey_acceptance_obj = $borrower->get_extended_attribute("ANUN");
+        if ($existing_survey_acceptance_obj) {
+            my $existing_survey_acceptance = $existing_survey_acceptance_obj->attribute;
+            if ($survey_acceptance ne $existing_survey_acceptance) {
+                $borrower->extended_attributes->search({code => "ANUN"})->delete;
+                $borrower->add_extended_attribute({code => "ANUN", attribute => $survey_acceptance});
+            }
+        } else {
+            $borrower->add_extended_attribute({code => "ANUN", attribute => $survey_acceptance});
         }
     }
 }
