@@ -68,6 +68,8 @@ if ( $quicksearch and $searchmember && !$circsearch ) {
     my $patron = Koha::Patrons->find( { cardnumber => $searchmember } );
     $maybe_redirect->($patron) if ($patron);
 
+    $patron = Koha::Patrons->find( { borrowernumber => $searchmember } );
+    $maybe_redirect->($patron) if ($patron);
 
     if ( C4::Context->preference('UniqueExtendedAttributesQuickSearch') ) {
         # Search all unique patron attributes
