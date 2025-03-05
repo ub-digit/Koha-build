@@ -1659,7 +1659,7 @@ legend.collapsed i.fa.fa-caret-down::before {
                                                         [% IF ExtendedAttributeProperties.isVisible(patron_attribute) && !ExtendedAttributeProperties.hasSecretValue(patron_attribute) %]
                                                             [% attribute_hidden = '' %]
                                                         [% ELSE %]
-                                                            [% attribute_hidden = 'class="hidden"' %]
+                                                            [% attribute_hidden = 'class="d-none"' %]
                                                         [% END %]
                                                         [% IF ExtendedAttributeProperties.isEditable(patron_attribute) %]
                                                             [% editable = 1 %]
