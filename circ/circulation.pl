@@ -177,32 +177,48 @@ for my $barcode (@$barcodes) {
     $barcode = barcodedecode($barcode) if $barcode;
 }
 
+# Check if stickyduedate is turned off
+if (@$barcodes) {
+    if ( $query->param("stickyduedate") ) {
+
+    }
+    elsif ( $session->param('stickyduedate') )  {
+        $session->clear('stickyduedate');
+    }
+
+    # was stickyduedate loaded from session?
+    if ( $session->param('stickyduedate') && !$query->param("stickyduedate") ) {
+        $session->clear('stickyduedate');
+    }
+    $session->param( 'auto_renew', scalar $query->param('auto_renew') );
+} else {
+    $session->clear('auto_renew');
+}
+
 my $stickyduedate      = $query->param('stickyduedate')      || $session->param('stickyduedate');
 my $duedatespec        = $query->param('duedatespec')        || $session->param('stickyduedate');
 my $restoreduedatespec = $query->param('restoreduedatespec') || $duedatespec || $session->param('stickyduedate');
 if ( $restoreduedatespec && $restoreduedatespec eq "highholds_empty" ) {
     undef $restoreduedatespec;
 }
+
+# Restore date if changed by holds and/or save stickyduedate to session
+if ( $restoreduedatespec || $stickyduedate ) {
+    $duedatespec = $restoreduedatespec || $duedatespec;
+
+    if ($stickyduedate) {
+        $session->param( 'stickyduedate', $duedatespec );
+    }
+} elsif ( defined($duedatespec) && !defined($restoreduedatespec) ) {
+    undef $duedatespec;
+}
+
 my $issueconfirmed = $query->param('issueconfirmed');
 my $cancelreserve  = $query->param('cancelreserve');
 my $cancel_recall  = $query->param('cancel_recall');
 my $recall_id      = $query->param('recall_id');
 my $debt_confirmed = $query->param('debt_confirmed') || 0;     # Don't show the debt error dialog twice
 my $charges        = $query->param('charges')        || q{};
-
-# Check if stickyduedate is turned off
-if (@$barcodes) {
-
-    # was stickyduedate loaded from session?
-    if ( $stickyduedate && !$query->param("stickyduedate") ) {
-        $session->clear('stickyduedate');
-        $stickyduedate = $query->param('stickyduedate');
-        $duedatespec   = $query->param('duedatespec');
-    }
-    $session->param( 'auto_renew', scalar $query->param('auto_renew') );
-} else {
-    $session->clear('auto_renew');
-}
 
 $template->param( auto_renew => $session->param('auto_renew') );
 
