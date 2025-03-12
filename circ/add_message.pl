@@ -52,7 +52,7 @@ if ( $op eq 'cud-edit_message' && $message_id ) {
     my $message = Koha::Patron::Messages->find($message_id);
     $message->update( { message => $borrower_message } ) if $message;
 } elsif ( $op eq 'cud-add_message' ) {
-    if ( $message_type eq 'L' or $message_type eq 'B' ) {
+    if ( $message_type eq 'L' or $message_type eq 'N' ) {
         Koha::Patron::Message->new(
             {
                 borrowernumber => $borrowernumber,
