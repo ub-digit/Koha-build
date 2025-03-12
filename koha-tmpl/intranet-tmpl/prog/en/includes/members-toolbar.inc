@@ -177,8 +177,8 @@
                             <li class="form-group form-row">
                                 <label for="message_type" class="col-form-label">Add a message for:</label>
                                 <select name="message_type" id="message_type" class="form-select">
-                                    <option value="L">Staff - Internal note</option>
-                                    <option value="B">OPAC - [% patron.firstname | html %] [% patron.surname | html %]</option>
+                                    <option value="L">Fakturakommentar</option>
+                                    <option value="N">Personal - Intern kommentar</option>
                                     [% IF CAN_user_borrowers_send_messages_to_borrowers %]
                                         <option value="E">Email - email addresses of patron</option>
                                     [% END %]
