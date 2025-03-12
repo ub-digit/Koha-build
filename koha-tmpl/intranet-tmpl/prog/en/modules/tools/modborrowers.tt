@@ -325,10 +325,10 @@
                                                     [% FOREACH patron_message IN borrower.patron_messages %]
                                                         [% patron_message.message | html %] <br>
                                                         <strong>
-                                                        [% IF (patron_message.message_type == 'B') %]
-                                                            ( OPAC )
+                                                        [% IF (patron_message.message_type == 'L') %]
+                                                            ( Fakturakommentar )
                                                         [% ELSE %]
-                                                            ( Staff )
+                                                            ( Personal - Intern kommentar )
                                                         [% END %]
                                                         </strong><br><br>
                                                     [% END %]
@@ -397,8 +397,8 @@
                                             [% IF ( field.type == 'message_type' ) %]
                                                 <input type="text" name="[% field.name | html %]" value="" />
                                                 <select name="add_message_type" id="message_type">
-                                                    <option value="L">Staff - Internal note</option>
-                                                    <option value="B">OPAC</option>
+                                                    <option value="L">Fakturakommentar</option>
+                                                    <option value="N">Personal - Intern kommentar</option>
                                                 </select>
                                             [% END %]
                                             [% IF ( field.type == 'select' ) %]
