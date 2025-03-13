@@ -612,7 +612,7 @@
 
                                                 <div class="modal-footer">
                                                     <!-- CONFIRM -->
-                                                    <button class="btn btn-default approve" type="submit" accesskey="y"><i class="fa fa-check"></i> OK (Y)</button>
+                                                    <button class="btn btn-default approve" type="submit" accesskey="y" id="gub-wrong-transfer-focus"><i class="fa fa-check"></i> OK (Y)</button>
                                                     <!-- PRINT SLIP -->
                                                     <button type="button" data-bs-dismiss="modal" class="btn btn-default submit openWin" data-transfer="[% NewTransfer | html %]" data-url="transfer-slip.pl?transferitem=[% itemnumber | uri %]&amp;&amp;branchcode=[% TransferWaitingAt | uri %]&amp;op=slip" accesskey="p"><i class="fa fa-print"></i> Print transfer slip (P)</button>
                                                     <!-- CANCEL TRANSFER -->
@@ -702,7 +702,7 @@
                                                     </button>
 
                                                     <input type="hidden" name="print_slip" value="0" />
-                                                    <button type="button" class="btn btn-default print" accesskey="P">
+                                                    <button type="button" class="btn btn-default print" accesskey="P" id="gub-hold-found1-focus">
                                                         <i class="fa fa-print"></i> Print slip and confirm (P)
                                                     </button>
                                                     <button data-bs-dismiss="modal" type="submit" class="btn btn-default" accesskey="I">
@@ -769,13 +769,13 @@
                                                 <div class="modal-footer">
                                                     [% IF !transfer %]
                                                         <input type="hidden" name="op" value="cud-dotransfer" />
-                                                        <button type="submit" name="dotransfer" value="Yes" class="btn btn-default approve" accesskey="y"><i class="fa fa-check"></i> Yes (Y)</button>
+                                                        <button type="submit" name="dotransfer" value="Yes" class="btn btn-default approve" accesskey="y" id="gub-item-transfer-focus"><i class="fa fa-check"></i> Yes (Y)</button>
                                                         <button type="button" name="dotransfer" class="btn btn-default print openWin" data-url="transfer-slip.pl?transferitem=[% itemnumber | uri %]&amp;&amp;branchcode=[% returnbranch | uri %]&amp;op=slip"><i class="fa fa-print"></i> Yes, print slip</button>
                                                         <button type="button" data-bs-dismiss="modal" class="btn btn-default deny" name="notransfer" value="No" accesskey="n"><i class="fa fa-times"></i> No (N)</button>
                                                     [% ELSE %]
                                                         <input type="hidden" name="op" value="cud-transfer" />
                                                         <input type="hidden" name="transit" value="[% transfer | uri %]"/>
-                                                        <button type="submit" data-bs-dismiss="modal" class="btn btn-default" accesskey="y"><i class="fa fa-check"></i> OK (Y)</button>
+                                                        <button type="submit" data-bs-dismiss="modal" class="btn btn-default" accesskey="y" id="gub-item-transfer-focus"><i class="fa fa-check"></i> OK (Y)</button>
                                                         <button type="button" data-bs-dismiss="modal" class="btn btn-default print openWin" data-url="transfer-slip.pl?transferitem=[% itemnumber | uri %]&amp;branchcode=[% returnbranch | uri %]&amp;op=slip" accesskey="p"><i class="fa fa-print"></i> Print slip (P)</button>
                                                     [% END %]
                                                     <input type="hidden" name="return_date_override" value="[% return_date_override | html %]" />
@@ -890,7 +890,7 @@
 
                                                 <div class="modal-footer">
                                                     [% IF ( transfertodo ) %]
-                                                        <button type="submit" class="btn btn-default approve" accesskey="y">
+                                                        <button type="submit" class="btn btn-default approve" accesskey="y" id="gub-hold-found2-focus">
                                                             <i class="fa fa-check"></i> Confirm hold and transfer (Y)
                                                         </button>
                                                         <button type="button" class="btn btn-default print" accesskey="p">
@@ -900,7 +900,7 @@
                                                         <button type="submit" class="btn btn-default approve" accesskey="y">
                                                             <i class="fa fa-check"></i> Confirm hold (Y)
                                                         </button>
-                                                        <button type="button" class="btn btn-default print" accesskey="p">
+                                                        <button type="button" class="btn btn-default print" accesskey="p" id="gub-hold-found2-focus">
                                                             <i class="fa fa-print"></i> Print slip and confirm (P)
                                                         </button>
                                                     [% END %]
@@ -1693,6 +1693,19 @@
                     });
                 [% END %]
             [% END %]
+
+            if ($('#wrong-transfer-modal .modal-footer').is(':visible')) {
+                $('#wrong-transfer-modal #gub-wrong-transfer-focus').focus();
+            };
+            if ($('#item-transfer-modal .modal-footer').is(':visible')) {
+                $('#item-transfer-modal #gub-item-transfer-focus').focus();
+            };
+            if ($('#hold-found1 .modal-footer').is(':visible')) {
+                $('#hold-found1 #gub-hold-found1-focus').focus();
+            };
+            if ($('#hold-found2 .modal-footer').is(':visible')) {
+                $('#hold-found2 #gub-hold-found2-focus').focus();
+            };
         });
     </script>
 
