@@ -164,7 +164,7 @@
                             <fieldset class="rows">
                                 <legend>Next step</legend>
                                 <ol>
-                                    <li><label for="op_list">Select records to modify: </label><input type="radio" name="op" value="list" id="op_list" checked="checked" /></li>
+                                    <li><label for="op_list">Select records to modify: </label><input type="radio" name="op" value="cud-list" id="op_list" checked="checked" /></li>
                                     <li><label for="op_modify_all">Modify all: </label><input type="radio" name="op" value="modify_all" id="op_modify_all" /></li>
                                 </ol>
                             </fieldset>
