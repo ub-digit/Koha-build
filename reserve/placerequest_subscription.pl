@@ -109,6 +109,7 @@ if ( $patron ) {
         performer => $performer_borrowernumber,
         'reserve[user_id]' => $borrowernumber,
         'reserve[biblio_id]' => $biblionumber,
+        'reserve[subscription_id]' => $subscription_id,
         'reserve[subscription_location]' => $subscription_branchname,
         'reserve[subscription_sublocation]' => $subscription_sublocation,
         'reserve[subscription_sublocation_id]' => $subscription_sublocation_id,
