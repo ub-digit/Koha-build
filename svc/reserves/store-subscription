@@ -1,0 +1,143 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use CGI qw ( -utf8 );
+use C4::Auth qw/check_api_auth/;
+use XML::Simple;
+use C4::Context;
+use Koha::Patrons;
+use Koha::Biblios;
+use Koha::Subscriptions;
+use utf8;
+
+my $query = new CGI;
+binmode STDOUT, ':encoding(UTF-8)';
+
+my ($status, $cookie, $sessionID) = check_api_auth($query, { editcatalogue => 'edit_catalogue'} );
+unless ($status eq "ok") {
+  print $query->header(-type => 'text/xml', -status => '403 Forbidden');
+  print XMLout({ status => $status, status => 'Forbidden' }, NoAttr => 1, RootName => 'response', XMLDecl => 1);
+  exit 0;
+}
+
+# Reference table:
+# CREATE TABLE `ub_subscription_reserves` (
+#   `reserve_id` varchar(200) NOT NULL COMMENT 'Filename of the subscription reserve',
+#   `borrowernumber` int(11) NOT NULL DEFAULT 0,
+#   `reservedate` date DEFAULT NULL,
+#   `biblionumber` int(11) NOT NULL DEFAULT 0,
+#   `subscriptionid` int(11) NOT NULL DEFAULT 0,
+#   `branchcode` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'foreign key from the branches table defining which branch the patron wishes to pick this hold up at',
+#   `reservenotes` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+#   `timestamp` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+#   PRIMARY KEY (`reserve_id`))
+
+# Single line CREATE TABLE statement:
+# CREATE TABLE `ub_subscription_reserves` (`reserve_id` varchar(200) NOT NULL COMMENT 'Filename of the subscription reserve', `borrowernumber` int(11) NOT NULL DEFAULT 0, `reservedate` date DEFAULT NULL, `biblionumber` int(11) NOT NULL DEFAULT 0, `subscriptionid` int(11) NOT NULL DEFAULT 0, `branchcode` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'foreign key from the branches table defining which branch the patron wishes to pick this hold up at', `reservenotes` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL, `timestamp` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(), PRIMARY KEY (`reserve_id`));
+
+my $reserve_id = $query->param('reserve_id');
+my $borrowernumber = $query->param('borrowernumber');
+my $biblionumber = $query->param('biblionumber');
+my $subscriptionid = $query->param('subscriptionid');
+my $branchcode = $query->param('branchcode');
+my $reservenotes = $query->param('reservenotes');
+my $performer_borrowernumber = $query->param('performer_borrowernumber');
+
+my $borrower = Koha::Patrons->find( { borrowernumber => $borrowernumber } );
+my $biblio = Koha::Biblios->find( { biblionumber => $biblionumber } );
+my $subscription = Koha::Subscriptions->find( { subscriptionid => $subscriptionid } );
+
+save_to_ub_subscription_reserves($reserve_id, $borrowernumber, $biblionumber, $subscriptionid, $branchcode, $reservenotes, $performer_borrowernumber);
+
+my %stat_obj = (
+    reserve_id => $reserve_id,
+    borrowernumber => $borrowernumber,
+    biblionumber => $biblionumber,
+    subscriptionid => $subscriptionid,
+    branchcode => $branchcode,
+    reservenotes => $reservenotes,
+    performer_borrowernumber => $performer_borrowernumber
+);
+
+save_to_statistics(\%stat_obj, $borrower, $biblio, $subscription);
+
+print $query->header(-type => 'text/xml',-charset => 'utf-8', -status => '200');
+print XMLout({ status => "ok" }, NoAttr => 1, RootName => 'response', XMLDecl => 1);
+
+exit 0;
+
+sub save_to_ub_subscription_reserves {
+    my ($reserve_id, $borrowernumber, $biblionumber, $subscriptionid, $branchcode, $reservenotes) = @_;
+    my $dbh = C4::Context->dbh;
+
+    # Check if table "ub_statistics" exists.
+    my $sqlquery = "SHOW TABLES LIKE 'ub_subscription_reserves'";
+    my $sth = $dbh->prepare($sqlquery);
+    $sth->execute();
+    my $table_exists = $sth->fetchrow_arrayref();
+
+    # If table does exist, insert data, otherwise silently ignore.
+
+    if ($table_exists) {
+        # reservedate is NOW(), all other fields are from the request.
+        my $sqlquery = "INSERT INTO ub_subscription_reserves (reserve_id, borrowernumber, reservedate, biblionumber, subscriptionid, branchcode, reservenotes) VALUES (?, ?, NOW(), ?, ?, ?, ?)";
+
+        my $sth = $dbh->prepare($sqlquery);
+        $sth->execute($reserve_id, $borrowernumber, $biblionumber, $subscriptionid, $branchcode, $reservenotes);
+    }
+}
+
+sub save_to_statistics {
+    # Data from the subscription reserve table (stat_obj), full borrower, full biblio and full subscription object, or undef if missing
+    my ($stat_obj, $borrower, $biblio, $subscription) = @_; 
+    # Statistics table:
+    my $branch = $stat_obj->{branchcode};
+    my $value = undef;
+    my $type = "hold_sub";
+    my $other = undef;
+    my $itemnumber = undef;
+    my $itemtype = undef;
+    my $location = $subscription ? $subscription->branchcode : undef;
+    my $ccode = undef;
+    my $biblionumber = $biblio ? $biblio->biblionumber : undef;
+    my $title = $biblio ? $biblio->title : undef;
+    my $author = $biblio ? $biblio->author : undef;
+    my $callno = $subscription ? $subscription->callnumber : undef;
+    my $categorycode = $borrower ? $borrower->categorycode : undef;
+    my $organisation = undef;
+    my $borrowernumber = $stat_obj->{performer_borrowernumber};
+    my $issue_note = undef;
+    my $issue_auto_renew = undef;
+
+    # If borrowernumber is not provided, use the context userenv user.
+    # If that does not exist, we write NULL.
+    if (!$borrowernumber) {
+        my $userenv = C4::Context->userenv;
+        # userenv does not contain borrowernumber, so we need to fetch it from the database.
+        # if userenv is not set, leave it as undef.
+
+        if ($userenv) {
+            my $performer = Koha::Patrons->find( { cardnumber => $userenv->{cardnumber} } );
+            $borrowernumber = $performer->borrowernumber;
+        }
+    }
+
+    my $dbh = C4::Context->dbh;
+
+    # Check if table "ub_statistics" exists.
+    my $sqlquery = "SHOW TABLES LIKE 'ub_statistics'";
+    my $sth = $dbh->prepare($sqlquery);
+    $sth->execute();
+    my $table_exists = $sth->fetchrow_arrayref();
+
+    # If table does exist, insert data, otherwise silently ignore.
+
+    if ($table_exists) {
+        my $sqlquery = "INSERT INTO ub_statistics (datetime, branch, value, type, other, itemnumber, itemtype, location, ccode, biblionumber, title, author, callno, categorycode, organisation, borrowernumber, issue_note, issue_auto_renew) VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        my $sth = $dbh->prepare($sqlquery);
+        $sth->execute($branch, $value, $type, $other, $itemnumber, $itemtype, $location, $ccode, $biblionumber, $title, $author, $callno, $categorycode, $organisation, $borrowernumber, $issue_note, $issue_auto_renew);
+    }
+}
