@@ -99,10 +99,11 @@ if (!$borrowernumber) {
   my $patron = Koha::Patron->new({%borrower})->store;
   $borrowernumber = $patron->borrowernumber;
 
+# Always set ACCEPT to "1" (YES), because it is now a YES_NO attribute, and to get to this point the user has accepted the terms
   my $attributes = [
     {code => "PNR", attribute => $personalnumber},
     {code => "PNR12", attribute => $pnr12},
-    {code => "ACCEPT", attribute => $accept_text},
+    {code => "ACCEPT", attribute => "1"},
     {code => "IMPORT", attribute => "gukort-syncuser"}
     ];
   $patron->extended_attributes($attributes);
