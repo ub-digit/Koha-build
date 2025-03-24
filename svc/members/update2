@@ -220,10 +220,10 @@ else { #$action eq 'update'
     }
   }
   
-  # Spara att de accepterat biblioteksreglerna.
+  # Spara att de accepterat biblioteksreglerna ("1" (YES))
   # Sparar att datat kommer från GU genom att skriva GU-kort uppdat i posten.
   $borrower->extended_attributes->search({code => "ACCEPT"})->delete;
-  $borrower->add_extended_attribute({code => "ACCEPT", attribute => "Biblioteksreglerna accepteras"});
+  $borrower->add_extended_attribute({code => "ACCEPT", attribute => "1"});
   $borrower->extended_attributes->search({code => "IMPORT"})->delete;
   $borrower->add_extended_attribute({code => "IMPORT", attribute => "gukort updat"});
 
