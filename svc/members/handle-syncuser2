@@ -152,25 +152,44 @@ if (!$borrowernumber) {
     $firstname = $query->param('firstname');
   }
 
-  $newdata{'borrowernumber'} = $patron->borrowernumber;
-  if($firstname) {
-    $newdata{'firstname'} = $firstname;
-  }
-  if($surname) {
-    $newdata{'surname'} = $surname;
-  }
-  if($patron->userid ne $userid) {
-    $newdata{'userid'} = $userid;
-  }
-  if($patron->categorycode ne $categorycode) {
-    $newdata{'categorycode'} = $categorycode;
-  }
-  # if($query->param('email')) {
-  #   $newdata{'email'} = $query->param('email');
-  # }
+  my $perform_update = 1;
 
-  specialized_update($patron, $patronstatus, $user_type, \%newdata);
-  $patron->set(\%newdata)->store;
+  # If it's a deactivation message, and we stop being an employee while being external
+  # This is not normal, but can happen in a transition period
+  # If this is the case, we simply abort, since syncuser should not change external patrons
+  if (deactivating_employee($patronstatus, $user_type) && is_external($patron->categorycode)) {
+    $perform_update = 0;
+  }
+
+  # If it's a deactivation message, and we stop being a student while being external
+  # This is not normal, but can happen in a transition period
+  # If this is the case, we simply abort, since syncuser should not change external patrons
+  if (deactivating_student($patronstatus, $user_type) && is_external($patron->categorycode)) {
+    $perform_update = 0;
+  }
+
+  # Only update the patron if we should, i.e. never for external patrons where the incoming status is "inactive".
+  if ($perform_update) {
+    $newdata{'borrowernumber'} = $patron->borrowernumber;
+    if($firstname) {
+      $newdata{'firstname'} = $firstname;
+    }
+    if($surname) {
+      $newdata{'surname'} = $surname;
+    }
+    if($patron->userid ne $userid) {
+      $newdata{'userid'} = $userid;
+    }
+    if($patron->categorycode ne $categorycode) {
+      $newdata{'categorycode'} = $categorycode;
+    }
+    # if($query->param('email')) {
+    #   $newdata{'email'} = $query->param('email');
+    # }
+
+    specialized_update($patron, $patronstatus, $user_type, \%newdata);
+    $patron->set(\%newdata)->store;
+  }
 }
 
 print $query->header(-type => 'text/xml',-charset => 'utf-8', -status => '201');
