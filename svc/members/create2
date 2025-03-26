@@ -108,6 +108,10 @@ my $email = $query->param('email');
 if ($email) {
   $borrower{'email'} = $email;
 }
+my $b_email = $query->param('b_email');
+if ($b_email) {
+  $borrower{'B_email'} = $b_email;
+}
 
 # Patron attribute fields
 my $accept_text = $query->param('accept_text');
