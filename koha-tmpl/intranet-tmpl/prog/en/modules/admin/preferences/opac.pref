@@ -1019,3 +1019,12 @@ OPAC:
               type: textarea
               syntax: application/json
               class: code
+        -
+            - 'Alert message in JSON format for the Primo application'
+            - '<br />Note: The JSON MUST(!) have the properties as below. Toggle message visibility with the enabled property'
+            - '<br />Example:'
+            - '<pre>{  <br/>  "_comment" : "DO NOT USE THIS ATTRIBUTE! This file is used to manage operation and maintenance info in Primo. Toggle message visibility with the enabled property",  <br/>  "enabled": false,  <br/>  "sv" : {    <br/>    "message_title" : "Detta är titeln till meddelandetexten på svenska",    <br/>    "message_body" : "Detta är meddelandetexten på svenska.",    <br/>    "call_to_action_link": {      <br/>      "text" : "Länktext på svenska",      <br/>      "url": "Länk till den svenska sidan",      <br/>      "title" : "Länktitel på svenska",      <br/>      "target" : "_self"      <br/>    }    <br/>  },  <br/>  "en" : {    <br/>    "message_title" : "This is an alert message title in English",    <br/>    "message_body" : "This is an alert message body in English.",    <br/>    "call_to_action_link": {      <br/>      "text" : "Link text in English",      <br/>      "url": "Link to the English page",      <br/>      "title" : "Link title in English",      <br/>      "target" : "_self"      <br/>    }    <br/>  }  <br/>}</pre>'
+            - pref: PrimoAlertMessage
+              type: textarea
+              syntax: application/json
+              class: code
