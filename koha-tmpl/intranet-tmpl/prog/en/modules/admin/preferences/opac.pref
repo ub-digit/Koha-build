@@ -1019,3 +1019,12 @@ OPAC:
               type: textarea
               syntax: application/json
               class: code
+        -
+            - 'Alert message in JSON format for the Primo application'
+            - '<br />Note: The JSON MUST(!) have two properties that are strings. "en" and "sv" for each language of the message. The string can be HTML.'
+            - '<br />Example:'
+            - '<pre>{<br>  "en": "This is an alert message in English",<br>  "sv": "Detta är ett varningsmeddelande på svenska"<br>}</pre>'
+            - pref: PrimoAlertMessage
+              type: textarea
+              syntax: application/json
+              class: code
