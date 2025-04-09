@@ -25,6 +25,7 @@ use C4::Context;
 use C4::Service;
 use C4::Log;
 use JSON qw( to_json );
+use XML::Simple;
 
 my $query = new CGI;
 binmode STDOUT, ':encoding(UTF-8)';
