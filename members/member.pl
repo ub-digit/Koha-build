@@ -46,7 +46,7 @@ my $searchmember = $input->param('searchmember');
 my $quicksearch = $input->param('quicksearch') // 0;
 my $circsearch = $input->param('circsearch') // 0;
 
-if ( $quicksearch and $searchmember && !$circsearch ) {
+if ( $quicksearch and $searchmember ) {
     my $branchcode;
     if ( C4::Context::only_my_library ) {
         my $userenv = C4::Context->userenv;
@@ -60,7 +60,8 @@ if ( $quicksearch and $searchmember && !$circsearch ) {
                 or ( not $branchcode ) )
             )
         {
-            print $input->redirect( "/cgi-bin/koha/members/moremember.pl?borrowernumber=" . $patron->borrowernumber );
+            my $redirect_url = $circsearch ? '/cgi-bin/koha/circ/circulation.pl' : '/cgi-bin/koha/members/moremember.pl';
+            print $input->redirect( "$redirect_url?borrowernumber=" . $patron->borrowernumber );
             exit;
         }
     };
