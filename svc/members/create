@@ -6,6 +6,7 @@ use warnings;
 use CGI qw ( -utf8 );
 use XML::Simple;
 use C4::Auth qw/check_api_auth/;
+use UUID;
 
 use C4::Members;
 
@@ -41,7 +42,7 @@ else {
 }
 
 # Mandatory borrower fields
-$borrower{'password'} = $personalnumber;
+$borrower{'password'} = UUID::uuid();
 $borrower{'categorycode'} = $query->param('categorycode');
 $borrower{'branchcode'} = $query->param('branchcode');
 $borrower{'surname'} = $query->param('surname');
