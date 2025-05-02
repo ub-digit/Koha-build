@@ -195,7 +195,7 @@
                                                 [% IF ( manualhistory ) %]
                                                     Enabled <a href="/cgi-bin/koha/serials/subscription-history.pl?subscriptionid=[% subscriptionid | uri %]">Edit history</a>
                                                 [% ELSE %]
-                                                    Disabled
+                                                    Disabled <a href="/cgi-bin/koha/serials/subscription-history.pl?subscriptionid=[% subscriptionid | uri %]">Edit history</a>
                                                 [% END %]
                                             </li>
                                             <li>
