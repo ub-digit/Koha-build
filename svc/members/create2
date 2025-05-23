@@ -111,7 +111,7 @@ if ($email) {
 }
 my $b_email = $query->param('b_email');
 if ($b_email) {
-  $borrower{'B_email'} = $b_email;
+  $borrower{'emailpro'} = $b_email;
 }
 
 # Patron attribute fields
