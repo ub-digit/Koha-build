@@ -34,10 +34,7 @@ foreach(@$res){
 	use POSIX qw(strftime);
 	my $today = strftime "%Y-%m-%d", localtime;
 
-	if ($itemlost == 0) {
-		$item->itemlost("1");
-	}
-
+	$item->itemlost("1");
 	$item->itemlost_on($today);
 	$item->onloan("");
 	$item->store;
