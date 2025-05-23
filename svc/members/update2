@@ -193,7 +193,7 @@ else { #$action eq 'update'
 
   my $b_email = $query->param('b_email');
   if ($b_email) {
-    $newdata{'B_email'} = $b_email;
+    $newdata{'emailpro'} = $b_email;
   }
 
   # Ta bort spärrarna GU och WR om vi får ett KORT-meddelande, inte annars
