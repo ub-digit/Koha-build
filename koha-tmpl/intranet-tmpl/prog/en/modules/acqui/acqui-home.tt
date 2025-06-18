@@ -84,8 +84,6 @@
 
 </div>
 
-[% PROCESS acquisitions_filter_form context => "main" %]
-
 [% IF ( loop_budget ) %]
 
 <div class="page-section">
