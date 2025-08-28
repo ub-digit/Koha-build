@@ -715,7 +715,7 @@ END_SQL
                 $sth2->finish;
                 my @message_transport_types;
                 if (C4::Context->preference('UsePatronPreferencesForOverdueNotices')) {
-                    my $patronpref = GetMessagingPreferences(
+                    my $patronpref = C4::Members::Messaging::GetMessagingPreferences(
                         { borrowernumber => $borrowernumber, message_name => "Overdue$i"});
                     if ($patronpref && $patronpref->{'transports'}) {
                         @message_transport_types = keys %{$patronpref->{'transports'}};
