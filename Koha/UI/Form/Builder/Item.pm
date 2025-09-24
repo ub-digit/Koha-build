@@ -543,7 +543,8 @@ sub edit_form {
 
             next
               if $ignore_invisible_subfields
-              && ( $subfield->{hidden} > 4 || $subfield->{hidden} <= -4 );
+              && ( $subfield->{hidden} > 4 || $subfield->{hidden} <= -4 )
+              && !$subfield->{mandatory};
 
             my $readonly;
             if (
