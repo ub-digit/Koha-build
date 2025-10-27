@@ -142,6 +142,10 @@ my $f_500 = MARC::Field->new('500', '', '', a => "$isbn");
 my $f_942 = MARC::Field->new('942', '', '', n => "1");
 $record->append_fields($f_942);
 
+## create a 951 field
+my $f_951 = MARC::Field->new('951', '', '', a => "FjärrIN");
+$record->append_fields($f_951);
+
 my $biblionumber;
 my $biblioitemnumber;
 ($biblionumber,$biblioitemnumber) = AddBiblio($record,'');
