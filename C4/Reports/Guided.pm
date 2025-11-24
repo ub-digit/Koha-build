@@ -57,6 +57,7 @@ BEGIN {
       ValidateSQLParameters
       nb_rows update_sql
       EmailReport
+      SmsReport
     );
 }
 
@@ -1087,6 +1088,78 @@ sub EmailReport {
     }
 
     return ( \@emails, \@errors );
+
+}
+
+=head2 SmsReport
+
+    my ( $smses, $arrayrefs ) = SmsReport($report_id, $letter_code, $module, $branch, $sms)
+
+Take a report and use it to process a Template Toolkit formatted notice
+Returns arrayrefs containing prepared letters and errors respectively
+
+=cut
+
+sub SmsReport {
+
+    my $params     = shift;
+    my $report_id  = $params->{report_id};
+    my $from       = $params->{from};
+    my $sms_col    = $params->{sms} || 'sms';
+    my $module     = $params->{module};
+    my $code       = $params->{code};
+    my $branch     = $params->{branch} || "";
+
+    my @errors = ();
+    my @smses = ();
+
+    return ( undef, [{ FATAL => "MISSING_PARAMS" }] ) unless ($report_id && $module && $code);
+
+    return ( undef, [{ FATAL => "NO_LETTER" }] ) unless
+    my $letter = Koha::Notice::Templates->find({
+        module     => $module,
+        code       => $code,
+        branchcode => $branch,
+        message_transport_type => 'sms',
+    });
+    $letter = $letter->unblessed;
+    $letter->{'content-type'} = 'text/html; charset="UTF-8"' if $letter->{'is_html'};
+
+    my $report = Koha::Reports->find( $report_id );
+    my $sql = $report->savedsql;
+    return ( { FATAL => "NO_REPORT" } ) unless $sql;
+
+    #don't pass offset or limit, hardcoded limit of 999,999 will be used
+    my ( $sth, $errors ) = execute_query( { sql => $sql, report_id => $report_id } );
+    return ( undef, [{ FATAL => "REPORT_FAIL" }] ) if $errors;
+
+    my $counter = 1;
+    my $template = $letter->{content};
+
+    while ( my $row = $sth->fetchrow_hashref() ) {
+        my $sms;
+        my $err_count = scalar @errors;
+        push ( @errors, { NO_BOR_COL => $counter } ) unless defined $row->{borrowernumber};
+        push ( @errors, { NO_SMS_COL => $counter } ) unless ( defined $row->{$sms_col} );
+        push ( @errors, { NO_FROM_COL => $counter } ) unless defined ( $from || $row->{from} );
+        push ( @errors, { NO_BOR => $row->{borrowernumber} } ) unless Koha::Patrons->find({borrowernumber=>$row->{borrowernumber}});
+
+        my $from_address = $from || $row->{from};
+        my $to_address = $row->{$sms_col};
+        push ( @errors, { NOT_PARSE => $counter } ) unless my $content = process_tt( $template, $row );
+        $counter++;
+        next if scalar @errors > $err_count; #If any problems, try next
+
+        $letter->{content}       = $content;
+        $sms->{borrowernumber} = $row->{borrowernumber};
+        $sms->{letter}         = { %$letter };
+        $sms->{from_address}   = $from_address;
+        $sms->{to_address}     = $to_address;
+
+        push ( @smses, $sms );
+    }
+
+    return ( \@smses, \@errors );
 
 }
 
