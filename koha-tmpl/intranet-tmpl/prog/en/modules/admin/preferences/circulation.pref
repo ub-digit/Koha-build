@@ -1507,6 +1507,12 @@ Circulation:
                   1: Send
                   0: Don't send
             - OPAC patron messages in the SIP2 screen message field.
+        -
+            - pref: UsePNRAsIdentifierInSIP
+              choices:
+                  1: Use PNR
+                  0: Don't use PNR
+            - as login identifier in SIP.
 
     Curbside pickup module:
         -
